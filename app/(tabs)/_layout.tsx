@@ -79,12 +79,13 @@ export default function TabsLayout() {
         options={{ title: 'Progrès', tabBarIcon: ({ focused }) => icon('trending-up-outline', focused) }}
       />
 
-      {/* Programmes : caché de la tab bar, accessible via le bouton dans Sport ── */}
+      {/* Programmes : retiré du layout de la tab bar pour ne pas créer d'espace vide ── */}
       <Tabs.Screen
         name="programs"
         options={{
           title: 'Programmes',
           tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
     </Tabs>
