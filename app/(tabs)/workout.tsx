@@ -1,0 +1,267 @@
+import React, { useState, useRef, useCallback } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  Alert, Animated, PanResponder, Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppStore } from '../../store/useAppStore';
+import { WorkoutSession, WorkoutType } from '../../types';
+import Card from '../../components/ui/Card';
+import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import * as storage from '../../services/storage';
+
+const SCREEN_W = Dimensions.get('window').width;
+
+const TYPE_META: Record<WorkoutType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
+  strength: { label: 'Musculation', icon: 'barbell-outline',  color: Colors.primary },
+  cardio:   { label: 'Cardio',      icon: 'bicycle-outline',  color: Colors.green },
+  hiit:     { label: 'HIIT',        icon: 'flash-outline',    color: Colors.red },
+  yoga:     { label: 'Yoga',        icon: 'body-outline',     color: '#b983ff' },
+  running:  { label: 'Course',      icon: 'walk-outline',     color: Colors.orange },
+  other:    { label: 'Autre',       icon: 'fitness-outline',  color: Colors.textSecondary },
+};
+
+type Filter = WorkoutType | 'all';
+
+export default function WorkoutScreen() {
+  const router = useRouter();
+  const store  = useAppStore();
+  const [filter, setFilter] = useState<Filter>('all');
+
+  const todayWorkouts = store.workouts.filter(w => w.date === storage.today());
+  const filtered = filter === 'all' ? store.workouts : store.workouts.filter(w => w.type === filter);
+
+  const totalBurned  = todayWorkouts.reduce((s, w) => s + w.caloriesBurned, 0);
+  const totalMinutes = todayWorkouts.reduce((s, w) => s + w.duration, 0);
+
+  // Dernière séance enregistrée (la plus récente)
+  const lastWorkout = store.workouts[0] ?? null;
+
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* ── Reprendre la dernière séance ───────────────────────────────── */}
+        {lastWorkout && (
+          <TouchableOpacity
+            style={styles.repeatBtn}
+            onPress={() => router.push({ pathname: '/modals/add-workout', params: { repeatWorkoutId: lastWorkout.id } })}
+          >
+            <Ionicons name="flash" size={18} color={Colors.orange} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.repeatBtnTitle}>⚡ Reprendre la dernière séance</Text>
+              <Text style={styles.repeatBtnSub}>{lastWorkout.name} — {lastWorkout.exercises.length} exercice{lastWorkout.exercises.length > 1 ? 's' : ''}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
+        {/* ── Stats du jour ──────────────────────────────────────────────── */}
+        <View style={styles.statsRow}>
+          <MiniStat icon="barbell-outline"  color={Colors.primary} value={String(todayWorkouts.length)} label="Séances" />
+          <MiniStat icon="flame-outline"    color={Colors.orange}  value={String(totalBurned)}         label="kcal" />
+          <MiniStat icon="time-outline"     color={Colors.green}   value={String(totalMinutes)}        label="min" />
+        </View>
+
+        {/* ── Filtres ────────────────────────────────────────────────────── */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
+          <FilterChip label="Tout" active={filter === 'all'} onPress={() => setFilter('all')} />
+          {(Object.keys(TYPE_META) as WorkoutType[]).map(t => (
+            <FilterChip
+              key={t}
+              label={TYPE_META[t].label}
+              active={filter === t}
+              color={TYPE_META[t].color}
+              onPress={() => setFilter(t)}
+            />
+          ))}
+        </ScrollView>
+
+        {/* ── Liste des séances ──────────────────────────────────────────── */}
+        {filtered.length === 0 ? (
+          <EmptyWorkout onAdd={() => router.push('/modals/add-workout')} />
+        ) : (
+          filtered.map((w, idx) => (
+            <SwipeableWorkoutCard
+              key={w.id}
+              workout={w}
+              index={idx}
+              onDelete={() => store.deleteWorkout(w.id)}
+            />
+          ))
+        )}
+      </ScrollView>
+
+      {/* ── FAB ──────────────────────────────────────────────────────────── */}
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/modals/add-workout')}>
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── Carte séance avec swipe pour supprimer ───────────────────────────────────
+
+function SwipeableWorkoutCard({ workout, index, onDelete }: {
+  workout: WorkoutSession;
+  index: number;
+  onDelete: () => void;
+}) {
+  const panX     = useRef(new Animated.Value(0)).current;
+  const slideIn  = useRef(new Animated.Value(40)).current;
+  const opacity  = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity,  { toValue: 1, duration: 300, delay: index * 50, useNativeDriver: true }),
+      Animated.timing(slideIn,  { toValue: 0, duration: 280, delay: index * 50, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dy) < 20,
+    onPanResponderMove: (_, g) => { if (g.dx < 0) panX.setValue(g.dx); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx < -90) {
+        Animated.timing(panX, { toValue: -SCREEN_W, duration: 220, useNativeDriver: true }).start(onDelete);
+      } else {
+        Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  })).current;
+
+  const { label, icon, color } = TYPE_META[workout.type];
+  const isToday = workout.date === storage.today();
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateY: slideIn }] }}>
+      {/* Fond rouge visible au swipe */}
+      <View style={swipeStyles.bg}>
+        <Ionicons name="trash-outline" size={22} color="#fff" />
+        <Text style={swipeStyles.bgText}>Supprimer</Text>
+      </View>
+
+      <Animated.View
+        style={[swipeStyles.card, { transform: [{ translateX: panX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <View style={[swipeStyles.iconBox, { backgroundColor: color + '18' }]}>
+          <Ionicons name={icon} size={22} color={color} />
+        </View>
+        <View style={swipeStyles.info}>
+          <View style={swipeStyles.titleRow}>
+            <Text style={swipeStyles.name}>{workout.name}</Text>
+            {isToday && <View style={swipeStyles.todayBadge}><Text style={swipeStyles.todayText}>Aujourd'hui</Text></View>}
+          </View>
+          <Text style={swipeStyles.meta}>
+            {label} • {workout.duration}min • {workout.caloriesBurned}kcal
+          </Text>
+          {workout.exercises.length > 0 && (
+            <Text style={swipeStyles.exCount}>{workout.exercises.length} exercice{workout.exercises.length > 1 ? 's' : ''}</Text>
+          )}
+          {/* Affichage des PRs de cette séance */}
+          {workout.exercises.flatMap(e =>
+            e.sets.filter(s => s.weight > 0).map(s => ({ name: e.name, w: s.weight }))
+          ).slice(0, 2).map((ex, i) => (
+            <Text key={i} style={swipeStyles.prText}>🏆 PR {ex.name} : {ex.w}kg</Text>
+          ))}
+        </View>
+        <Text style={swipeStyles.date}>{workout.date.slice(5).replace('-', '/')}</Text>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+const swipeStyles = StyleSheet.create({
+  bg: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    width: 110, borderRadius: R, backgroundColor: Colors.red,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: Sp.sm,
+  },
+  bgText: { color: '#fff', fontSize: Fs.sm, fontWeight: Fw.semibold },
+  card: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.surface, borderRadius: R,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: Sp.md, marginBottom: Sp.sm, gap: Sp.sm,
+  },
+  iconBox: { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  info: { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  name: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
+  todayBadge: { backgroundColor: Colors.primary + '25', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
+  todayText: { fontSize: Fs.xs, color: Colors.primary },
+  meta: { fontSize: Fs.xs, color: Colors.textSecondary },
+  exCount: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 },
+  prText: { fontSize: Fs.xs, color: Colors.yellow, marginTop: 2 },
+  date: { fontSize: Fs.xs, color: Colors.textMuted },
+});
+
+// ─── Sous-composants ──────────────────────────────────────────────────────────
+
+function MiniStat({ icon, color, value, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; value: string; label: string }) {
+  return (
+    <View style={miniStyles.card}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={[miniStyles.value, { color }]}>{value}</Text>
+      <Text style={miniStyles.label}>{label}</Text>
+    </View>
+  );
+}
+const miniStyles = StyleSheet.create({
+  card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center', gap: 3 },
+  value: { fontSize: Fs.xl, fontWeight: Fw.bold },
+  label: { fontSize: Fs.xs, color: Colors.textMuted },
+});
+
+function FilterChip({ label, active, color = Colors.primary, onPress }: { label: string; active: boolean; color?: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      style={[styles.chip, active && { borderColor: color, backgroundColor: color + '18' }]}
+      onPress={onPress}
+    >
+      <Text style={[styles.chipText, active && { color }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function EmptyWorkout({ onAdd }: { onAdd: () => void }) {
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: 60, gap: 12 }}>
+      <Ionicons name="barbell-outline" size={56} color={Colors.textMuted} />
+      <Text style={{ color: Colors.textSecondary, fontSize: Fs.lg, fontWeight: Fw.semibold }}>Aucune séance</Text>
+      <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, textAlign: 'center' }}>Commence à enregistrer tes entraînements</Text>
+      <TouchableOpacity style={{ backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 }} onPress={onAdd}>
+        <Text style={{ color: '#fff', fontWeight: Fw.semibold }}>Ajouter une séance</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
+  // Bouton reprendre dernière séance
+  repeatBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: Sp.sm,
+    backgroundColor: Colors.orange + '12',
+    borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '35',
+    padding: Sp.md,
+  },
+  repeatBtnTitle: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.text },
+  repeatBtnSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  statsRow: { flexDirection: 'row', gap: Sp.sm },
+  filterScroll: { marginHorizontal: -Sp.md },
+  filterContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
+  chip: { borderRadius: 99, paddingHorizontal: Sp.md, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
+  chipText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  fab: {
+    position: 'absolute', bottom: 30, right: Sp.lg,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
+  },
+});

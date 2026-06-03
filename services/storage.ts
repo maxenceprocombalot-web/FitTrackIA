@@ -1,0 +1,210 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  User, WorkoutSession, Meal, WeightEntry,
+  ChatMessage, PersonalRecord, ActiveProgram,
+  FavoriteMeal, WaterEntry, StreakData,
+  SavedPlan, MonthlySummary,
+} from '../types';
+
+// ─── Clés de stockage ──────────────────────────────────────────────────────────
+
+const K = {
+  USER:            '@fit_user',
+  WORKOUTS:        '@fit_workouts',
+  MEALS:           '@fit_meals',
+  WEIGHTS:         '@fit_weights',
+  CHAT:            '@fit_chat',
+  PRS:             '@fit_prs',
+  ACTIVE_PROGRAM:  '@fit_active_program',
+  FAVORITES:       '@fit_favorites',
+  WATER:           '@fit_water',
+  STREAK:          '@fit_streak',
+  SAVED_PLANS:     '@fit_plans',
+  RECENT_FOODS:    '@fit_recent_foods',
+  MONTHLY:         '@fit_monthly',
+};
+
+// ─── Utilitaires génériques ────────────────────────────────────────────────────
+
+async function save<T>(key: string, data: T): Promise<void> {
+  await AsyncStorage.setItem(key, JSON.stringify(data));
+}
+
+async function load<T>(key: string): Promise<T | null> {
+  const raw = await AsyncStorage.getItem(key);
+  return raw ? (JSON.parse(raw) as T) : null;
+}
+
+// ─── Utilisateur ──────────────────────────────────────────────────────────────
+
+export const saveUser = (u: User) => save(K.USER, u);
+export const loadUser = ()        => load<User>(K.USER);
+
+// ─── Séances ──────────────────────────────────────────────────────────────────
+
+export async function loadWorkouts(): Promise<WorkoutSession[]> {
+  return (await load<WorkoutSession[]>(K.WORKOUTS)) ?? [];
+}
+
+export async function saveWorkout(w: WorkoutSession): Promise<void> {
+  const list = await loadWorkouts();
+  const idx  = list.findIndex(x => x.id === w.id);
+  if (idx >= 0) list[idx] = w; else list.unshift(w);
+  await save(K.WORKOUTS, list);
+}
+
+export async function deleteWorkout(id: string): Promise<void> {
+  const list = await loadWorkouts();
+  await save(K.WORKOUTS, list.filter(w => w.id !== id));
+}
+
+// ─── Repas ────────────────────────────────────────────────────────────────────
+
+export async function loadMeals(): Promise<Meal[]> {
+  return (await load<Meal[]>(K.MEALS)) ?? [];
+}
+
+export async function saveMeal(m: Meal): Promise<void> {
+  const list = await loadMeals();
+  const idx  = list.findIndex(x => x.id === m.id);
+  if (idx >= 0) list[idx] = m; else list.unshift(m);
+  await save(K.MEALS, list);
+}
+
+export async function deleteMeal(id: string): Promise<void> {
+  const list = await loadMeals();
+  await save(K.MEALS, list.filter(m => m.id !== id));
+}
+
+// ─── Poids ────────────────────────────────────────────────────────────────────
+
+export async function loadWeights(): Promise<WeightEntry[]> {
+  return (await load<WeightEntry[]>(K.WEIGHTS)) ?? [];
+}
+
+export async function saveWeight(e: WeightEntry): Promise<void> {
+  const list = await loadWeights();
+  const idx  = list.findIndex(x => x.date === e.date);
+  if (idx >= 0) list[idx] = e; else list.push(e);
+  list.sort((a, b) => a.date.localeCompare(b.date));
+  await save(K.WEIGHTS, list);
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+export async function loadChat(): Promise<ChatMessage[]> {
+  return (await load<ChatMessage[]>(K.CHAT)) ?? [];
+}
+
+export async function saveChat(msgs: ChatMessage[]): Promise<void> {
+  await save(K.CHAT, msgs.slice(-120));
+}
+
+// ─── Personal Records ─────────────────────────────────────────────────────────
+
+export async function loadPRs(): Promise<PersonalRecord[]> {
+  return (await load<PersonalRecord[]>(K.PRS)) ?? [];
+}
+
+export async function savePR(pr: PersonalRecord): Promise<void> {
+  const list = await loadPRs();
+  const idx  = list.findIndex(x => x.exerciseId === pr.exerciseId);
+  if (idx >= 0) list[idx] = pr; else list.push(pr);
+  await save(K.PRS, list);
+}
+
+// ─── Programme actif ──────────────────────────────────────────────────────────
+
+export const loadActiveProgram  = () => load<ActiveProgram>(K.ACTIVE_PROGRAM);
+export const saveActiveProgram  = (ap: ActiveProgram) => save(K.ACTIVE_PROGRAM, ap);
+export const clearActiveProgram = () => AsyncStorage.removeItem(K.ACTIVE_PROGRAM);
+
+// ─── Repas favoris ────────────────────────────────────────────────────────────
+
+export async function loadFavorites(): Promise<FavoriteMeal[]> {
+  return (await load<FavoriteMeal[]>(K.FAVORITES)) ?? [];
+}
+
+export async function saveFavorite(f: FavoriteMeal): Promise<void> {
+  const list = await loadFavorites();
+  const idx  = list.findIndex(x => x.id === f.id);
+  if (idx >= 0) list[idx] = f; else list.unshift(f);
+  await save(K.FAVORITES, list);
+}
+
+export async function deleteFavorite(id: string): Promise<void> {
+  const list = await loadFavorites();
+  await save(K.FAVORITES, list.filter(f => f.id !== id));
+}
+
+// ─── Hydratation ──────────────────────────────────────────────────────────────
+
+export async function loadWaterEntry(date: string): Promise<WaterEntry> {
+  const all = (await load<WaterEntry[]>(K.WATER)) ?? [];
+  return all.find(e => e.date === date) ?? { date, ml: 0 };
+}
+
+export async function saveWaterEntry(e: WaterEntry): Promise<void> {
+  const all = (await load<WaterEntry[]>(K.WATER)) ?? [];
+  // Ne garder que les 30 derniers jours
+  const idx = all.findIndex(x => x.date === e.date);
+  if (idx >= 0) all[idx] = e; else all.push(e);
+  all.sort((a, b) => a.date.localeCompare(b.date));
+  await save(K.WATER, all.slice(-30));
+}
+
+// ─── Streak ───────────────────────────────────────────────────────────────────
+
+export async function loadStreak(): Promise<StreakData> {
+  return (await load<StreakData>(K.STREAK)) ?? { current: 0, best: 0, lastWorkoutDate: '' };
+}
+
+export const saveStreak = (s: StreakData) => save(K.STREAK, s);
+
+// ─── Plans sauvegardés ────────────────────────────────────────────────────────
+
+export async function loadSavedPlans(): Promise<SavedPlan[]> {
+  return (await load<SavedPlan[]>(K.SAVED_PLANS)) ?? [];
+}
+
+export async function savePlan(p: SavedPlan): Promise<void> {
+  const list = await loadSavedPlans();
+  const idx  = list.findIndex(x => x.id === p.id);
+  if (idx >= 0) list[idx] = p; else list.unshift(p);
+  await save(K.SAVED_PLANS, list);
+}
+
+export async function deletePlan(id: string): Promise<void> {
+  const list = await loadSavedPlans();
+  await save(K.SAVED_PLANS, list.filter(p => p.id !== id || p.isPredefined));
+}
+
+// ─── Aliments récents (10 derniers) ───────────────────────────────────────────
+
+export async function loadRecentFoods(): Promise<import('../types').FoodItem[]> {
+  return (await load<import('../types').FoodItem[]>(K.RECENT_FOODS)) ?? [];
+}
+
+export async function pushRecentFood(item: import('../types').FoodItem): Promise<void> {
+  const list  = await loadRecentFoods();
+  const dedup = list.filter(f => f.name !== item.name);
+  await save(K.RECENT_FOODS, [item, ...dedup].slice(0, 10));
+}
+
+// ─── Bilan mensuel ────────────────────────────────────────────────────────────
+
+export async function loadMonthlySummaries(): Promise<MonthlySummary[]> {
+  return (await load<MonthlySummary[]>(K.MONTHLY)) ?? [];
+}
+
+export async function saveMonthlySummary(s: MonthlySummary): Promise<void> {
+  const list = await loadMonthlySummaries();
+  const idx  = list.findIndex(x => x.month === s.month);
+  if (idx >= 0) list[idx] = s; else list.unshift(s);
+  await save(K.MONTHLY, list.slice(0, 24));
+}
+
+// ─── Utilitaire date ──────────────────────────────────────────────────────────
+
+export const today     = (): string => new Date().toISOString().split('T')[0];
+export const thisMonth = (): string => new Date().toISOString().slice(0, 7); // "YYYY-MM"

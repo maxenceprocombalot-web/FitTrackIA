@@ -1,25 +1,54 @@
 {
   "expo": {
     "name": "FitTrackIA",
-    "slug": "FitTrackIA",
+    "slug": "fittrackia",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "scheme": "fittrackia",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080a0e"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fittrackia.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#080a0e"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.fittrackia.app",
+      "permissions": ["CAMERA"]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#7c6dfa"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
