@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Alert, Platform,
@@ -12,15 +12,14 @@ import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
-const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string; timeHint: string }> = {
-  breakfast: { label: 'Petit-déjeuner', icon: 'sunny-outline',      color: Colors.yellow,  timeHint: 'Matin' },
-  lunch:     { label: 'Déjeuner',       icon: 'restaurant-outline',  color: Colors.primary, timeHint: 'Midi' },
-  dinner:    { label: 'Dîner',          icon: 'moon-outline',        color: '#b983ff',      timeHint: 'Soir' },
-  snack:     { label: 'Collation',      icon: 'cafe-outline',        color: Colors.green,   timeHint: 'Snack' },
+const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
+  breakfast: { label: 'Petit-déjeuner', icon: 'sunny-outline',     color: Colors.yellow },
+  lunch:     { label: 'Déjeuner',       icon: 'restaurant-outline', color: Colors.primary },
+  dinner:    { label: 'Dîner',          icon: 'moon-outline',       color: '#b983ff' },
+  snack:     { label: 'Collation',      icon: 'cafe-outline',       color: Colors.green },
 };
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
-// Calcul des macros pour une liste d'items
 function calcMacros(items: FoodItem[]) {
   return items.reduce(
     (acc, item) => {
@@ -36,27 +35,60 @@ function calcMacros(items: FoodItem[]) {
   );
 }
 
+// Formate une date YYYY-MM-DD de façon lisible
+function fmtDate(dateStr: string, todayStr: string): string {
+  if (dateStr === todayStr) return "Aujourd'hui";
+  const yesterday = new Date(todayStr);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === yesterday.toISOString().split('T')[0]) return 'Hier';
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
 export default function NutritionScreen() {
   const router = useRouter();
   const store  = useAppStore();
   const user   = store.user;
 
-  const todayDate  = storage.today();
-  const todayMeals = store.meals.filter(m => m.date === todayDate);
-  const macros     = store.getTodayMacros();
+  const TODAY = storage.today();
+  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const isToday = selectedDate === TODAY;
+
+  // Navigation par date
+  const goToPrev = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+  const goToNext = () => {
+    if (isToday) return;
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    const next = d.toISOString().split('T')[0];
+    if (next <= TODAY) setSelectedDate(next);
+  };
+
+  // Repas et macros du jour sélectionné
+  const selectedMeals = store.meals.filter(m => m.date === selectedDate);
+  const macros = calcMacros(selectedMeals.flatMap(m => m.items));
+
+  // Jour précédent pour le bouton "Copier"
+  const prevDate = new Date(selectedDate);
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateStr = prevDate.toISOString().split('T')[0];
+  const prevMeals   = store.meals.filter(m => m.date === prevDateStr);
+
+  // ── Supprimer un aliment ──────────────────────────────────────────────────
 
   const handleDeleteItem = (mealId: string, itemId: string) => {
     const meal = store.meals.find(m => m.id === mealId);
     if (!meal) return;
     const updated = { ...meal, items: meal.items.filter(i => i.id !== itemId) };
-    if (updated.items.length === 0) {
-      store.deleteMeal(mealId);
-    } else {
-      store.updateMeal(updated);
-    }
+    if (updated.items.length === 0) store.deleteMeal(mealId);
+    else store.updateMeal(updated);
   };
 
-  // Sauvegarde d'un repas complet comme favori
+  // ── Sauvegarder un repas comme favori ─────────────────────────────────────
+
   const handleSaveFavorite = (type: MealType, meals: Meal[]) => {
     const allItems = meals.flatMap(m => m.items);
     if (allItems.length === 0) {
@@ -70,64 +102,131 @@ export default function NutritionScreen() {
         'Donne un nom à ce repas',
         (name) => {
           if (!name?.trim()) return;
-          store.addFavorite({
-            id: Date.now().toString(),
-            name: name.trim(),
-            items: allItems,
-            mealType: type,
-            createdAt: new Date().toISOString(),
-          });
+          store.addFavorite({ id: Date.now().toString(), name: name.trim(), items: allItems, mealType: type, createdAt: new Date().toISOString() });
           Alert.alert('⭐ Favori sauvegardé !', `"${name}" est dans l'onglet Favoris.`);
         },
         'plain-text',
         defaultName,
       );
     } else {
-      // Android : utilise le nom par défaut
-      store.addFavorite({
-        id: Date.now().toString(),
-        name: defaultName,
-        items: allItems,
-        mealType: type,
-        createdAt: new Date().toISOString(),
-      });
+      store.addFavorite({ id: Date.now().toString(), name: defaultName, items: allItems, mealType: type, createdAt: new Date().toISOString() });
       Alert.alert('⭐ Favori sauvegardé !', `"${defaultName}" est dans l'onglet Favoris.`);
     }
   };
 
+  // ── Copier les repas du jour précédent ────────────────────────────────────
+
+  const handleCopyFromPrev = useCallback(() => {
+    if (prevMeals.length === 0) {
+      Alert.alert('Aucun repas', `Rien à copier depuis ${fmtDate(prevDateStr, TODAY)}.`);
+      return;
+    }
+
+    const executeCopy = async () => {
+      for (const meal of prevMeals) {
+        const existing = selectedMeals.find(m => m.type === meal.type);
+        const newItems  = meal.items.map(item => ({
+          ...item,
+          id: `copy_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        }));
+        const newMeal: Meal = existing
+          ? { ...existing, items: [...existing.items, ...newItems] }
+          : { ...meal, id: `copy_${Date.now()}_${Math.random().toString(36).slice(2)}`, date: selectedDate, items: newItems };
+        await store.addMeal(newMeal);
+      }
+    };
+
+    const totalItems   = prevMeals.reduce((s, m) => s + m.items.length, 0);
+    const hasExisting  = selectedMeals.length > 0;
+    const confirmLabel = `Copier les ${prevMeals.length} repas (${totalItems} aliments) de ${fmtDate(prevDateStr, TODAY)} ?`;
+
+    const showConfirm = () => Alert.alert(
+      confirmLabel, '',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Copier', onPress: executeCopy },
+      ],
+    );
+
+    if (hasExisting) {
+      Alert.alert(
+        'Des repas existent déjà',
+        `${fmtDate(selectedDate, TODAY)} a déjà des repas. Ajouter quand même ?`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Ajouter quand même', onPress: showConfirm },
+        ],
+      );
+    } else {
+      showConfirm();
+    }
+  }, [prevMeals, selectedMeals, selectedDate, prevDateStr, store]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-      {/* ── Récapitulatif du jour ─────────────────────────────────────────── */}
+      {/* ── Navigateur de date ───────────────────────────────────────────── */}
+      <View style={styles.dateNav}>
+        <TouchableOpacity style={styles.dateArrow} onPress={goToPrev}>
+          <Ionicons name="chevron-back" size={22} color={Colors.text} />
+        </TouchableOpacity>
+        <View style={styles.dateLabelWrap}>
+          <Text style={styles.dateLabel}>{fmtDate(selectedDate, TODAY)}</Text>
+          {!isToday && (
+            <TouchableOpacity onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
+              <Text style={styles.todayLinkText}>Revenir à aujourd'hui</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
+          onPress={goToNext}
+          disabled={isToday}
+        >
+          <Ionicons name="chevron-forward" size={22} color={isToday ? Colors.textMuted : Colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Bouton copier depuis le jour précédent ───────────────────────── */}
+      {prevMeals.length > 0 && (
+        <TouchableOpacity style={styles.copyBtn} onPress={handleCopyFromPrev}>
+          <Ionicons name="copy-outline" size={14} color={Colors.primary} />
+          <Text style={styles.copyBtnText}>
+            Copier depuis {fmtDate(prevDateStr, TODAY)} ({prevMeals.length} repas)
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* ── Récapitulatif calorique ──────────────────────────────────────── */}
       <Card>
         <View style={styles.summaryTop}>
           <View>
-            <Text style={styles.bigCal}>{Math.round(macros.calories)}</Text>
-            <Text style={styles.bigCalLabel}>kcal aujourd'hui</Text>
+            <Text style={styles.bigCal}>{Math.round(macros.cal)}</Text>
+            <Text style={styles.bigCalLabel}>
+              kcal {isToday ? "aujourd'hui" : fmtDate(selectedDate, TODAY).toLowerCase()}
+            </Text>
           </View>
           {user && (
             <View style={styles.remaining}>
-              <Text style={[styles.remValue, { color: macros.calories > user.targetCalories ? Colors.red : Colors.green }]}>
-                {Math.abs(Math.round(user.targetCalories - macros.calories))}
+              <Text style={[styles.remValue, { color: macros.cal > user.targetCalories ? Colors.red : Colors.green }]}>
+                {Math.abs(Math.round(user.targetCalories - macros.cal))}
               </Text>
               <Text style={styles.remLabel}>
-                {macros.calories > user.targetCalories ? 'kcal dépassées' : 'kcal restantes'}
+                {macros.cal > user.targetCalories ? 'kcal dépassées' : 'kcal restantes'}
               </Text>
             </View>
           )}
         </View>
-        <View style={styles.macros}>
-          <MacroBar label="Protéines" current={macros.protein} goal={user?.targetProtein ?? 150} color={Colors.proteinColor} />
-          <MacroBar label="Glucides"  current={macros.carbs}   goal={user?.targetCarbs   ?? 200} color={Colors.carbsColor} />
-          <MacroBar label="Lipides"   current={macros.fat}     goal={user?.targetFat     ?? 65}  color={Colors.fatColor} />
-        </View>
+        <MacroBar label="Protéines" current={macros.prot} goal={user?.targetProtein ?? 150} color={Colors.proteinColor} />
+        <MacroBar label="Glucides"  current={macros.carb} goal={user?.targetCarbs   ?? 200} color={Colors.carbsColor} />
+        <MacroBar label="Lipides"   current={macros.fat}  goal={user?.targetFat     ?? 65}  color={Colors.fatColor} />
       </Card>
 
       {/* ── Sections par repas ───────────────────────────────────────────── */}
       {MEAL_ORDER.map(type => {
-        const meals = todayMeals.filter(m => m.type === type);
+        const meals  = selectedMeals.filter(m => m.type === type);
         const totals = calcMacros(meals.flatMap(m => m.items));
-        const meta = MEAL_META[type];
+        const meta   = MEAL_META[type];
         return (
           <View key={type} style={styles.mealSection}>
             <View style={styles.mealHeader}>
@@ -136,16 +235,15 @@ export default function NutritionScreen() {
               </View>
               <Text style={styles.mealLabel}>{meta.label}</Text>
               <Text style={styles.mealCal}>{Math.round(totals.cal)} kcal</Text>
-              {/* Bouton sauvegarder comme favori */}
-              <TouchableOpacity
-                style={styles.favBtn}
-                onPress={() => handleSaveFavorite(type, meals)}
-              >
+              <TouchableOpacity style={styles.favBtn} onPress={() => handleSaveFavorite(type, meals)}>
                 <Ionicons name="star-outline" size={16} color={Colors.yellow} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.addBtn, { backgroundColor: meta.color + '18' }]}
-                onPress={() => router.push({ pathname: '/modals/add-food', params: { mealType: type } })}
+                onPress={() => router.push({
+                  pathname: '/modals/add-food',
+                  params: { mealType: type, targetDate: selectedDate },
+                })}
               >
                 <Ionicons name="add" size={18} color={meta.color} />
               </TouchableOpacity>
@@ -188,10 +286,10 @@ function FoodRow({ item, onDelete }: { item: FoodItem; onDelete: () => void }) {
         <Text style={foodStyles.portion}>{item.quantity}g</Text>
       </View>
       <View style={foodStyles.macros}>
-        <MacroPill value={`${cal}`} unit="kcal" color={Colors.caloriesColor} />
-        <MacroPill value={`P:${prot}`} unit="g" color={Colors.proteinColor} />
-        <MacroPill value={`G:${carb}`} unit="g" color={Colors.carbsColor} />
-        <MacroPill value={`L:${fat}`}  unit="g" color={Colors.fatColor} />
+        <MacroPill value={`${cal}`}    unit="kcal" color={Colors.caloriesColor} />
+        <MacroPill value={`P:${prot}`} unit="g"    color={Colors.proteinColor} />
+        <MacroPill value={`G:${carb}`} unit="g"    color={Colors.carbsColor} />
+        <MacroPill value={`L:${fat}`}  unit="g"    color={Colors.fatColor} />
       </View>
       <TouchableOpacity onPress={onDelete} style={foodStyles.del}>
         <Ionicons name="trash-outline" size={15} color={Colors.red} />
@@ -209,32 +307,54 @@ function MacroPill({ value, unit, color }: { value: string; unit: string; color:
 }
 
 const foodStyles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border, gap: 6 },
-  info: { flex: 1 },
-  name: { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
-  portion: { fontSize: Fs.xs, color: Colors.textMuted },
-  macros: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, flex: 1, justifyContent: 'flex-end' },
-  pill: { borderRadius: 99, paddingHorizontal: 5, paddingVertical: 2 },
+  row:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border, gap: 6 },
+  info:     { flex: 1 },
+  name:     { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
+  portion:  { fontSize: Fs.xs, color: Colors.textMuted },
+  macros:   { flexDirection: 'row', flexWrap: 'wrap', gap: 3, flex: 1, justifyContent: 'flex-end' },
+  pill:     { borderRadius: 99, paddingHorizontal: 5, paddingVertical: 2 },
   pillText: { fontSize: 10, fontWeight: Fw.medium },
-  del: { padding: 4 },
+  del:      { padding: 4 },
 });
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  content: { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
-  summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Sp.md },
-  bigCal: { fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.caloriesColor },
+  content:   { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
+  // Navigateur de date
+  dateNav: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.surface, borderRadius: R,
+    borderWidth: 1, borderColor: Colors.border,
+    paddingVertical: Sp.sm,
+  },
+  dateArrow:         { paddingHorizontal: Sp.md, paddingVertical: 4 },
+  dateArrowDisabled: { opacity: 0.25 },
+  dateLabelWrap:     { flex: 1, alignItems: 'center', gap: 2 },
+  dateLabel:         { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
+  todayLink:         { marginTop: 1 },
+  todayLinkText:     { fontSize: Fs.xs, color: Colors.primary },
+  // Bouton copier
+  copyBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.primary + '12',
+    borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30',
+    paddingVertical: 8, paddingHorizontal: Sp.md,
+  },
+  copyBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold, flex: 1 },
+  // Résumé
+  summaryTop:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Sp.md },
+  bigCal:      { fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.caloriesColor },
   bigCalLabel: { fontSize: Fs.xs, color: Colors.textSecondary },
-  remaining: { alignItems: 'flex-end' },
-  remValue: { fontSize: Fs.xl, fontWeight: Fw.bold },
-  remLabel: { fontSize: Fs.xs, color: Colors.textMuted },
-  macros: {},
+  remaining:   { alignItems: 'flex-end' },
+  remValue:    { fontSize: Fs.xl, fontWeight: Fw.bold },
+  remLabel:    { fontSize: Fs.xs, color: Colors.textMuted },
+  // Section repas
   mealSection: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
-  mealHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.md },
-  mealIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  mealLabel: { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
-  mealCal: { fontSize: Fs.sm, color: Colors.textSecondary },
-  favBtn: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.yellow + '15' },
-  addBtn: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  emptyMeal: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
+  mealHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.md },
+  mealIcon:    { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  mealLabel:   { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
+  mealCal:     { fontSize: Fs.sm, color: Colors.textSecondary },
+  favBtn:      { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.yellow + '15' },
+  addBtn:      { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  emptyMeal:   { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
 });

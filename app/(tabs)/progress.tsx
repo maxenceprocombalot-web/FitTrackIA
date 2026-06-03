@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TextInput,
   TouchableOpacity, StyleSheet, Dimensions,
@@ -96,10 +96,47 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
 export default function ProgressScreen() {
   const store  = useAppStore();
   const router = useRouter();
-  const [weightIn,  setWeightIn]  = useState('');
-  const [period,    setPeriod]    = useState<Period>('30j');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('weight');
-  const [plansFilter, setPlansFilter] = useState<'all' | 'sport' | 'nutrition'>('all');
+  const [weightIn,      setWeightIn]      = useState('');
+  const [period,        setPeriod]        = useState<Period>('30j');
+  const [activeTab,     setActiveTab]     = useState<ActiveTab>('weight');
+  const [plansFilter,   setPlansFilter]   = useState<'all' | 'sport' | 'nutrition'>('all');
+  const [selectedExo,   setSelectedExo]   = useState<string | null>(null);
+
+  // ── Historique par exercice (pour le graphique) ───────────────────────────
+  const exerciseHistory = useMemo(() => {
+    const map: Record<string, { date: string; maxWeight: number }[]> = {};
+    store.workouts.forEach(w => {
+      w.exercises.forEach(ex => {
+        const maxW = Math.max(0, ...ex.sets.map(s => s.weight));
+        if (maxW <= 0) return;
+        if (!map[ex.name]) map[ex.name] = [];
+        const existing = map[ex.name].find(e => e.date === w.date);
+        if (!existing)           map[ex.name].push({ date: w.date, maxWeight: maxW });
+        else if (maxW > existing.maxWeight) existing.maxWeight = maxW;
+      });
+    });
+    return map;
+  }, [store.workouts]);
+
+  const exerciseNames = Object.keys(exerciseHistory).sort();
+
+  // Données de progression pour l'exercice sélectionné (30 derniers jours)
+  const exoData = useMemo(() => {
+    const name = selectedExo ?? exerciseNames[0];
+    if (!name) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const since = cutoff.toISOString().split('T')[0];
+    return (exerciseHistory[name] ?? [])
+      .filter(e => e.date >= since)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [selectedExo, exerciseHistory, exerciseNames]);
+
+  const effectiveExo   = selectedExo ?? exerciseNames[0] ?? null;
+  const exoSessions    = effectiveExo ? (exerciseHistory[effectiveExo]?.length ?? 0) : 0;
+  const exoBestWeight  = exoData.length > 0 ? Math.max(...exoData.map(d => d.maxWeight)) : 0;
+  const exoFirstWeight = exoData.length > 0 ? exoData[0].maxWeight : 0;
+  const exoProgression = exoBestWeight - exoFirstWeight;
 
   const filteredWeights = (() => {
     const days   = period === '30j' ? 30 : period === '90j' ? 90 : 9999;
@@ -310,6 +347,42 @@ export default function ProgressScreen() {
                 );
               })}
           </Card>
+          {/* Progression par exercice */}
+          {exerciseNames.length > 0 && (
+            <Card>
+              <Text style={styles.sectionLabel}>Progression par exercice</Text>
+              {/* Sélecteur d'exercice */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exoScroll} contentContainerStyle={styles.exoScrollContent}>
+                {exerciseNames.map(name => (
+                  <TouchableOpacity
+                    key={name}
+                    style={[styles.exoChip, (effectiveExo === name) && styles.exoChipActive]}
+                    onPress={() => setSelectedExo(name)}
+                  >
+                    <Text style={[styles.exoChipText, (effectiveExo === name) && styles.exoChipTextActive]} numberOfLines={1}>
+                      {name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Stats résumé */}
+              {effectiveExo && (
+                <View style={styles.exoStats}>
+                  <ExoStat label="Meilleur" value={`${exoBestWeight} kg`} color={Colors.yellow} />
+                  <ExoStat
+                    label="Progression"
+                    value={exoProgression >= 0 ? `+${exoProgression.toFixed(1)} kg` : `${exoProgression.toFixed(1)} kg`}
+                    color={exoProgression >= 0 ? Colors.green : Colors.red}
+                  />
+                  <ExoStat label="Séances" value={String(exoSessions)} color={Colors.primary} />
+                </View>
+              )}
+
+              {/* Graphique */}
+              <ExerciseChart data={exoData} />
+            </Card>
+          )}
         </>
       )}
 
@@ -374,6 +447,66 @@ export default function ProgressScreen() {
     </ScrollView>
   );
 }
+
+// ─── Graphique progression exercice ──────────────────────────────────────────
+
+function ExerciseChart({ data }: { data: { date: string; maxWeight: number }[] }) {
+  if (data.length < 2) {
+    return (
+      <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+        <Text style={{ color: Colors.textMuted, fontSize: Fs.sm }}>
+          {data.length === 0 ? 'Aucune donnée sur 30 jours' : 'Enregistre au moins 2 séances pour voir la courbe'}
+        </Text>
+      </View>
+    );
+  }
+
+  const ys   = data.map(d => d.maxWeight);
+  const minY = Math.min(...ys) - 2.5;
+  const maxY = Math.max(...ys) + 2.5;
+  const w    = CHART_W - PAD.left - PAD.right;
+  const h    = CHART_H - PAD.top  - PAD.bottom;
+
+  const toX = (i: number) => PAD.left + (i / (data.length - 1)) * w;
+  const toY = (v: number) => PAD.top  + (1 - (v - minY) / (maxY - minY)) * h;
+
+  const points   = data.map((d, i) => ({ x: toX(i), y: toY(d.maxWeight) }));
+  const pathStr  = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const yLabels  = [minY + 2, (minY + maxY) / 2, maxY - 2];
+  const xIndices = [...new Set([0, Math.floor((data.length - 1) / 2), data.length - 1])];
+
+  return (
+    <Svg width={CHART_W} height={CHART_H} style={{ marginTop: 8 }}>
+      {yLabels.map((v, i) => (
+        <React.Fragment key={i}>
+          <Line x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+          <SvgText x={PAD.left - 4} y={toY(v) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">{v.toFixed(1)}</SvgText>
+        </React.Fragment>
+      ))}
+      <Path d={pathStr} stroke={Colors.yellow} strokeWidth={2} fill="none" />
+      {points.map((p, i) => <Circle key={i} cx={p.x} cy={p.y} r={3} fill={Colors.yellow} />)}
+      {xIndices.map(i => (
+        <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
+          {data[i].date.slice(5).replace('-', '/')}
+        </SvgText>
+      ))}
+    </Svg>
+  );
+}
+
+function ExoStat({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View style={exoStyles.stat}>
+      <Text style={[exoStyles.value, { color }]}>{value}</Text>
+      <Text style={exoStyles.label}>{label}</Text>
+    </View>
+  );
+}
+const exoStyles = StyleSheet.create({
+  stat:  { flex: 1, alignItems: 'center', paddingVertical: 6, backgroundColor: Colors.surfaceElevated, borderRadius: R },
+  value: { fontSize: Fs.lg, fontWeight: Fw.bold },
+  label: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 1 },
+});
 
 // ─── Carte plan ───────────────────────────────────────────────────────────────
 
@@ -490,6 +623,14 @@ const styles = StyleSheet.create({
   streakEmoji: { fontSize: 28 },
   streakTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
   streakSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  // Sélecteur exercice
+  exoScroll:        { marginHorizontal: -Sp.md },
+  exoScrollContent: { paddingHorizontal: Sp.md, paddingVertical: 6, gap: 6 },
+  exoChip:          { paddingHorizontal: Sp.sm, paddingVertical: 5, borderRadius: 99, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, maxWidth: 150 },
+  exoChipActive:    { borderColor: Colors.yellow, backgroundColor: Colors.yellow + '18' },
+  exoChipText:      { fontSize: Fs.xs, color: Colors.textSecondary },
+  exoChipTextActive:{ color: Colors.yellow, fontWeight: Fw.semibold },
+  exoStats:         { flexDirection: 'row', gap: Sp.xs, marginBottom: 4 },
   // Plans
   plansFilterRow: { flexDirection: 'row', gap: Sp.xs },
   plansFilterBtn: { flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, alignItems: 'center' },

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, Alert, SectionList, Animated,
+  Modal, Dimensions, Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,12 +12,35 @@ import RestTimer from '../../components/ui/RestTimer';
 import { useAppStore } from '../../store/useAppStore';
 import { WorkoutSession, WorkoutType, ExerciseLog, SetLog } from '../../types';
 import {
-  EXERCISES, EXERCISE_CATEGORIES, ExerciseCategory, ExerciseTemplate,
+  EXERCISES, EXERCISE_CATEGORIES, ExerciseTemplate,
   CALORIES_PER_MIN,
 } from '../../constants/exercises';
 import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+
+// ─── Type résumé de séance ────────────────────────────────────────────────────
+
+interface SessionSummary {
+  workoutName: string;
+  duration: number;
+  caloriesBurned: number;
+  totalVolume: number;
+  prs: { name: string; weight: number; reps: number }[];
+}
+
+// ─── Confettis ────────────────────────────────────────────────────────────────
+
+const SCREEN_W       = Dimensions.get('window').width;
+const CONF_COUNT     = 18;
+const CONF_COLORS    = [Colors.primary, Colors.green, Colors.yellow, Colors.orange, '#b983ff', '#4a9eff'];
+// Positions et couleurs fixes pour éviter la recalcul à chaque render
+const CONF_PROPS = Array.from({ length: CONF_COUNT }, () => ({
+  x:     Math.random() * SCREEN_W,
+  color: CONF_COLORS[Math.floor(Math.random() * CONF_COLORS.length)],
+  size:  5 + Math.random() * 7,
+  delay: Math.floor(Math.random() * 500),
+}));
 
 const TYPE_OPTIONS: { value: WorkoutType; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { value: 'strength', label: 'Muscu',    icon: 'barbell-outline' },
@@ -79,6 +103,7 @@ export default function AddWorkoutModal() {
   }, []);
 
   const [timerVisible, setTimerVisible] = useState(false);
+  const [summary,      setSummary]      = useState<SessionSummary | null>(null);
   // Flash doré PR : set (exIdx, setIdx) pour l'animation
   const [prFlash, setPrFlash] = useState<string | null>(null);
   const prFlashAnim = useRef(new Animated.Value(0)).current;
@@ -176,29 +201,41 @@ export default function AddWorkoutModal() {
       notes: notes.trim() || undefined,
     };
 
-    // Vérification et notification des PRs à la fin de la séance
+    // Volume total soulevé
+    const totalVolume = exercises.reduce((sv, ex) =>
+      sv + ex.sets.reduce((ss, set) => ss + set.reps * set.weight, 0), 0);
+
+    // Collecte des PRs battus
+    const newPRs: { name: string; weight: number; reps: number }[] = [];
     for (const ex of exercises) {
       const maxWeight = Math.max(0, ...ex.sets.map(s => s.weight));
       const maxReps   = ex.sets.find(s => s.weight === maxWeight)?.reps ?? 0;
       if (maxWeight > 0) {
         const isNewPR = await store.checkAndSavePR(ex.exerciseId, ex.name, maxWeight, maxReps);
         if (isNewPR) {
-          // Haptic de succès
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          // Notification push immédiate
           await Notifications.scheduleNotificationAsync({
             content: {
               title: `🏆 Nouveau PR — ${ex.name} !`,
               body: `${maxWeight}kg × ${maxReps} reps — nouveau record personnel !`,
             },
-            trigger: null, // immédiat
+            trigger: null,
           });
+          newPRs.push({ name: ex.name, weight: maxWeight, reps: maxReps });
         }
       }
     }
 
     await store.addWorkout(workout);
-    router.back();
+
+    // Affiche le résumé de fin de séance au lieu de router.back() direct
+    setSummary({
+      workoutName:    workout.name,
+      duration:       workout.duration,
+      caloriesBurned: workout.caloriesBurned,
+      totalVolume,
+      prs:            newPRs,
+    });
   };
 
   if (showPicker) {
@@ -240,6 +277,13 @@ export default function AddWorkoutModal() {
 
   return (
     <>
+    {/* Modal résumé de fin de séance */}
+    {summary && (
+      <WorkoutSummaryModal
+        summary={summary}
+        onClose={() => { setSummary(null); router.back(); }}
+      />
+    )}
     <RestTimer visible={timerVisible} onClose={() => setTimerVisible(false)} />
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
@@ -432,4 +476,146 @@ const styles = StyleSheet.create({
   exercisePickerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.md, paddingVertical: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: Sp.sm },
   exercisePickerName: { flex: 1, fontSize: Fs.md, color: Colors.text },
   exercisePickerMeta: { fontSize: Fs.xs, color: Colors.textMuted },
+});
+
+// ─── Modal résumé de fin de séance ───────────────────────────────────────────
+
+function WorkoutSummaryModal({ summary, onClose }: { summary: SessionSummary; onClose: () => void }) {
+  const confettiY       = useRef(CONF_PROPS.map(() => new Animated.Value(-60))).current;
+  const confettiOpacity = useRef(CONF_PROPS.map(() => new Animated.Value(0))).current;
+  const scaleAnim       = useRef(new Animated.Value(0.8)).current;
+  const fadeAnim        = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animation d'entrée de la card
+    Animated.parallel([
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+
+    // Confettis qui tombent
+    const anims = CONF_PROPS.map((cp, i) =>
+      Animated.sequence([
+        Animated.delay(cp.delay),
+        Animated.parallel([
+          Animated.timing(confettiY[i],       { toValue: 750, duration: 1600, useNativeDriver: true }),
+          Animated.sequence([
+            Animated.timing(confettiOpacity[i], { toValue: 1, duration: 80,   useNativeDriver: true }),
+            Animated.timing(confettiOpacity[i], { toValue: 0, duration: 500,  delay: 1000, useNativeDriver: true }),
+          ]),
+        ]),
+      ])
+    );
+    Animated.parallel(anims).start();
+  }, []);
+
+  const handleShare = () => {
+    const lines = [
+      `🏋️ Séance : ${summary.workoutName}`,
+      `⏱ ${summary.duration} min | 🔥 ${summary.caloriesBurned} kcal | 💪 ${Math.round(summary.totalVolume)} kg volume`,
+      summary.prs.length > 0
+        ? summary.prs.map(pr => `🏆 PR ${pr.name} : ${pr.weight}kg × ${pr.reps}`).join('\n')
+        : '',
+      '— FitTrackIA',
+    ].filter(Boolean).join('\n');
+    Share.share({ message: lines });
+  };
+
+  return (
+    <Modal visible transparent animationType="none">
+      <Animated.View style={[smStyles.overlay, { opacity: fadeAnim }]}>
+        {/* Confettis */}
+        {CONF_PROPS.map((cp, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              smStyles.confetti,
+              {
+                left:            cp.x,
+                width:           cp.size,
+                height:          cp.size,
+                borderRadius:    cp.size / 2,
+                backgroundColor: cp.color,
+                opacity:         confettiOpacity[i],
+                transform:       [{ translateY: confettiY[i] }],
+              },
+            ]}
+          />
+        ))}
+
+        {/* Card centrale */}
+        <Animated.View style={[smStyles.card, { transform: [{ scale: scaleAnim }] }]}>
+          <Text style={smStyles.emoji}>🎉</Text>
+          <Text style={smStyles.title}>Séance terminée !</Text>
+          <Text style={smStyles.name}>{summary.workoutName}</Text>
+
+          {/* Stats */}
+          <View style={smStyles.statsRow}>
+            <SummaryPill icon="time-outline"    value={`${summary.duration} min`}      color={Colors.primary} />
+            <SummaryPill icon="flame-outline"   value={`${summary.caloriesBurned} kcal`} color={Colors.orange} />
+            <SummaryPill icon="barbell-outline" value={`${Math.round(summary.totalVolume)} kg`} color={Colors.green} />
+          </View>
+
+          {/* PRs */}
+          {summary.prs.length > 0 && (
+            <View style={smStyles.prsBox}>
+              <Text style={smStyles.prsTitle}>🏆 Nouveaux records !</Text>
+              {summary.prs.map((pr, i) => (
+                <View key={i} style={smStyles.prRow}>
+                  <Text style={smStyles.prName}>{pr.name}</Text>
+                  <Text style={smStyles.prVal}>{pr.weight} kg × {pr.reps}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Boutons */}
+          <View style={smStyles.btns}>
+            <TouchableOpacity style={smStyles.shareBtn} onPress={handleShare}>
+              <Ionicons name="share-outline" size={16} color={Colors.primary} />
+              <Text style={smStyles.shareBtnText}>Partager</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={smStyles.continueBtn} onPress={onClose}>
+              <Text style={smStyles.continueBtnText}>Continuer</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+function SummaryPill({ icon, value, color }: { icon: React.ComponentProps<typeof Ionicons>['name']; value: string; color: string }) {
+  return (
+    <View style={[smStyles.pill, { backgroundColor: color + '18' }]}>
+      <Ionicons name={icon} size={13} color={color} />
+      <Text style={[smStyles.pillText, { color }]}>{value}</Text>
+    </View>
+  );
+}
+
+const smStyles = StyleSheet.create({
+  overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center' },
+  confetti:    { position: 'absolute', top: 0 },
+  card: {
+    width: '88%', backgroundColor: Colors.surface,
+    borderRadius: 24, borderWidth: 1, borderColor: Colors.border,
+    padding: Sp.lg, alignItems: 'center', gap: Sp.sm,
+  },
+  emoji:       { fontSize: 52 },
+  title:       { fontSize: Fs.xxl, fontWeight: Fw.heavy, color: Colors.text },
+  name:        { fontSize: Fs.sm, color: Colors.textSecondary, marginTop: -4 },
+  statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs, justifyContent: 'center', marginTop: 4 },
+  pill:        { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, paddingHorizontal: Sp.sm, paddingVertical: 6 },
+  pillText:    { fontSize: Fs.xs, fontWeight: Fw.semibold },
+  prsBox:      { width: '100%', backgroundColor: Colors.yellow + '10', borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '30', padding: Sp.sm, gap: 4 },
+  prsTitle:    { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.yellow, marginBottom: 2 },
+  prRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  prName:      { fontSize: Fs.xs, color: Colors.text, flex: 1 },
+  prVal:       { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.yellow },
+  btns:        { flexDirection: 'row', gap: Sp.sm, width: '100%', marginTop: 4 },
+  shareBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Sp.sm, paddingHorizontal: Sp.lg, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
+  shareBtnText:{ fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
+  continueBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', justifyContent: 'center' },
+  continueBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
 });

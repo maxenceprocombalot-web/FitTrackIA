@@ -205,14 +205,21 @@ export default function DashboardScreen() {
 
       {/* ── Streak ──────────────────────────────────────────────────────────── */}
       {streak > 0 && (
-        <Card style={styles.streakCard}>
+        <Card style={[styles.streakCard, streak > 7 && styles.streakCardFire]}>
           <View style={styles.streakRow}>
-            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={styles.streakEmoji}>{streak > 7 ? '🔥' : '💪'}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.streakTitle}>{streak} jour{streak > 1 ? 's' : ''} de streak !</Text>
-              <Text style={styles.streakSub}>Meilleur : {store.streak.best}j — Continue sur ta lancée</Text>
+              <View style={styles.streakTitleRow}>
+                <Text style={styles.streakTitle}>{streak} jour{streak > 1 ? 's' : ''} de streak</Text>
+                {streak > 7 && (
+                  <View style={styles.fireBadge}>
+                    <Text style={styles.fireBadgeText}>En feu 🔥</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.streakSub}>💪 Séances consécutives • Meilleur : {store.streak.best}j</Text>
             </View>
-            {streak > 0 && jokerAvail && (
+            {jokerAvail && (
               <TouchableOpacity style={styles.jokerBtn} onPress={store.useJoker}>
                 <Text style={styles.jokerBtnText}>🃏 Joker</Text>
               </TouchableOpacity>
@@ -386,13 +393,17 @@ const styles = StyleSheet.create({
   avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary + '30', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.primary },
   // Streak card
-  streakCard: { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
-  streakRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  streakEmoji: { fontSize: 32 },
-  streakTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  streakSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
-  jokerBtn: { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border },
-  jokerBtnText: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.text },
+  streakCard:     { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
+  streakCardFire: { borderColor: Colors.red + '60', backgroundColor: Colors.red + '10' },
+  streakRow:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
+  streakEmoji:    { fontSize: 32 },
+  streakTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  streakTitle:    { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
+  fireBadge:      { backgroundColor: Colors.red + '25', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
+  fireBadgeText:  { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.red },
+  streakSub:      { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  jokerBtn:       { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border },
+  jokerBtnText:   { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.text },
   // Ring
   ringCard: {},
   ringRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Sp.md },

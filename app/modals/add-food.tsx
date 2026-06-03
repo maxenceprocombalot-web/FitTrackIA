@@ -33,6 +33,8 @@ export default function AddFoodModal() {
   const params     = useLocalSearchParams();
   const store      = useAppStore();
   const mealType   = (params.mealType as MealType) ?? 'lunch';
+  // Date cible : aujourd'hui par défaut, ou la date transmise depuis nutrition.tsx
+  const targetDate = (params.targetDate as string) ?? storage.today();
 
   // Onglet par défaut : récents si disponibles, sinon courants
   const defaultTab: Tab = store.recentFoods.length > 0 ? 'recent' : 'common';
@@ -71,12 +73,12 @@ export default function AddFoodModal() {
     await store.pushRecentFood({ ...finalItem });
 
     // Trouver ou créer le repas du jour
-    const todayMeals = store.meals.filter(m => m.date === storage.today() && m.type === mealType);
+    const todayMeals = store.meals.filter(m => m.date === targetDate && m.type === mealType);
     const existing   = todayMeals[0];
 
     const meal: Meal = existing
       ? { ...existing, items: [...existing.items, finalItem] }
-      : { id: Date.now().toString(), date: storage.today(), type: mealType, items: [finalItem] };
+      : { id: Date.now().toString(), date: targetDate, type: mealType, items: [finalItem] };
 
     await store.addMeal(meal);
     router.back();
@@ -85,7 +87,7 @@ export default function AddFoodModal() {
   // ─── Ajout d'un repas favori complet ──────────────────────────────────────
 
   const addFavoriteToMeal = useCallback(async (fav: FavoriteMeal) => {
-    const todayMeals = store.meals.filter(m => m.date === storage.today() && m.type === mealType);
+    const todayMeals = store.meals.filter(m => m.date === targetDate && m.type === mealType);
     const existing   = todayMeals[0];
 
     const newItems = fav.items.map(item => ({
@@ -95,7 +97,7 @@ export default function AddFoodModal() {
 
     const meal: Meal = existing
       ? { ...existing, items: [...existing.items, ...newItems] }
-      : { id: Date.now().toString(), date: storage.today(), type: mealType, items: newItems };
+      : { id: Date.now().toString(), date: targetDate, type: mealType, items: newItems };
 
     await store.addMeal(meal);
     // Ajouter chaque aliment dans les récents
