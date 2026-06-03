@@ -283,17 +283,32 @@ export default function ProgressScreen() {
             </Card>
           )}
           <Card>
-            <Text style={styles.sectionLabel}>Records personnels (PRs)</Text>
+            <View style={styles.prHeader}>
+              <Text style={styles.sectionLabel}>Records personnels 🏆</Text>
+              <Text style={styles.prCount}>{store.prs.length} record{store.prs.length > 1 ? 's' : ''}</Text>
+            </View>
             {store.prs.length === 0 && (
               <Text style={styles.emptyText}>Aucun PR enregistré — commence à t'entraîner !</Text>
             )}
-            {store.prs.map(pr => (
-              <View key={pr.exerciseId} style={styles.prRow}>
-                <Text style={styles.prName}>{pr.exerciseName}</Text>
-                <Text style={styles.prWeight}>{pr.weight} kg × {pr.reps}</Text>
-                <Text style={styles.prDate}>{pr.date.slice(5).replace('-', '/')}</Text>
-              </View>
-            ))}
+            {[...store.prs]
+              .sort((a, b) => b.date.localeCompare(a.date))
+              .map(pr => {
+                const gain = pr.previousWeight ? pr.weight - pr.previousWeight : null;
+                return (
+                  <View key={pr.exerciseId} style={styles.prRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.prName}>{pr.exerciseName}</Text>
+                      <Text style={styles.prDate}>{new Date(pr.date).toLocaleDateString('fr-FR')}</Text>
+                    </View>
+                    <View style={styles.prRight}>
+                      <Text style={styles.prWeight}>{pr.weight} kg × {pr.reps}</Text>
+                      {gain !== null && gain > 0 && (
+                        <Text style={styles.prGain}>+{gain.toFixed(1)} kg</Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
           </Card>
         </>
       )}
@@ -457,9 +472,13 @@ const styles = StyleSheet.create({
   statGrid: { flexDirection: 'row', gap: Sp.sm },
   bigExercise: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
   bigExerciseSub: { fontSize: Fs.sm, color: Colors.textMuted, marginTop: 2 },
-  prRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
-  prName: { flex: 1, fontSize: Fs.sm, color: Colors.text },
+  prHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Sp.sm },
+  prCount: { fontSize: Fs.xs, color: Colors.textMuted },
+  prRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
+  prName: { fontSize: Fs.sm, fontWeight: Fw.medium, color: Colors.text },
+  prRight: { alignItems: 'flex-end', gap: 2 },
   prWeight: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.yellow },
+  prGain: { fontSize: Fs.xs, color: Colors.green, fontWeight: Fw.semibold },
   prDate: { fontSize: Fs.xs, color: Colors.textMuted },
   emptyText: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: Sp.md },
   inRangeBar: { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 },

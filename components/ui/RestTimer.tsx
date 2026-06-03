@@ -17,28 +17,20 @@ interface Props {
   onClose: () => void;
 }
 
-// Composant arc SVG animé identique à AnimatedRing
+// Composant arc SVG animé — un seul effet pour éviter les listeners dupliqués
 function ArcFill({ circumference, targetOffset, color, r, size, sw }: {
   circumference: number; targetOffset: number; color: string; r: number; size: number; sw: number;
 }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  const [offset, setOffset] = useState(0);
+  const anim = useRef(new Animated.Value(circumference - targetOffset)).current;
+  const [offset, setOffset] = useState(circumference - targetOffset);
 
   useEffect(() => {
-    anim.setValue(circumference - targetOffset); // plein au départ, se vide
+    // Repart de la valeur courante et anime vers 0 sur 1s (une seconde de countdown)
+    anim.setValue(circumference - targetOffset);
     const id = anim.addListener(({ value }) => setOffset(circumference - value));
+    Animated.timing(anim, { toValue: 0, duration: 1000, useNativeDriver: false }).start();
     return () => anim.removeListener(id);
   }, [targetOffset, circumference]);
-
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: 0,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start();
-    const id = anim.addListener(({ value }) => setOffset(circumference - value));
-    return () => anim.removeListener(id);
-  }, [targetOffset]);
 
   return (
     <Circle

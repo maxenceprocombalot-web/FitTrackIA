@@ -26,7 +26,16 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 // ─── Planification de tous les rappels ────────────────────────────────────────
 
 export async function scheduleAllReminders(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // N'annule que les rappels récurrents (daily/weekly), pas les notifs ponctuelles
+  // (streak cassé, bilan mensuel, PRs) qui ont leur propre identifiant
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const recurringIds = scheduled
+    .filter(n => {
+      const trigger = n.trigger as any;
+      return trigger?.type === 'daily' || trigger?.type === 'weekly';
+    })
+    .map(n => n.identifier);
+  await Promise.all(recurringIds.map(id => Notifications.cancelScheduledNotificationAsync(id)));
 
   // Rappel déjeuner — 12h
   await Notifications.scheduleNotificationAsync({

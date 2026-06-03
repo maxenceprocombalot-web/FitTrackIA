@@ -135,9 +135,7 @@ export default function DashboardScreen() {
       coachMessage,
     };
 
-    await store.saveMonthlySummary(summary);
-
-    // Marquer comme vu et naviguer vers le modal
+    // Sauvegarder directement avec viewedAt pour éviter un double write
     await store.saveMonthlySummary({ ...summary, viewedAt: new Date().toISOString() });
     setTimeout(() => {
       router.push({ pathname: '/modals/monthly-summary', params: { month: lastMonthKey } });

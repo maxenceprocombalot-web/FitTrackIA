@@ -54,6 +54,9 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
   let currentDayIdx = -1;
   let mealsAdded    = 0;
 
+  // Tracking local pour éviter les doublons sur le snapshot existingMeals
+  const localAdded: Meal[] = [];
+
   for (const line of lines) {
     const trimmed  = line.trim().toUpperCase();
     const dayIdx   = DAY_NAMES.findIndex(d => trimmed.startsWith(d));
@@ -87,12 +90,19 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
         fatPer100g:       0,
       };
 
-      const existing = existingMeals.find(m => m.date === dateStr && m.type === mealType);
+      // Cherche dans le snapshot ET dans les repas déjà ajoutés lors de cette boucle
+      const allKnown = [...existingMeals, ...localAdded];
+      const existing = allKnown.find(m => m.date === dateStr && m.type === mealType);
       const meal: Meal = existing
         ? { ...existing, items: [...existing.items, item] }
         : { id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, date: dateStr, type: mealType, items: [item] };
 
       await addMeal(meal);
+      // Mise à jour du tracking local pour les prochaines itérations
+      const localIdx = localAdded.findIndex(m => m.id === meal.id);
+      if (localIdx >= 0) localAdded[localIdx] = meal;
+      else localAdded.push(meal);
+
       mealsAdded++;
       break;
     }
