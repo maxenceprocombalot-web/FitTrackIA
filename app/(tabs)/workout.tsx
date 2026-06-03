@@ -42,6 +42,18 @@ export default function WorkoutScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
+        {/* ── Carte Programmes ───────────────────────────────────────────── */}
+        <TouchableOpacity style={styles.programsCard} onPress={() => router.push('/(tabs)/programs')} activeOpacity={0.8}>
+          <View style={styles.programsIconBox}>
+            <Text style={styles.programsEmoji}>📋</Text>
+          </View>
+          <View style={styles.programsText}>
+            <Text style={styles.programsTitle}>Programmes d'entraînement</Text>
+            <Text style={styles.programsSub}>Full Body, PPL, Upper/Lower…</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
+        </TouchableOpacity>
+
         {/* ── Reprendre la dernière séance ───────────────────────────────── */}
         {lastWorkout && (
           <TouchableOpacity
@@ -242,6 +254,22 @@ function EmptyWorkout({ onAdd }: { onAdd: () => void }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
+  // Carte Programmes
+  programsCard: {
+    flexDirection: 'row', alignItems: 'center', gap: Sp.md,
+    backgroundColor: Colors.primary + '14',
+    borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '35',
+    padding: Sp.md,
+  },
+  programsIconBox: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: Colors.primary + '22',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  programsEmoji: { fontSize: 22 },
+  programsText: { flex: 1 },
+  programsTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
+  programsSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
   // Bouton reprendre dernière séance
   repeatBtn: {
     flexDirection: 'row', alignItems: 'center', gap: Sp.sm,

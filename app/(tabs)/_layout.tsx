@@ -1,7 +1,6 @@
-import { Tabs, useRouter } from 'expo-router';
-import { TouchableOpacity, Text } from 'react-native';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Fs, Fw } from '../../constants/theme';
+import { Colors, Fs } from '../../constants/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -12,23 +11,6 @@ function icon(name: IconName, focused: boolean, size = 20) {
       size={size}
       color={focused ? Colors.primary : Colors.textMuted}
     />
-  );
-}
-
-// Bouton "Programmes 📋" affiché dans le header de l'onglet Sport
-function ProgramsHeaderBtn() {
-  const router = useRouter();
-  return (
-    <TouchableOpacity
-      style={{ marginRight: 16, flexDirection: 'row', alignItems: 'center', gap: 5 }}
-      onPress={() => router.push('/(tabs)/programs')}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
-      <Ionicons name="list-outline" size={16} color={Colors.primary} />
-      <Text style={{ fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.primary }}>
-        Programmes
-      </Text>
-    </TouchableOpacity>
   );
 }
 
@@ -63,7 +45,6 @@ export default function TabsLayout() {
         options={{
           title: 'Sport',
           tabBarIcon: ({ focused }) => icon('barbell-outline', focused),
-          headerRight: () => <ProgramsHeaderBtn />,
         }}
       />
       <Tabs.Screen
