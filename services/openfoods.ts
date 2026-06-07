@@ -51,7 +51,7 @@ function offProductToFoodItem(p: OFFProduct, quantity = 100): FoodItem | null {
 export async function searchFoods(query: string): Promise<FoodItem[]> {
   if (!query.trim()) return [];
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20&lc=fr`;
+    const url = `https://fr.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20&lc=fr&cc=fr`;
     const res  = await fetch(url, { signal: AbortSignal.timeout(8000) });
     const data = (await res.json()) as OFFSearchResponse;
     return (data.products ?? [])

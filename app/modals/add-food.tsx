@@ -28,6 +28,17 @@ const TAB_META: { key: Tab; label: string; icon: React.ComponentProps<typeof Ion
   { key: 'manual',    label: 'Manuel',    icon: 'create-outline' },
 ];
 
+// Conversion module-level (COMMON_FOODS est une constante, pas besoin de recalculer)
+const COMMON_AS_FOOD_ITEMS: FoodItem[] = COMMON_FOODS.map(f => ({
+  id: f.id,
+  name: f.name,
+  quantity: f.defaultPortion,
+  caloriesPer100g: f.caloriesPer100g,
+  proteinPer100g: f.proteinPer100g,
+  carbsPer100g: f.carbsPer100g,
+  fatPer100g: f.fatPer100g,
+}));
+
 export default function AddFoodModal() {
   const router     = useRouter();
   const params     = useLocalSearchParams();
@@ -43,8 +54,9 @@ export default function AddFoodModal() {
   const [pending,     setPending]     = useState<FoodItem | null>(null);
   const [searchQ,     setSearchQ]     = useState('');
   const [searchRes,   setSearchRes]   = useState<FoodItem[]>([]);
-  const [searching,   setSearching]   = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searching,     setSearching]     = useState(false);
+  const [hasSearched,   setHasSearched]   = useState(false);
+  const [localResults,  setLocalResults]  = useState<FoodItem[]>([]);
   const [scanned,     setScanned]     = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -127,9 +139,14 @@ export default function AddFoodModal() {
     if (!searchQ.trim()) return;
     setSearching(true);
     setSearchRes([]);
+    setLocalResults([]);
     setHasSearched(false);
     const results = await searchFoods(searchQ);
     setSearchRes(results);
+    if (results.length === 0) {
+      const q = searchQ.toLowerCase().trim();
+      setLocalResults(COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q)));
+    }
     setSearching(false);
     setHasSearched(true);
   }, [searchQ]);
@@ -359,42 +376,60 @@ export default function AddFoodModal() {
               {searching ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="search" size={18} color="#fff" />}
             </TouchableOpacity>
           </View>
-          <Text style={styles.searchHint}>Résultats d'OpenFoodFacts</Text>
+
+          {/* Hint contextuel */}
+          {!hasSearched && (
+            <Text style={styles.searchHint}>Aliments courants — tape pour chercher sur OpenFoodFacts</Text>
+          )}
+          {hasSearched && searchRes.length > 0 && (
+            <Text style={styles.searchHint}>Résultats OpenFoodFacts ({searchRes.length})</Text>
+          )}
+          {hasSearched && searchRes.length === 0 && localResults.length > 0 && (
+            <Text style={styles.searchHintFallback}>Aucun résultat OFF — aliments locaux correspondants</Text>
+          )}
+
+          {/* Indicateur de chargement */}
           {searching && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
               <Text style={styles.loadingText}>Recherche en cours…</Text>
             </View>
           )}
+
+          {/* Liste : aliments courants si pas encore cherché, résultats OFF, fallback local ou vide */}
           {!searching && (
             <FlatList
-            data={searchRes}
-            keyExtractor={item => item.id}
-            contentContainerStyle={{ paddingBottom: 40 }}
-            ListEmptyComponent={
-              hasSearched
-                ? (
+              data={
+                !hasSearched
+                  ? COMMON_AS_FOOD_ITEMS
+                  : searchRes.length > 0
+                    ? searchRes
+                    : localResults
+              }
+              keyExtractor={item => item.id}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              ListEmptyComponent={
+                hasSearched ? (
                   <View style={styles.emptyState}>
                     <Ionicons name="search-outline" size={40} color={Colors.textMuted} />
                     <Text style={styles.emptyText}>Aucun résultat</Text>
                     <Text style={styles.emptySubText}>Essaie un autre terme ou ajoute l'aliment manuellement</Text>
                   </View>
-                )
-                : <Text style={styles.emptyText}>Lance une recherche ci-dessus</Text>
-            }
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
-                <View style={styles.foodInfo}>
-                  <Text style={styles.foodName}>{item.name}</Text>
-                  {item.brand && <Text style={styles.foodBrand}>{item.brand}</Text>}
-                  <Text style={styles.foodMacros}>
-                    {item.caloriesPer100g}kcal • P:{item.proteinPer100g}g • G:{item.carbsPer100g}g • L:{item.fatPer100g}g /100g
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          />
+                ) : null
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{item.name}</Text>
+                    {item.brand && <Text style={styles.foodBrand}>{item.brand}</Text>}
+                    <Text style={styles.foodMacros}>
+                      {item.caloriesPer100g}kcal • P:{item.proteinPer100g}g • G:{item.carbsPer100g}g • L:{item.fatPer100g}g /100g
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            />
           )}
         </View>
       )}
@@ -529,6 +564,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
   searchBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, alignItems: 'center', justifyContent: 'center', width: 48 },
   searchHint: { fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm },
+  searchHintFallback: { fontSize: Fs.xs, color: Colors.yellow, marginBottom: Sp.sm },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: Sp.sm },
   loadingText: { fontSize: Fs.sm, color: Colors.textSecondary },
   // Scan

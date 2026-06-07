@@ -55,4 +55,38 @@ export const COMMON_FOODS: FoodTemplate[] = [
   { id: 'f28', name: 'Beurre de cacahuète',   caloriesPer100g: 588, proteinPer100g: 25,   carbsPer100g: 20,   fatPer100g: 50,   defaultPortion: 30,  emoji: '🥜' },
   { id: 'f29', name: 'Huile d\'olive',        caloriesPer100g: 884, proteinPer100g: 0,    carbsPer100g: 0,    fatPer100g: 100,  defaultPortion: 10,  emoji: '🫙' },
   { id: 'f30', name: 'Whey protéine',         caloriesPer100g: 380, proteinPer100g: 75,   carbsPer100g: 8,    fatPer100g: 5,    defaultPortion: 30,  emoji: '💪' },
+
+  // Pains & viennoiseries français
+  { id: 'f31', name: 'Pain de mie',           caloriesPer100g: 270, proteinPer100g: 8.5,  carbsPer100g: 49,   fatPer100g: 3.5,  defaultPortion: 50,  emoji: '🍞' },
+  { id: 'f32', name: 'Baguette',              caloriesPer100g: 270, proteinPer100g: 9,    carbsPer100g: 56,   fatPer100g: 1.2,  defaultPortion: 80,  emoji: '🥖' },
+  { id: 'f33', name: 'Croissant',             caloriesPer100g: 406, proteinPer100g: 8.5,  carbsPer100g: 45,   fatPer100g: 21,   defaultPortion: 60,  emoji: '🥐' },
+
+  // Viandes françaises
+  { id: 'f34', name: 'Poulet rôti',           caloriesPer100g: 190, proteinPer100g: 27,   carbsPer100g: 0,    fatPer100g: 9,    defaultPortion: 150, emoji: '🍗' },
+  { id: 'f35', name: 'Steak haché 15%',       caloriesPer100g: 220, proteinPer100g: 19,   carbsPer100g: 0,    fatPer100g: 15,   defaultPortion: 150, emoji: '🥩' },
+  { id: 'f36', name: 'Jambon blanc',          caloriesPer100g: 110, proteinPer100g: 17,   carbsPer100g: 1,    fatPer100g: 4,    defaultPortion: 80,  emoji: '🥩' },
+  { id: 'f37', name: 'Côte de porc',          caloriesPer100g: 250, proteinPer100g: 27,   carbsPer100g: 0,    fatPer100g: 15,   defaultPortion: 150, emoji: '🍖' },
+  { id: 'f38', name: 'Sardines en boîte',     caloriesPer100g: 208, proteinPer100g: 25,   carbsPer100g: 0,    fatPer100g: 12,   defaultPortion: 100, emoji: '🐟' },
+
+  // Fromages français
+  { id: 'f39', name: 'Camembert',             caloriesPer100g: 300, proteinPer100g: 20,   carbsPer100g: 0.5,  fatPer100g: 24,   defaultPortion: 50,  emoji: '🧀' },
+  { id: 'f40', name: 'Mozzarella',            caloriesPer100g: 280, proteinPer100g: 18,   carbsPer100g: 2.2,  fatPer100g: 22,   defaultPortion: 125, emoji: '🧀' },
+
+  // Produits laitiers & boissons
+  { id: 'f41', name: 'Lait entier',           caloriesPer100g: 65,  proteinPer100g: 3.2,  carbsPer100g: 4.8,  fatPer100g: 3.7,  defaultPortion: 200, emoji: '🥛' },
+  { id: 'f42', name: 'Jus d\'orange',         caloriesPer100g: 45,  proteinPer100g: 0.7,  carbsPer100g: 10,   fatPer100g: 0.2,  defaultPortion: 200, emoji: '🍊' },
+
+  // Matières grasses
+  { id: 'f43', name: 'Beurre',               caloriesPer100g: 717, proteinPer100g: 0.5,  carbsPer100g: 0.6,  fatPer100g: 81,   defaultPortion: 10,  emoji: '🧈' },
+
+  // Fruits supplémentaires
+  { id: 'f44', name: 'Orange',               caloriesPer100g: 47,  proteinPer100g: 0.9,  carbsPer100g: 12,   fatPer100g: 0.1,  defaultPortion: 150, emoji: '🍊' },
+  { id: 'f45', name: 'Fraises',              caloriesPer100g: 32,  proteinPer100g: 0.7,  carbsPer100g: 7.7,  fatPer100g: 0.3,  defaultPortion: 150, emoji: '🍓' },
+  { id: 'f46', name: 'Raisin',               caloriesPer100g: 70,  proteinPer100g: 0.6,  carbsPer100g: 18,   fatPer100g: 0.2,  defaultPortion: 150, emoji: '🍇' },
+  { id: 'f47', name: 'Compote de pommes',    caloriesPer100g: 48,  proteinPer100g: 0.3,  carbsPer100g: 12,   fatPer100g: 0.1,  defaultPortion: 100, emoji: '🍎' },
+
+  // Légumes supplémentaires
+  { id: 'f48', name: 'Carottes',             caloriesPer100g: 41,  proteinPer100g: 0.9,  carbsPer100g: 10,   fatPer100g: 0.2,  defaultPortion: 150, emoji: '🥕' },
+  { id: 'f49', name: 'Haricots verts cuits', caloriesPer100g: 35,  proteinPer100g: 1.9,  carbsPer100g: 7,    fatPer100g: 0.1,  defaultPortion: 150, emoji: '🥬' },
+  { id: 'f50', name: 'Courgette',            caloriesPer100g: 17,  proteinPer100g: 1.2,  carbsPer100g: 3.1,  fatPer100g: 0.3,  defaultPortion: 150, emoji: '🥒' },
 ];
