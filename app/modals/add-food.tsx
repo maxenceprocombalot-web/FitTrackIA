@@ -9,6 +9,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
 import { COMMON_FOODS } from '../../constants/foods';
+import { CIQUAL_FOODS } from '../../constants/ciqual';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
@@ -57,6 +58,7 @@ export default function AddFoodModal() {
   const [searching,     setSearching]     = useState(false);
   const [hasSearched,   setHasSearched]   = useState(false);
   const [localResults,  setLocalResults]  = useState<FoodItem[]>([]);
+  const [resultSource,  setResultSource]  = useState<'ciqual' | 'off' | 'local' | ''>('');
   const [scanned,     setScanned]     = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -141,12 +143,44 @@ export default function AddFoodModal() {
     setSearchRes([]);
     setLocalResults([]);
     setHasSearched(false);
-    const results = await searchFoods(searchQ);
-    setSearchRes(results);
-    if (results.length === 0) {
-      const q = searchQ.toLowerCase().trim();
-      setLocalResults(COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q)));
+    setResultSource('');
+
+    const q = searchQ.toLowerCase().trim();
+
+    // 1. Chercher dans CIQUAL (instantané, local)
+    const ciqualHits = CIQUAL_FOODS
+      .filter(f => f.name.toLowerCase().includes(q))
+      .slice(0, 20)
+      .map<FoodItem>(f => ({
+        id: f.id,
+        name: f.name,
+        quantity: f.defaultPortion,
+        caloriesPer100g: f.caloriesPer100g,
+        proteinPer100g: f.proteinPer100g,
+        carbsPer100g: f.carbsPer100g,
+        fatPer100g: f.fatPer100g,
+      }));
+
+    if (ciqualHits.length > 0) {
+      setSearchRes(ciqualHits);
+      setResultSource('ciqual');
+      setSearching(false);
+      setHasSearched(true);
+      return;
     }
+
+    // 2. Pas de résultat CIQUAL → OpenFoodFacts
+    const offResults = await searchFoods(searchQ);
+    if (offResults.length > 0) {
+      setSearchRes(offResults);
+      setResultSource('off');
+    } else {
+      // 3. Fallback : aliments courants correspondants
+      const fallback = COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q));
+      setLocalResults(fallback);
+      setResultSource('local');
+    }
+
     setSearching(false);
     setHasSearched(true);
   }, [searchQ]);
@@ -379,13 +413,16 @@ export default function AddFoodModal() {
 
           {/* Hint contextuel */}
           {!hasSearched && (
-            <Text style={styles.searchHint}>Aliments courants — tape pour chercher sur OpenFoodFacts</Text>
+            <Text style={styles.searchHint}>Aliments courants — tape pour chercher dans la base CIQUAL</Text>
           )}
-          {hasSearched && searchRes.length > 0 && (
-            <Text style={styles.searchHint}>Résultats OpenFoodFacts ({searchRes.length})</Text>
+          {hasSearched && resultSource === 'ciqual' && (
+            <Text style={styles.searchHint}>Base CIQUAL 2020 ({searchRes.length} résultats)</Text>
           )}
-          {hasSearched && searchRes.length === 0 && localResults.length > 0 && (
-            <Text style={styles.searchHintFallback}>Aucun résultat OFF — aliments locaux correspondants</Text>
+          {hasSearched && resultSource === 'off' && (
+            <Text style={styles.searchHint}>OpenFoodFacts ({searchRes.length} résultats)</Text>
+          )}
+          {hasSearched && resultSource === 'local' && localResults.length > 0 && (
+            <Text style={styles.searchHintFallback}>Aliments courants correspondants</Text>
           )}
 
           {/* Indicateur de chargement */}
