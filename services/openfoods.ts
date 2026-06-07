@@ -28,6 +28,8 @@ function offProductToFoodItem(p: OFFProduct, quantity = 100): FoodItem | null {
   if (!name) return null;
 
   const cal  = n['energy-kcal_100g'] ?? n['energy-kcal'] ?? 0;
+  if (!cal || cal <= 0) return null;
+
   const prot = n.proteins_100g ?? 0;
   const carb = n.carbohydrates_100g ?? 0;
   const fat  = n.fat_100g ?? 0;
@@ -49,7 +51,7 @@ function offProductToFoodItem(p: OFFProduct, quantity = 100): FoodItem | null {
 export async function searchFoods(query: string): Promise<FoodItem[]> {
   if (!query.trim()) return [];
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=20&fields=product_name,brands,nutriments`;
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20&lc=fr`;
     const res  = await fetch(url, { signal: AbortSignal.timeout(8000) });
     const data = (await res.json()) as OFFSearchResponse;
     return (data.products ?? [])

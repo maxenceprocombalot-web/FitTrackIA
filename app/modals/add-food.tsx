@@ -44,6 +44,7 @@ export default function AddFoodModal() {
   const [searchQ,     setSearchQ]     = useState('');
   const [searchRes,   setSearchRes]   = useState<FoodItem[]>([]);
   const [searching,   setSearching]   = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [scanned,     setScanned]     = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -126,9 +127,11 @@ export default function AddFoodModal() {
     if (!searchQ.trim()) return;
     setSearching(true);
     setSearchRes([]);
+    setHasSearched(false);
     const results = await searchFoods(searchQ);
     setSearchRes(results);
     setSearching(false);
+    setHasSearched(true);
   }, [searchQ]);
 
   // ─── Scanner code-barres ──────────────────────────────────────────────────
@@ -357,12 +360,27 @@ export default function AddFoodModal() {
             </TouchableOpacity>
           </View>
           <Text style={styles.searchHint}>Résultats d'OpenFoodFacts</Text>
-          <FlatList
+          {searching && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.loadingText}>Recherche en cours…</Text>
+            </View>
+          )}
+          {!searching && (
+            <FlatList
             data={searchRes}
             keyExtractor={item => item.id}
             contentContainerStyle={{ paddingBottom: 40 }}
             ListEmptyComponent={
-              !searching ? <Text style={styles.emptyText}>Lance une recherche ci-dessus</Text> : null
+              hasSearched
+                ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="search-outline" size={40} color={Colors.textMuted} />
+                    <Text style={styles.emptyText}>Aucun résultat</Text>
+                    <Text style={styles.emptySubText}>Essaie un autre terme ou ajoute l'aliment manuellement</Text>
+                  </View>
+                )
+                : <Text style={styles.emptyText}>Lance une recherche ci-dessus</Text>
             }
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
@@ -377,6 +395,7 @@ export default function AddFoodModal() {
               </TouchableOpacity>
             )}
           />
+          )}
         </View>
       )}
 
@@ -510,6 +529,8 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
   searchBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, alignItems: 'center', justifyContent: 'center', width: 48 },
   searchHint: { fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: Sp.sm },
+  loadingText: { fontSize: Fs.sm, color: Colors.textSecondary },
   // Scan
   scanContainer: { flex: 1 },
   camera: { flex: 1 },
