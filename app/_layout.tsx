@@ -69,6 +69,10 @@ export default function RootLayout() {
           options={{ headerShown: false, presentation: 'modal' }}
         />
         <Stack.Screen
+          name="modals/workout-detail"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
+        <Stack.Screen
           name="modals/privacy-policy"
           options={{ title: 'Politique de confidentialité', presentation: 'modal', headerShown: false }}
         />

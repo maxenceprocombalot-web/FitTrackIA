@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert, Platform,
+  StyleSheet, Alert, Platform, Animated, PanResponder, Dimensions,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -274,29 +275,64 @@ export default function NutritionScreen() {
   );
 }
 
-// ─── Ligne aliment ────────────────────────────────────────────────────────────
+// ─── Ligne aliment avec swipe gauche pour supprimer ──────────────────────────
+
+const SCREEN_W_N = Dimensions.get('window').width;
+const DELETE_W   = 85;
 
 function FoodRow({ item, onDelete }: { item: FoodItem; onDelete: () => void }) {
+  const panX = useRef(new Animated.Value(0)).current;
   const cal  = Math.round(item.caloriesPer100g * item.quantity / 100);
   const prot = Math.round(item.proteinPer100g  * item.quantity / 100);
   const carb = Math.round(item.carbsPer100g    * item.quantity / 100);
   const fat  = Math.round(item.fatPer100g      * item.quantity / 100);
 
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dy) < 20,
+    onPanResponderMove: (_, g) => { if (g.dx < 0) panX.setValue(Math.max(g.dx, -DELETE_W - 10)); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx < -50) {
+        Animated.spring(panX, { toValue: -DELETE_W, useNativeDriver: true }).start();
+        Alert.alert(
+          'Supprimer cet aliment ?',
+          `"${item.name}" sera retiré de ce repas.`,
+          [
+            { text: 'Annuler', style: 'cancel', onPress: () => Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start() },
+            { text: 'Supprimer', style: 'destructive', onPress: () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Animated.timing(panX, { toValue: -SCREEN_W_N, duration: 200, useNativeDriver: true }).start(onDelete);
+              },
+            },
+          ],
+        );
+      } else {
+        Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  })).current;
+
   return (
-    <View style={foodStyles.row}>
-      <View style={foodStyles.info}>
-        <Text style={foodStyles.name} numberOfLines={1}>{item.name}</Text>
-        <Text style={foodStyles.portion}>{item.quantity}g</Text>
+    <View style={foodStyles.swipeWrap}>
+      {/* Fond rouge */}
+      <View style={foodStyles.swipeBg}>
+        <Ionicons name="trash-outline" size={18} color="#fff" />
+        <Text style={foodStyles.swipeBgText}>Suppr.</Text>
       </View>
-      <View style={foodStyles.macros}>
-        <MacroPill value={`${cal}`}    unit="kcal" color={Colors.caloriesColor} />
-        <MacroPill value={`P:${prot}`} unit="g"    color={Colors.proteinColor} />
-        <MacroPill value={`G:${carb}`} unit="g"    color={Colors.carbsColor} />
-        <MacroPill value={`L:${fat}`}  unit="g"    color={Colors.fatColor} />
-      </View>
-      <TouchableOpacity onPress={onDelete} style={foodStyles.del}>
-        <Ionicons name="trash-outline" size={15} color={Colors.red} />
-      </TouchableOpacity>
+      <Animated.View
+        style={[foodStyles.row, { transform: [{ translateX: panX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <View style={foodStyles.info}>
+          <Text style={foodStyles.name} numberOfLines={1}>{item.name}</Text>
+          <Text style={foodStyles.portion}>{item.quantity}g</Text>
+        </View>
+        <View style={foodStyles.macros}>
+          <MacroPill value={`${cal}`}    unit="kcal" color={Colors.caloriesColor} />
+          <MacroPill value={`P:${prot}`} unit="g"    color={Colors.proteinColor} />
+          <MacroPill value={`G:${carb}`} unit="g"    color={Colors.carbsColor} />
+          <MacroPill value={`L:${fat}`}  unit="g"    color={Colors.fatColor} />
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -310,14 +346,16 @@ function MacroPill({ value, unit, color }: { value: string; unit: string; color:
 }
 
 const foodStyles = StyleSheet.create({
-  row:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border, gap: 6 },
+  swipeWrap: { position: 'relative', borderTopWidth: 1, borderTopColor: Colors.border, overflow: 'hidden' },
+  swipeBg:   { position: 'absolute', right: 0, top: 0, bottom: 0, width: DELETE_W, backgroundColor: Colors.red, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  swipeBgText: { color: '#fff', fontSize: Fs.xs, fontWeight: Fw.semibold },
+  row:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, gap: 6, backgroundColor: Colors.surface },
   info:     { flex: 1 },
   name:     { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
   portion:  { fontSize: Fs.xs, color: Colors.textMuted },
   macros:   { flexDirection: 'row', flexWrap: 'wrap', gap: 3, flex: 1, justifyContent: 'flex-end' },
   pill:     { borderRadius: 99, paddingHorizontal: 5, paddingVertical: 2 },
   pillText: { fontSize: 10, fontWeight: Fw.medium },
-  del:      { padding: 4 },
 });
 
 const styles = StyleSheet.create({

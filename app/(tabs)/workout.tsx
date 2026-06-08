@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { WorkoutSession, WorkoutType } from '../../types';
@@ -114,13 +115,14 @@ export default function WorkoutScreen() {
   );
 }
 
-// ─── Carte séance avec swipe pour supprimer ───────────────────────────────────
+// ─── Carte séance avec swipe pour supprimer + tap pour le détail ─────────────
 
 function SwipeableWorkoutCard({ workout, index, onDelete }: {
   workout: WorkoutSession;
   index: number;
   onDelete: () => void;
 }) {
+  const router   = useRouter();
   const panX     = useRef(new Animated.Value(0)).current;
   const slideIn  = useRef(new Animated.Value(40)).current;
   const opacity  = useRef(new Animated.Value(0)).current;
@@ -134,10 +136,23 @@ function SwipeableWorkoutCard({ workout, index, onDelete }: {
 
   const panResponder = useRef(PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dy) < 20,
-    onPanResponderMove: (_, g) => { if (g.dx < 0) panX.setValue(g.dx); },
+    onPanResponderMove: (_, g) => { if (g.dx < 0) panX.setValue(Math.max(g.dx, -SCREEN_W)); },
     onPanResponderRelease: (_, g) => {
       if (g.dx < -90) {
-        Animated.timing(panX, { toValue: -SCREEN_W, duration: 220, useNativeDriver: true }).start(onDelete);
+        // Snap vers la zone "supprimer", puis demande confirmation
+        Animated.spring(panX, { toValue: -100, useNativeDriver: true }).start();
+        Alert.alert(
+          'Supprimer cette séance ?',
+          `"${workout.name}" sera supprimée définitivement.`,
+          [
+            { text: 'Annuler', style: 'cancel', onPress: () => Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start() },
+            { text: 'Supprimer', style: 'destructive', onPress: () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Animated.timing(panX, { toValue: -SCREEN_W, duration: 220, useNativeDriver: true }).start(onDelete);
+              },
+            },
+          ],
+        );
       } else {
         Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
       }
@@ -159,28 +174,30 @@ function SwipeableWorkoutCard({ workout, index, onDelete }: {
         style={[swipeStyles.card, { transform: [{ translateX: panX }] }]}
         {...panResponder.panHandlers}
       >
-        <View style={[swipeStyles.iconBox, { backgroundColor: color + '18' }]}>
-          <Ionicons name={icon} size={22} color={color} />
-        </View>
-        <View style={swipeStyles.info}>
-          <View style={swipeStyles.titleRow}>
-            <Text style={swipeStyles.name}>{workout.name}</Text>
-            {isToday && <View style={swipeStyles.todayBadge}><Text style={swipeStyles.todayText}>Aujourd'hui</Text></View>}
+        {/* Tap → détail de la séance */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push({ pathname: '/modals/workout-detail', params: { id: workout.id } })}
+          style={swipeStyles.cardInner}
+        >
+          <View style={[swipeStyles.iconBox, { backgroundColor: color + '18' }]}>
+            <Ionicons name={icon} size={22} color={color} />
           </View>
-          <Text style={swipeStyles.meta}>
-            {label} • {workout.duration}min • {workout.caloriesBurned}kcal
-          </Text>
-          {workout.exercises.length > 0 && (
-            <Text style={swipeStyles.exCount}>{workout.exercises.length} exercice{workout.exercises.length > 1 ? 's' : ''}</Text>
-          )}
-          {/* Affichage des PRs de cette séance */}
-          {workout.exercises.flatMap(e =>
-            e.sets.filter(s => s.weight > 0).map(s => ({ name: e.name, w: s.weight }))
-          ).slice(0, 2).map((ex, i) => (
-            <Text key={i} style={swipeStyles.prText}>🏆 PR {ex.name} : {ex.w}kg</Text>
-          ))}
-        </View>
-        <Text style={swipeStyles.date}>{workout.date.slice(5).replace('-', '/')}</Text>
+          <View style={swipeStyles.info}>
+            <View style={swipeStyles.titleRow}>
+              <Text style={swipeStyles.name}>{workout.name}</Text>
+              {isToday && <View style={swipeStyles.todayBadge}><Text style={swipeStyles.todayText}>Aujourd'hui</Text></View>}
+            </View>
+            <Text style={swipeStyles.meta}>
+              {label} • {workout.duration}min • {workout.caloriesBurned}kcal
+            </Text>
+            {workout.exercises.length > 0 && (
+              <Text style={swipeStyles.exCount}>{workout.exercises.length} exercice{workout.exercises.length > 1 ? 's' : ''}</Text>
+            )}
+          </View>
+          <Text style={swipeStyles.date}>{workout.date.slice(5).replace('-', '/')}</Text>
+          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+        </TouchableOpacity>
       </Animated.View>
     </Animated.View>
   );
@@ -194,10 +211,13 @@ const swipeStyles = StyleSheet.create({
   },
   bgText: { color: '#fff', fontSize: Fs.sm, fontWeight: Fw.semibold },
   card: {
-    flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.surface, borderRadius: R,
     borderWidth: 1, borderColor: Colors.border,
-    padding: Sp.md, marginBottom: Sp.sm, gap: Sp.sm,
+    marginBottom: Sp.sm, overflow: 'hidden',
+  },
+  cardInner: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: Sp.md, gap: Sp.sm,
   },
   iconBox: { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
@@ -207,7 +227,6 @@ const swipeStyles = StyleSheet.create({
   todayText: { fontSize: Fs.xs, color: Colors.primary },
   meta: { fontSize: Fs.xs, color: Colors.textSecondary },
   exCount: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 },
-  prText: { fontSize: Fs.xs, color: Colors.yellow, marginTop: 2 },
   date: { fontSize: Fs.xs, color: Colors.textMuted },
 });
 

@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors, Fs } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
 import TutorialOverlay from '../../components/ui/TutorialOverlay';
@@ -44,25 +45,27 @@ export default function TabsLayout() {
         {/* ── 5 onglets visibles ─────────────────────────────────────────────── */}
         <Tabs.Screen
           name="index"
+          listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
           options={{ title: "Aujourd'hui", tabBarIcon: ({ focused }) => icon('home-outline', focused) }}
         />
         <Tabs.Screen
           name="workout"
-          options={{
-            title: 'Sport',
-            tabBarIcon: ({ focused }) => icon('barbell-outline', focused),
-          }}
+          listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
+          options={{ title: 'Sport', tabBarIcon: ({ focused }) => icon('barbell-outline', focused) }}
         />
         <Tabs.Screen
           name="nutrition"
+          listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
           options={{ title: 'Nutrition', tabBarIcon: ({ focused }) => icon('nutrition-outline', focused) }}
         />
         <Tabs.Screen
           name="coach"
+          listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
           options={{ title: 'Coach IA', tabBarIcon: ({ focused }) => icon('chatbubble-ellipses-outline', focused) }}
         />
         <Tabs.Screen
           name="progress"
+          listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
           options={{ title: 'Progrès', tabBarIcon: ({ focused }) => icon('trending-up-outline', focused) }}
         />
 

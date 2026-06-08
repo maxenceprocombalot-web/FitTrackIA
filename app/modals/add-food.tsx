@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
@@ -73,6 +74,7 @@ export default function AddFoodModal() {
   // ─── Sélection d'un aliment ────────────────────────────────────────────────
 
   const selectItem = (item: FoodItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPending({ ...item, quantity: item.quantity });
     setQuantity(String(item.quantity));
   };
@@ -82,6 +84,7 @@ export default function AddFoodModal() {
     const qty = parseFloat(quantity);
     if (!qty || isNaN(qty) || qty <= 0) { Alert.alert('Erreur', 'Indique une quantité valide.'); return; }
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const finalItem: FoodItem = { ...pending, id: `${Date.now()}`, quantity: qty };
 
     // Mémoriser dans les aliments récents

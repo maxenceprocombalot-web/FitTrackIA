@@ -4,7 +4,7 @@ import {
   TouchableOpacity, StyleSheet, Dimensions, Animated,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
-import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
@@ -17,7 +17,7 @@ const CHART_H = 160;
 const PAD     = { top: 16, bottom: 24, left: 30, right: 10 };
 
 type Period  = '30j' | '90j' | 'tout';
-type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'plans';
+type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'plans' | 'calories';
 
 // Régression linéaire
 function linearReg(ys: number[]): { slope: number; intercept: number } {
@@ -85,6 +85,73 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
       {realPoints.map((p, i) => (
         <Circle key={i} cx={p.x} cy={p.y} r={3} fill={Colors.green} />
       ))}
+      {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
+        <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
+          {entries[i].date.slice(5).replace('-', '/')}
+        </SvgText>
+      ))}
+    </Svg>
+  );
+}
+
+// ─── Graphique calories 30 jours ──────────────────────────────────────────────
+
+function CaloriesChart({ entries, target }: {
+  entries: { date: string; calories: number }[];
+  target: number;
+}) {
+  if (entries.length < 2) return (
+    <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+      <Ionicons name="analytics-outline" size={36} color={Colors.textMuted} />
+      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm }}>
+        Enregistre au moins 2 jours de repas
+      </Text>
+    </View>
+  );
+
+  const cals = entries.map(e => e.calories);
+  const rawMin = Math.min(...cals, target * 0.7);
+  const rawMax = Math.max(...cals, target * 1.3);
+  const minY = Math.floor(rawMin / 100) * 100;
+  const maxY = Math.ceil(rawMax  / 100) * 100;
+  const w = CHART_W - PAD.left - PAD.right;
+  const h = CHART_H - PAD.top  - PAD.bottom;
+
+  const toX = (i: number) => PAD.left + (i / (entries.length - 1)) * w;
+  const toY = (v: number) => PAD.top + (1 - (v - minY) / (maxY - minY)) * h;
+
+  const points = entries.map((e, i) => ({ x: toX(i), y: toY(e.calories), cal: e.calories }));
+  const targetY = toY(target);
+  const linePath = buildPath(points);
+  const yLabels  = [minY, Math.round((minY + maxY) / 2), maxY];
+
+  return (
+    <Svg width={CHART_W} height={CHART_H}>
+      {/* Grille horizontale */}
+      {yLabels.map((v, i) => (
+        <Line key={i}
+          x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)}
+          stroke="rgba(255,255,255,0.05)" strokeWidth={1}
+        />
+      ))}
+      {yLabels.map((v, i) => (
+        <SvgText key={i} x={PAD.left - 4} y={toY(v) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">
+          {v}
+        </SvgText>
+      ))}
+      {/* Ligne objectif (pointillée) */}
+      <Line
+        x1={PAD.left} y1={targetY} x2={CHART_W - PAD.right} y2={targetY}
+        stroke={Colors.primary} strokeWidth={1.5} strokeDasharray="5,4" opacity={0.8}
+      />
+      <SvgText x={CHART_W - PAD.right + 2} y={targetY + 4} fontSize={8} fill={Colors.primary}>obj</SvgText>
+      {/* Courbe */}
+      <Path d={linePath} stroke={Colors.green} strokeWidth={2} fill="none" />
+      {/* Points colorés selon l'objectif */}
+      {points.map((p, i) => (
+        <Circle key={i} cx={p.x} cy={p.y} r={3} fill={p.cal > target ? Colors.red : Colors.green} />
+      ))}
+      {/* Labels dates */}
       {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
         <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
           {entries[i].date.slice(5).replace('-', '/')}
@@ -199,6 +266,29 @@ export default function ProgressScreen() {
     ? store.savedPlans
     : store.savedPlans.filter(p => p.type === plansFilter);
 
+  // Données calories sur 30 jours
+  const calories30 = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const since = cutoff.toISOString().split('T')[0];
+    const dayMap: Record<string, number> = {};
+    store.meals.filter(m => m.date >= since).forEach(m => {
+      const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+      dayMap[m.date] = (dayMap[m.date] ?? 0) + cal;
+    });
+    return Object.entries(dayMap)
+      .map(([date, calories]) => ({ date, calories: Math.round(calories) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [store.meals]);
+
+  const calTarget  = store.user?.targetCalories ?? 2000;
+  const calAvg     = calories30.length ? Math.round(calories30.reduce((s, e) => s + e.calories, 0) / calories30.length) : 0;
+  const calInRange = calories30.filter(e => e.calories >= calTarget * 0.9 && e.calories <= calTarget * 1.1).length;
+  const calBestDay = calories30.reduce<{ date: string; calories: number } | null>(
+    (best, e) => (!best || Math.abs(e.calories - calTarget) < Math.abs(best.calories - calTarget)) ? e : best,
+    null,
+  );
+
   const handleSaveWeight = () => {
     const w = parseFloat(weightIn);
     if (!w || isNaN(w) || w < 20 || w > 300) return;
@@ -211,19 +301,23 @@ export default function ProgressScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
-      <View style={styles.tabs}>
-        {(['weight', 'sport', 'nutrition', 'plans'] as ActiveTab[]).map(tab => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
+        {(['weight', 'sport', 'nutrition', 'calories', 'plans'] as ActiveTab[]).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'weight' ? 'Poids' : tab === 'sport' ? 'Sport' : tab === 'nutrition' ? 'Nutrition' : 'Plans'}
+              {tab === 'weight' ? 'Poids'
+                : tab === 'sport' ? 'Sport'
+                : tab === 'nutrition' ? 'Nutrition'
+                : tab === 'calories' ? 'Calories'
+                : 'Plans'}
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       {/* ── Onglet Poids ─────────────────────────────────────────────────── */}
       {activeTab === 'weight' && (
@@ -403,6 +497,47 @@ export default function ProgressScreen() {
             <Text style={styles.inRangeText}>
               {last7.daysInRange}/{last7.daysTracked} jours dans la fenêtre calorique
             </Text>
+          </Card>
+        </>
+      )}
+
+      {/* ── Onglet Calories ──────────────────────────────────────────────── */}
+      {activeTab === 'calories' && (
+        <>
+          {/* Stats en haut */}
+          <View style={styles.statGrid}>
+            <BigStat value={String(calAvg)}     label={`moy. 30j (obj: ${calTarget})`} color={calAvg > calTarget ? Colors.red : Colors.green} />
+            <BigStat value={String(calInRange)}  label="jours dans l'objectif (±10%)"  color={Colors.primary} />
+          </View>
+          {calBestDay && (
+            <Card>
+              <Text style={styles.sectionLabel}>Meilleur jour</Text>
+              <Text style={{ color: Colors.text, fontSize: Fs.md, fontWeight: Fw.semibold }}>
+                {new Date(calBestDay.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+              </Text>
+              <Text style={{ color: Colors.textSecondary, fontSize: Fs.xs, marginTop: 2 }}>
+                {calBestDay.calories} kcal — plus proche de l'objectif
+              </Text>
+            </Card>
+          )}
+          {/* Graphique */}
+          <Card style={styles.chartCard}>
+            <Text style={styles.sectionLabel}>Évolution sur 30 jours</Text>
+            <View style={styles.calLegend}>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calLegendDot, { backgroundColor: Colors.green }]} />
+                <Text style={styles.calLegendText}>Sous l'objectif</Text>
+              </View>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calLegendDot, { backgroundColor: Colors.red }]} />
+                <Text style={styles.calLegendText}>Au-dessus</Text>
+              </View>
+              <View style={styles.calLegendItem}>
+                <View style={[styles.calLegendDash, { borderColor: Colors.primary }]} />
+                <Text style={styles.calLegendText}>Objectif</Text>
+              </View>
+            </View>
+            <CaloriesChart entries={calories30} target={calTarget} />
           </Card>
         </>
       )}
@@ -598,11 +733,18 @@ const bsStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
-  tabs: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: R, padding: 4, borderWidth: 1, borderColor: Colors.border },
-  tab: { flex: 1, paddingVertical: 8, borderRadius: R - 2, alignItems: 'center' },
+  tabsScroll: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
+  tabsContent: { padding: 4, gap: 3 },
+  tab: { paddingVertical: 8, paddingHorizontal: Sp.sm, borderRadius: R - 2, alignItems: 'center', minWidth: 70 },
   tabActive: { backgroundColor: Colors.primary },
   tabText: { fontSize: Fs.xs, color: Colors.textSecondary, fontWeight: Fw.medium },
   tabTextActive: { color: '#fff', fontWeight: Fw.semibold },
+  // Légende calories
+  calLegend:     { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm, marginBottom: Sp.sm },
+  calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  calLegendDot:  { width: 8, height: 8, borderRadius: 4 },
+  calLegendDash: { width: 16, height: 0, borderTopWidth: 2, borderStyle: 'dashed' },
+  calLegendText: { fontSize: Fs.xs, color: Colors.textSecondary },
   sectionLabel: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.sm },
   weightInputRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md },
   weightInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
