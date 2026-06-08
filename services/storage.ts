@@ -210,6 +210,12 @@ export async function deleteAllData(): Promise<void> {
   await AsyncStorage.multiRemove(Object.values(K));
 }
 
+// ─── Réinitialisation onboarding (dev uniquement) ─────────────────────────────
+
+export async function resetOnboardingData(): Promise<void> {
+  await AsyncStorage.multiRemove([K.USER, '@fit_tutorial_done']);
+}
+
 // ─── Tutoriel interactif ──────────────────────────────────────────────────────
 
 const TUTORIAL_KEY = '@fit_tutorial_done';

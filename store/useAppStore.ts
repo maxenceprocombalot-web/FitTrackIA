@@ -286,6 +286,13 @@ export function useAppStore() {
     setState({ tutorialDone: true });
   }, []);
 
+  // ─── Réinitialisation onboarding (dev uniquement) ───────────────────────────
+
+  const resetOnboarding = useCallback(async () => {
+    await S.resetOnboardingData();
+    setState({ user: null, tutorialDone: false, loading: false });
+  }, []);
+
   // ─── Suppression de toutes les données (RGPD) ───────────────────────────────
 
   const deleteAllData = useCallback(async () => {
@@ -361,6 +368,7 @@ export function useAppStore() {
     pushRecentFood,
     saveMonthlySummary,
     deleteAllData,
+    resetOnboarding,
     markTutorialDone,
     getTodayMacros, getTodayBurned, getRecentWorkouts, getRecentMeals,
   };

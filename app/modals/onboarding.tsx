@@ -412,6 +412,30 @@ export default function OnboardingModal() {
                   <Text style={styles.deleteBtnText}>Supprimer toutes mes données</Text>
                 </TouchableOpacity>
               )}
+
+              {/* ── DEV ONLY : Réinitialiser l'onboarding ──────────────── */}
+              {__DEV__ && (
+                <TouchableOpacity
+                  style={styles.devResetBtn}
+                  onPress={() => Alert.alert(
+                    '🛠 Réinitialiser l\'onboarding',
+                    'Supprime le profil et l\'état du tutoriel pour retester le flux complet.',
+                    [
+                      { text: 'Annuler', style: 'cancel' },
+                      {
+                        text: 'Réinitialiser',
+                        onPress: async () => {
+                          await store.resetOnboarding();
+                          router.replace('/modals/onboarding');
+                        },
+                      },
+                    ],
+                  )}
+                >
+                  <Ionicons name="refresh-outline" size={15} color={Colors.orange} />
+                  <Text style={styles.devResetBtnText}>DEV — Réinitialiser l'onboarding</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -537,6 +561,10 @@ const styles = StyleSheet.create({
   // Delete
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: Sp.md, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '50', backgroundColor: Colors.red + '10', marginTop: Sp.md },
   deleteBtnText: { fontSize: Fs.sm, color: Colors.red, fontWeight: Fw.semibold },
+
+  // Dev reset (visible uniquement en __DEV__)
+  devResetBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '50', backgroundColor: Colors.orange + '08', marginTop: Sp.sm },
+  devResetBtnText: { fontSize: Fs.xs, color: Colors.orange, fontWeight: Fw.medium },
 
   // Navigation
   navRow: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.xl },
