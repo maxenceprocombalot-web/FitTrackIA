@@ -25,6 +25,7 @@ interface AppState {
   recentFoods: FoodItem[];
   monthlySummaries: MonthlySummary[];
   loading: boolean;
+  tutorialDone: boolean;
 }
 
 let _state: AppState = {
@@ -34,6 +35,7 @@ let _state: AppState = {
   streak: { current: 0, best: 0, lastWorkoutDate: '' },
   savedPlans: PREDEFINED_PLANS, recentFoods: [],
   monthlySummaries: [], loading: true,
+  tutorialDone: false,
 };
 
 const _listeners = new Set<() => void>();
@@ -84,10 +86,12 @@ export function useAppStore() {
       user, workouts, meals, weights, chat, prs,
       activeProgram, favorites, storedStreak,
       userSavedPlans, recentFoods, monthlySummaries,
+      tutorialDone,
     ] = await Promise.all([
       S.loadUser(), S.loadWorkouts(), S.loadMeals(), S.loadWeights(),
       S.loadChat(), S.loadPRs(), S.loadActiveProgram(), S.loadFavorites(),
       S.loadStreak(), S.loadSavedPlans(), S.loadRecentFoods(), S.loadMonthlySummaries(),
+      S.loadTutorialDone(),
     ]);
 
     // Hydratation : reset si nouveau jour
@@ -108,6 +112,7 @@ export function useAppStore() {
       user, workouts, meals, weights, chat, prs, activeProgram,
       favorites, water: waterToday, streak, savedPlans: allPlans,
       recentFoods, monthlySummaries, loading: false,
+      tutorialDone,
     });
   }, []);
 
@@ -274,6 +279,13 @@ export function useAppStore() {
     setState({ recentFoods: next });
   }, []);
 
+  // ─── Tutoriel interactif ─────────────────────────────────────────────────────
+
+  const markTutorialDone = useCallback(async () => {
+    await S.saveTutorialDone();
+    setState({ tutorialDone: true });
+  }, []);
+
   // ─── Suppression de toutes les données (RGPD) ───────────────────────────────
 
   const deleteAllData = useCallback(async () => {
@@ -349,6 +361,7 @@ export function useAppStore() {
     pushRecentFood,
     saveMonthlySummary,
     deleteAllData,
+    markTutorialDone,
     getTodayMacros, getTodayBurned, getRecentWorkouts, getRecentMeals,
   };
 }

@@ -210,6 +210,17 @@ export async function deleteAllData(): Promise<void> {
   await AsyncStorage.multiRemove(Object.values(K));
 }
 
+// ─── Tutoriel interactif ──────────────────────────────────────────────────────
+
+const TUTORIAL_KEY = '@fit_tutorial_done';
+export const loadTutorialDone = async (): Promise<boolean> => {
+  const v = await AsyncStorage.getItem(TUTORIAL_KEY);
+  return v === 'true';
+};
+export const saveTutorialDone = async (): Promise<void> => {
+  await AsyncStorage.setItem(TUTORIAL_KEY, 'true');
+};
+
 // ─── Utilitaire date ──────────────────────────────────────────────────────────
 
 export const today     = (): string => new Date().toISOString().split('T')[0];

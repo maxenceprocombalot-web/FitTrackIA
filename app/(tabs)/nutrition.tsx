@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Alert, Platform,
 } from 'react-native';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
@@ -163,6 +164,7 @@ export default function NutritionScreen() {
   }, [prevMeals, selectedMeals, selectedDate, prevDateStr, store]);
 
   return (
+    <AnimatedScreen style={styles.animWrapper}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Navigateur de date ───────────────────────────────────────────── */}
@@ -268,6 +270,7 @@ export default function NutritionScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </AnimatedScreen>
   );
 }
 
@@ -318,6 +321,7 @@ const foodStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  animWrapper: { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.bg },
   content:   { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
   // Navigateur de date

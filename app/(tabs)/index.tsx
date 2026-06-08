@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Animated, RefreshControl,
 } from 'react-native';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
@@ -179,6 +180,7 @@ export default function DashboardScreen() {
   const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
+    <AnimatedScreen style={{ flex: 1 }}>
     <Animated.ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -332,6 +334,7 @@ export default function DashboardScreen() {
         <QuickAction icon="trending-up-outline" label="Progrès"   color={Colors.yellow}   onPress={() => router.push('/(tabs)/progress')} />
       </View>
     </Animated.ScrollView>
+    </AnimatedScreen>
   );
 }
 

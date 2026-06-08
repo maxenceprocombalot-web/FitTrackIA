@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TextInput,
-  TouchableOpacity, StyleSheet, Dimensions,
+  TouchableOpacity, StyleSheet, Dimensions, Animated,
 } from 'react-native';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -206,6 +207,7 @@ export default function ProgressScreen() {
   };
 
   return (
+    <AnimatedScreen style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
@@ -445,6 +447,7 @@ export default function ProgressScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </AnimatedScreen>
   );
 }
 
@@ -564,9 +567,24 @@ function WBadge({ label, value, color }: { label: string; value: string; color: 
 }
 
 function BigStat({ value, label, color }: { value: string; label: string; color: string }) {
+  const numericVal = parseFloat(value.replace(/[^\d.]/g, ''));
+  const isNumeric  = !isNaN(numericVal) && numericVal > 0;
+
+  const anim = useRef(new Animated.Value(0)).current;
+  const [displayed, setDisplayed] = useState<string | number>(isNumeric ? 0 : value);
+
+  useEffect(() => {
+    if (!isNumeric) return;
+    Animated.timing(anim, { toValue: numericVal, duration: 900, useNativeDriver: false }).start();
+    const id = anim.addListener(({ value: v }) => {
+      setDisplayed(value.includes('.') ? v.toFixed(1) : String(Math.round(v)));
+    });
+    return () => anim.removeListener(id);
+  }, [numericVal]);
+
   return (
     <View style={bsStyles.card}>
-      <Text style={[bsStyles.value, { color }]}>{value}</Text>
+      <Text style={[bsStyles.value, { color }]}>{displayed}</Text>
       <Text style={bsStyles.label}>{label}</Text>
     </View>
   );

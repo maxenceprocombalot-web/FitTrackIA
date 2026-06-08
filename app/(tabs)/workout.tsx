@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Alert, Animated, PanResponder, Dimensions,
 } from 'react-native';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
@@ -39,7 +40,7 @@ export default function WorkoutScreen() {
   const lastWorkout = store.workouts[0] ?? null;
 
   return (
-    <View style={styles.container}>
+    <AnimatedScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Carte Programmes ───────────────────────────────────────────── */}
@@ -109,7 +110,7 @@ export default function WorkoutScreen() {
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/modals/add-workout')}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
-    </View>
+    </AnimatedScreen>
   );
 }
 

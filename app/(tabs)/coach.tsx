@@ -4,6 +4,7 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform,
   ActivityIndicator, Alert,
 } from 'react-native';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { sendCoachMessage, generateMealPlan } from '../../services/openai';
@@ -207,6 +208,7 @@ export default function CoachScreen() {
   }, [store]);
 
   return (
+    <AnimatedScreen style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       {/* ── En-tête ──────────────────────────────────────────────────────── */}
       <View style={styles.coachBar}>
@@ -325,6 +327,7 @@ export default function CoachScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </AnimatedScreen>
   );
 }
 
