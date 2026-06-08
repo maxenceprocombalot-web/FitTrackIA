@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
@@ -121,6 +121,76 @@ export default function CoachScreen() {
   const [loading,            setLoading]           = useState(false);
   const [generatingMealPlan, setGeneratingMealPlan] = useState(false);
   const [applyingPlan,       setApplyingPlan]      = useState<string | null>(null); // messageId en cours d'application
+
+  // ── Suggestions contextuelles ──────────────────────────────────────────────
+  const contextualQuestions = useMemo(() => {
+    const questions: string[] = [];
+    const today = new Date();
+
+    // 1. Pas de séance depuis 3+ jours
+    const lastWorkoutDate = store.workouts[0]?.date;
+    if (lastWorkoutDate) {
+      const daysSince = Math.floor((today.getTime() - new Date(lastWorkoutDate + 'T12:00').getTime()) / 86400000);
+      if (daysSince >= 3) {
+        questions.push(`Tu n'as pas fait de séance depuis ${daysSince} jours — que faire ?`);
+      }
+    } else {
+      questions.push('Je commence — par où démarrer mon programme ?');
+    }
+
+    // 2. Calories trop basses cette semaine (< 80% de l'objectif en moyenne)
+    if (store.user) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      const since = cutoff.toISOString().split('T')[0];
+      const dayMap: Record<string, number> = {};
+      store.meals.filter(m => m.date >= since).forEach(m => {
+        const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+        dayMap[m.date] = (dayMap[m.date] ?? 0) + cal;
+      });
+      const calVals = Object.values(dayMap);
+      if (calVals.length >= 3) {
+        const avgCal = calVals.reduce((a, b) => a + b, 0) / calVals.length;
+        if (avgCal < store.user.targetCalories * 0.8) {
+          questions.push('Mes calories sont trop basses cette semaine — comment corriger ?');
+        }
+      }
+    }
+
+    // 3. PR battu cette semaine
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const recentPR = store.prs.find(p => p.date >= oneWeekAgo.toISOString().split('T')[0]);
+    if (recentPR) {
+      questions.push(`J'ai battu mon PR sur ${recentPR.exerciseName} — comment continuer à progresser ?`);
+    }
+
+    // 4. 5 jours consécutifs dans l'objectif calorique
+    if (store.user) {
+      let streak = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        const dayMeals = store.meals.filter(m => m.date === dStr);
+        if (dayMeals.length === 0) break;
+        const cal = dayMeals.flatMap(m => m.items).reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+        const target = store.user.targetCalories;
+        if (cal >= target * 0.9 && cal <= target * 1.1) streak++;
+        else break;
+      }
+      if (streak >= 5) {
+        questions.push(`Je respecte mon objectif depuis ${streak} jours — quelle est la prochaine étape ?`);
+      }
+    }
+
+    // Fallback : questions génériques si peu de contexte
+    if (questions.length < 2) {
+      questions.push('Analyse ma nutrition de cette semaine', 'Comment booster mes performances ?');
+    }
+
+    return questions.slice(0, 4); // max 4 suggestions
+  }, [store.workouts, store.meals, store.prs, store.user]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !store.user) return;
@@ -259,7 +329,7 @@ export default function CoachScreen() {
               <Text style={styles.mealPlanBtnText}>📅 Générer mon plan repas semaine</Text>
             </TouchableOpacity>
             <View style={styles.quickBtns}>
-              {QUICK_QUESTIONS.map(q => (
+              {contextualQuestions.map(q => (
                 <TouchableOpacity key={q} style={styles.quickBtn} onPress={() => sendMessage(q)}>
                   <Text style={styles.quickBtnText}>{q}</Text>
                 </TouchableOpacity>

@@ -80,6 +80,10 @@ export default function RootLayout() {
           name="modals/terms"
           options={{ title: "Conditions d'utilisation", presentation: 'modal', headerShown: false }}
         />
+        <Stack.Screen
+          name="modals/nutrition-detail"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
       </Stack>
     </>
   );

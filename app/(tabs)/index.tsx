@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Animated, RefreshControl,
+  StyleSheet, Animated, RefreshControl, Modal, TextInput,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
@@ -12,8 +12,21 @@ import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
 import { generateMonthlyMessage } from '../../services/openai';
 import { MonthlySummary } from '../../types';
+
+// ─── Interface WeeklyStats ────────────────────────────────────────────────────
+
+interface WeeklyStats {
+  weekLabel: string;
+  avgCalories: number;
+  targetCalories: number;
+  workoutsCount: number;
+  daysInRange: number;
+  weightStart?: number;
+  weightEnd?: number;
+}
 
 // Message coach déterministe basé sur les données
 function coachMessage(name: string, consumed: number, goal: number, burned: number, sessions: number): string {
@@ -42,6 +55,14 @@ function weightProjection(weights: { date: string; weight: number }[], targetWei
   return days > 0 && days < 730 ? days : null;
 }
 
+// Message de motivation hebdo
+function motivationMessage(avgCal: number, target: number, workouts: number): string {
+  if (workouts >= 4 && avgCal >= target * 0.9) return "Semaine exceptionnelle ! Tu as enchaîné les séances tout en respectant ton alimentation. Continue sur cette lancée ! 💪";
+  if (workouts >= 3) return `Belle semaine avec ${workouts} séances ! Garde cette régularité, c'est la clé du progrès.`;
+  if (workouts === 0) return "Cette semaine a été calme côté sport — aucun problème ! Reprends cette semaine, une séance suffit pour relancer la machine.";
+  return `${workouts} séance${workouts > 1 ? 's' : ''} cette semaine, bien joué ! Essaie d'en ajouter une de plus la semaine prochaine.`;
+}
+
 export default function DashboardScreen() {
   const router  = useRouter();
   const store   = useAppStore();
@@ -54,8 +75,14 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => { setRefreshing(true); await store.refresh(); setRefreshing(false); };
 
+  // ── États modaux ────────────────────────────────────────────────────────────
+  const [showWeightModal,   setShowWeightModal]   = useState(false);
+  const [showWeeklyBilan,   setShowWeeklyBilan]   = useState(false);
+  const [weeklyBilanStats,  setWeeklyBilanStats]  = useState<WeeklyStats | null>(null);
+
   // ── Bilan mensuel automatique ──────────────────────────────────────────────
-  const bilanGenerated = useRef(false);
+  const bilanGenerated  = useRef(false);
+  const weeklyBilanShown = useRef(false);
 
   const generateMonthlyBilan = useCallback(async () => {
     if (!user || bilanGenerated.current) return;
@@ -118,7 +145,7 @@ export default function DashboardScreen() {
     const bestPR = Object.values(prMap).sort((a, b) => b.weight - a.weight)[0];
 
     // Message du coach IA
-    const coachMessage = await generateMonthlyMessage(user, {
+    const coachMsg = await generateMonthlyMessage(user, {
       avgCalories,
       totalWorkouts: lastMonthWorkouts.length,
       weightChange,
@@ -133,7 +160,7 @@ export default function DashboardScreen() {
       weightChange,
       totalVolume,
       bestPR,
-      coachMessage,
+      coachMessage: coachMsg,
     };
 
     // Sauvegarder directement avec viewedAt pour éviter un double write
@@ -143,8 +170,65 @@ export default function DashboardScreen() {
     }, 800);
   }, [user, store, router]);
 
+  // ── Bilan hebdomadaire automatique ─────────────────────────────────────────
+  const generateWeeklyBilan = useCallback(async () => {
+    if (!user || weeklyBilanShown.current) return;
+    const today = new Date();
+    if (today.getDay() !== 1) return; // seulement le lundi
+
+    // Clé de la semaine précédente : lundi au dimanche
+    const lastMonday = new Date(today);
+    lastMonday.setDate(today.getDate() - 7);
+    const weekKey = lastMonday.toISOString().split('T')[0];
+
+    const alreadyShown = await loadWeeklyBilanShown(weekKey);
+    if (alreadyShown) return;
+
+    weeklyBilanShown.current = true;
+
+    // Calcul des stats de la semaine précédente
+    const since = lastMonday.toISOString().split('T')[0];
+    const until = new Date(lastMonday);
+    until.setDate(lastMonday.getDate() + 6);
+    const untilStr = until.toISOString().split('T')[0];
+
+    const weekWorkouts = store.workouts.filter(w => w.date >= since && w.date <= untilStr);
+    const weekMeals    = store.meals.filter(m => m.date >= since && m.date <= untilStr);
+    const weekWeights  = store.weights.filter(w => w.date >= since && w.date <= untilStr);
+
+    const dayCalMap: Record<string, number> = {};
+    weekMeals.forEach(m => {
+      const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+      dayCalMap[m.date] = (dayCalMap[m.date] ?? 0) + cal;
+    });
+    const calVals = Object.values(dayCalMap);
+    const avgCal  = calVals.length ? Math.round(calVals.reduce((a, b) => a + b, 0) / calVals.length) : 0;
+    const target  = user.targetCalories;
+    const inRange = calVals.filter(v => v >= target * 0.9 && v <= target * 1.1).length;
+
+    const lundi    = lastMonday.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    const dimanche = new Date(lastMonday.getTime() + 6 * 86400000).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+
+    const stats: WeeklyStats = {
+      weekLabel:      `${lundi} – ${dimanche}`,
+      avgCalories:    avgCal,
+      targetCalories: target,
+      workoutsCount:  weekWorkouts.length,
+      daysInRange:    inRange,
+      weightStart:    weekWeights[0]?.weight,
+      weightEnd:      weekWeights[weekWeights.length - 1]?.weight,
+    };
+
+    await saveWeeklyBilanShown(weekKey);
+    setWeeklyBilanStats(stats);
+    setShowWeeklyBilan(true);
+  }, [user, store]);
+
   useEffect(() => {
-    if (!store.loading && user) generateMonthlyBilan();
+    if (!store.loading && user) {
+      generateMonthlyBilan();
+      generateWeeklyBilan();
+    }
   }, [store.loading, user]);
 
   const macros        = store.getTodayMacros();
@@ -259,6 +343,42 @@ export default function DashboardScreen() {
         <MacroBar label="Lipides"   current={macros.fat}     goal={user.targetFat}      color={Colors.fatColor} />
       </Card>
 
+      {/* ── Objectif de poids (après macros) ───────────────────────────────── */}
+      {targetWeight && latestWeight && (
+        <Card>
+          <Text style={styles.sectionTitle}>Mon objectif</Text>
+          <View style={styles.goalRow}>
+            <View>
+              <Text style={styles.goalCurrent}>{latestWeight} kg</Text>
+              <Text style={styles.goalLabel}>Actuel</Text>
+            </View>
+            <View style={styles.goalArrow}>
+              <Ionicons name={user.goal === 'weight_loss' ? 'arrow-down' : 'arrow-up'} size={20} color={Colors.primary} />
+            </View>
+            <View>
+              <Text style={[styles.goalCurrent, { color: Colors.primary }]}>{targetWeight.toFixed(1)} kg</Text>
+              <Text style={styles.goalLabel}>Objectif</Text>
+            </View>
+          </View>
+          {/* Barre de progression vers l'objectif */}
+          <View style={styles.goalTrack}>
+            <View style={[styles.goalFill, { width: `${Math.max(weightPct * 100, 2)}%` }]} />
+          </View>
+          <Text style={styles.goalProjection}>
+            {latestWeight && targetWeight
+              ? `Il te reste ${Math.abs(latestWeight - targetWeight).toFixed(1)} kg`
+              : ''}
+          </Text>
+          {projectionDays !== null ? (
+            <Text style={styles.goalProjection}>
+              📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>{projectionDays} jours</Text>
+            </Text>
+          ) : (
+            <Text style={styles.goalProjection}>Enregistre ton poids régulièrement pour voir la projection</Text>
+          )}
+        </Card>
+      )}
+
       {/* ── Hydratation 💧 ──────────────────────────────────────────────────── */}
       <Card>
         <View style={styles.waterHeader}>
@@ -280,37 +400,6 @@ export default function DashboardScreen() {
         {waterPct >= 1 && <Text style={styles.waterDone}>💧 Objectif atteint ! Bravo</Text>}
       </Card>
 
-      {/* ── Objectif de poids ───────────────────────────────────────────────── */}
-      {targetWeight && latestWeight && (
-        <Card>
-          <Text style={styles.sectionTitle}>Mon objectif</Text>
-          <View style={styles.goalRow}>
-            <View>
-              <Text style={styles.goalCurrent}>{latestWeight} kg</Text>
-              <Text style={styles.goalLabel}>Actuel</Text>
-            </View>
-            <View style={styles.goalArrow}>
-              <Ionicons name={user.goal === 'weight_loss' ? 'arrow-down' : 'arrow-up'} size={20} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={[styles.goalCurrent, { color: Colors.primary }]}>{targetWeight.toFixed(1)} kg</Text>
-              <Text style={styles.goalLabel}>Objectif</Text>
-            </View>
-          </View>
-          {/* Barre de progression vers l'objectif */}
-          <View style={styles.goalTrack}>
-            <View style={[styles.goalFill, { width: `${Math.max(weightPct * 100, 2)}%` }]} />
-          </View>
-          {projectionDays !== null ? (
-            <Text style={styles.goalProjection}>
-              📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>{projectionDays} jours</Text>
-            </Text>
-          ) : (
-            <Text style={styles.goalProjection}>Enregistre ton poids régulièrement pour voir la projection</Text>
-          )}
-        </Card>
-      )}
-
       {/* ── Stats du jour ───────────────────────────────────────────────────── */}
       <View style={styles.statRow}>
         <StatCard icon="barbell-outline" iconColor={Colors.primary}  value={todayWorkouts.length} label="Séances"  onPress={() => router.push('/(tabs)/workout')} />
@@ -330,16 +419,237 @@ export default function DashboardScreen() {
       </Card>
 
       {/* ── Actions rapides ─────────────────────────────────────────────────── */}
-      <View style={styles.actionsRow}>
-        <QuickAction icon="add-circle-outline" label="Séance"     color={Colors.primary}  onPress={() => router.push('/modals/add-workout')} />
-        <QuickAction icon="restaurant-outline" label="Repas"      color={Colors.green}    onPress={() => router.push('/modals/add-food')} />
-        <QuickAction icon="list-outline"       label="Programmes" color={Colors.primary}  onPress={() => router.push('/(tabs)/programs')} />
-        <QuickAction icon="trending-up-outline" label="Progrès"   color={Colors.yellow}   onPress={() => router.push('/(tabs)/progress')} />
+      <Text style={styles.sectionTitle}>Actions rapides</Text>
+      <View style={styles.quickActionsGrid}>
+        {/* Séance rapide */}
+        <TouchableOpacity
+          style={[styles.quickActionBtn, { borderColor: Colors.primary + '40' }]}
+          onPress={() => {
+            const last = store.workouts[0];
+            router.push(last
+              ? { pathname: '/modals/add-workout', params: { repeatWorkoutId: last.id } }
+              : '/modals/add-workout'
+            );
+          }}
+          accessibilityLabel="Séance rapide"
+        >
+          <Text style={styles.quickActionEmoji}>⚡</Text>
+          <Text style={[styles.quickActionLabel, { color: Colors.primary }]}>Séance rapide</Text>
+          <Text style={styles.quickActionSub}>
+            {store.workouts[0] ? store.workouts[0].name : 'Nouvelle séance'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Repas rapide → favoris */}
+        <TouchableOpacity
+          style={[styles.quickActionBtn, { borderColor: Colors.green + '40' }]}
+          onPress={() => router.push({ pathname: '/modals/add-food', params: { startTab: 'favorites' } })}
+          accessibilityLabel="Repas rapide"
+        >
+          <Text style={styles.quickActionEmoji}>🍽️</Text>
+          <Text style={[styles.quickActionLabel, { color: Colors.green }]}>Repas rapide</Text>
+          <Text style={styles.quickActionSub}>
+            {store.favorites.length > 0 ? `${store.favorites.length} favoris` : 'Ajouter un repas'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Mon poids */}
+        <TouchableOpacity
+          style={[styles.quickActionBtn, { borderColor: Colors.yellow + '40' }]}
+          onPress={() => setShowWeightModal(true)}
+          accessibilityLabel="Enregistrer mon poids"
+        >
+          <Text style={styles.quickActionEmoji}>⚖️</Text>
+          <Text style={[styles.quickActionLabel, { color: Colors.yellow }]}>Mon poids</Text>
+          <Text style={styles.quickActionSub}>
+            {latestWeight ? `Dernier : ${latestWeight} kg` : 'Non renseigné'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Eau +250ml */}
+        <TouchableOpacity
+          style={[styles.quickActionBtn, { borderColor: '#4a9eff40' }]}
+          onPress={() => store.addWater(250)}
+          accessibilityLabel="Ajouter 250ml d'eau"
+        >
+          <Text style={styles.quickActionEmoji}>💧</Text>
+          <Text style={[styles.quickActionLabel, { color: '#4a9eff' }]}>Eau +250ml</Text>
+          <Text style={styles.quickActionSub}>{store.water.ml}ml / {user.waterGoalMl ?? 2000}ml</Text>
+        </TouchableOpacity>
       </View>
+
     </Animated.ScrollView>
+
+    {/* ── Modal saisie poids ──────────────────────────────────────────────── */}
+    {showWeightModal && (
+      <WeightInputModal
+        currentWeight={latestWeight}
+        onSave={(w) => { store.addWeight({ date: storage.today(), weight: w }); setShowWeightModal(false); }}
+        onClose={() => setShowWeightModal(false)}
+      />
+    )}
+
+    {/* ── Modal bilan hebdomadaire ────────────────────────────────────────── */}
+    {showWeeklyBilan && weeklyBilanStats && (
+      <WeeklyBilanModal
+        stats={weeklyBilanStats}
+        onClose={() => setShowWeeklyBilan(false)}
+        onDetail={() => { setShowWeeklyBilan(false); router.push('/(tabs)/progress'); }}
+      />
+    )}
+
     </AnimatedScreen>
   );
 }
+
+// ─── Modal bilan hebdomadaire ─────────────────────────────────────────────────
+
+function WeeklyBilanModal({ stats, onClose, onDetail }: {
+  stats: WeeklyStats;
+  onClose: () => void;
+  onDetail: () => void;
+}) {
+  const calDiff  = stats.avgCalories - stats.targetCalories;
+  const calColor = Math.abs(calDiff) <= stats.targetCalories * 0.1 ? Colors.green : calDiff > 0 ? Colors.red : Colors.orange;
+  const weightDelta = stats.weightStart && stats.weightEnd
+    ? (stats.weightEnd - stats.weightStart).toFixed(1)
+    : null;
+
+  return (
+    <Modal visible transparent animationType="fade">
+      <View style={wbStyles.overlay}>
+        <View style={wbStyles.card}>
+          {/* Header */}
+          <View style={wbStyles.header}>
+            <Text style={wbStyles.title}>📊 Bilan de la semaine</Text>
+            <TouchableOpacity onPress={onClose} style={wbStyles.closeBtn}>
+              <Ionicons name="close" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={wbStyles.weekLabel}>Semaine du {stats.weekLabel}</Text>
+
+          {/* Stats */}
+          <View style={wbStyles.statsGrid}>
+            <View style={wbStyles.statBox}>
+              <Text style={[wbStyles.statValue, { color: calColor }]}>{stats.avgCalories}</Text>
+              <Text style={wbStyles.statLabel}>kcal/j moy.</Text>
+              <Text style={wbStyles.statSub}>objectif {stats.targetCalories}</Text>
+            </View>
+            <View style={wbStyles.statBox}>
+              <Text style={[wbStyles.statValue, { color: Colors.primary }]}>{stats.workoutsCount}</Text>
+              <Text style={wbStyles.statLabel}>séance{stats.workoutsCount !== 1 ? 's' : ''}</Text>
+            </View>
+            <View style={wbStyles.statBox}>
+              <Text style={[wbStyles.statValue, { color: Colors.green }]}>{stats.daysInRange}</Text>
+              <Text style={wbStyles.statLabel}>jours dans l'objectif</Text>
+            </View>
+            {weightDelta !== null && (
+              <View style={wbStyles.statBox}>
+                <Text style={[wbStyles.statValue, { color: parseFloat(weightDelta) <= 0 ? Colors.green : Colors.orange }]}>
+                  {parseFloat(weightDelta) > 0 ? '+' : ''}{weightDelta} kg
+                </Text>
+                <Text style={wbStyles.statLabel}>évolution poids</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Message de motivation */}
+          <View style={wbStyles.motivBox}>
+            <Text style={wbStyles.motivText}>
+              {motivationMessage(stats.avgCalories, stats.targetCalories, stats.workoutsCount)}
+            </Text>
+          </View>
+
+          {/* Boutons */}
+          <View style={wbStyles.btns}>
+            <TouchableOpacity style={wbStyles.detailBtn} onPress={onDetail}>
+              <Text style={wbStyles.detailBtnText}>Voir le détail</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={wbStyles.closeActionBtn} onPress={onClose}>
+              <Text style={wbStyles.closeActionBtnText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const wbStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', padding: Sp.lg },
+  card: { width: '100%', backgroundColor: Colors.surface, borderRadius: R * 1.5, padding: Sp.lg, gap: Sp.md, borderWidth: 1, borderColor: Colors.border },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  weekLabel: { fontSize: Fs.sm, color: Colors.textSecondary },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
+  statBox: { flex: 1, minWidth: '45%', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, alignItems: 'center', gap: 2, borderWidth: 1, borderColor: Colors.border },
+  statValue: { fontSize: Fs.xl, fontWeight: Fw.bold },
+  statLabel: { fontSize: Fs.xs, color: Colors.textSecondary, textAlign: 'center' },
+  statSub: { fontSize: 10, color: Colors.textMuted },
+  motivBox: { backgroundColor: Colors.primary + '12', borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.primary + '30' },
+  motivText: { fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
+  btns: { flexDirection: 'row', gap: Sp.sm },
+  detailBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center' },
+  detailBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.sm },
+  closeActionBtn: { flex: 1, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  closeActionBtnText: { color: Colors.textSecondary, fontSize: Fs.sm },
+});
+
+// ─── Modal saisie poids ───────────────────────────────────────────────────────
+
+function WeightInputModal({ currentWeight, onSave, onClose }: {
+  currentWeight?: number;
+  onSave: (w: number) => void;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState(currentWeight ? String(currentWeight) : '');
+  return (
+    <View style={weightModalStyles.overlay}>
+      <View style={weightModalStyles.card}>
+        <Text style={weightModalStyles.title}>⚖️ Mon poids aujourd'hui</Text>
+        <TextInput
+          style={weightModalStyles.input}
+          value={value}
+          onChangeText={setValue}
+          keyboardType="decimal-pad"
+          placeholder="75.0"
+          placeholderTextColor={Colors.textMuted}
+          autoFocus
+          selectTextOnFocus
+        />
+        <Text style={weightModalStyles.unit}>kg</Text>
+        <View style={weightModalStyles.btns}>
+          <TouchableOpacity style={weightModalStyles.cancelBtn} onPress={onClose}>
+            <Text style={weightModalStyles.cancelText}>Annuler</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={weightModalStyles.saveBtn}
+            onPress={() => {
+              const w = parseFloat(value);
+              if (w > 0 && !isNaN(w)) onSave(w);
+            }}
+          >
+            <Text style={weightModalStyles.saveText}>Enregistrer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const weightModalStyles = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', zIndex: 999 },
+  card: { width: '80%', backgroundColor: Colors.surface, borderRadius: R * 1.5, padding: Sp.lg, alignItems: 'center', gap: Sp.md, borderWidth: 1, borderColor: Colors.border },
+  title: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  input: { fontSize: 40, fontWeight: Fw.heavy, color: Colors.text, textAlign: 'center', width: '100%', backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingVertical: Sp.md, borderWidth: 1, borderColor: Colors.border },
+  unit: { fontSize: Fs.md, color: Colors.textMuted, marginTop: -Sp.sm },
+  btns: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
+  cancelBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
+  cancelText: { color: Colors.textSecondary },
+  saveBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
+  saveText: { color: '#fff', fontWeight: Fw.bold },
+});
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 
@@ -371,29 +681,6 @@ const scStyles = StyleSheet.create({
   card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center', gap: 4 },
   iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   value: { fontSize: Fs.xxl, fontWeight: Fw.bold, color: Colors.text },
-  label: { fontSize: Fs.xs, color: Colors.textSecondary },
-});
-
-function QuickAction({ icon, label, color, onPress }: {
-  icon: React.ComponentProps<typeof Ionicons>['name']; label: string; color: string; onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={qaStyles.btn}
-      onPress={onPress}
-      accessibilityLabel={label}
-      accessibilityRole="button"
-    >
-      <View style={[qaStyles.icon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <Text style={qaStyles.label}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-const qaStyles = StyleSheet.create({
-  btn: { flex: 1, alignItems: 'center', gap: 5 },
-  icon: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: Fs.xs, color: Colors.textSecondary },
 });
 
@@ -452,5 +739,10 @@ const styles = StyleSheet.create({
   coachMsg: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
   coachBtn: { marginTop: 10 },
   coachBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
-  actionsRow: { flexDirection: 'row', gap: Sp.xs },
+  // Actions rapides
+  quickActionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
+  quickActionBtn: { width: '48%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, padding: Sp.md, gap: 4 },
+  quickActionEmoji: { fontSize: 24 },
+  quickActionLabel: { fontSize: Fs.sm, fontWeight: Fw.bold },
+  quickActionSub: { fontSize: Fs.xs, color: Colors.textMuted },
 });

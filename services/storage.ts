@@ -245,6 +245,11 @@ export const saveTutorialDone = async (): Promise<void> => {
   await AsyncStorage.setItem(TUTORIAL_KEY, 'true');
 };
 
+// ─── Bilan hebdomadaire ──────────────────────────────────────────────────────
+
+export const loadWeeklyBilanShown = (weekKey: string) => AsyncStorage.getItem(`@fit_weekly_bilan_${weekKey}`);
+export const saveWeeklyBilanShown = (weekKey: string) => AsyncStorage.setItem(`@fit_weekly_bilan_${weekKey}`, 'true');
+
 // ─── Utilitaire date ──────────────────────────────────────────────────────────
 
 export const today     = (): string => new Date().toISOString().split('T')[0];

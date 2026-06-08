@@ -49,8 +49,9 @@ export default function AddFoodModal() {
   // Date cible : aujourd'hui par défaut, ou la date transmise depuis nutrition.tsx
   const targetDate = (params.targetDate as string) ?? storage.today();
 
-  // Onglet par défaut : récents si disponibles, sinon courants
-  const defaultTab: Tab = store.recentFoods.length > 0 ? 'recent' : 'common';
+  // Onglet par défaut : startTab param si fourni, récents si disponibles, sinon courants
+  const startTabParam = params.startTab as Tab | undefined;
+  const defaultTab: Tab = startTabParam ?? (store.recentFoods.length > 0 ? 'recent' : 'common');
   const [tab,         setTab]         = useState<Tab>(defaultTab);
   const [quantity,    setQuantity]    = useState('');
   const [pending,     setPending]     = useState<FoodItem | null>(null);

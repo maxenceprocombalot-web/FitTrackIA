@@ -173,14 +173,19 @@ export default function NutritionScreen() {
         <TouchableOpacity style={styles.dateArrow} onPress={goToPrev}>
           <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <View style={styles.dateLabelWrap}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push({ pathname: '/modals/nutrition-detail', params: { date: selectedDate } })}
+          style={styles.dateLabelWrap}
+        >
           <Text style={styles.dateLabel}>{fmtDate(selectedDate, TODAY)}</Text>
+          <Text style={styles.dateLabelHint}>Voir le détail →</Text>
           {!isToday && (
             <TouchableOpacity onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
               <Text style={styles.todayLinkText}>Revenir à aujourd'hui</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
           onPress={goToNext}
@@ -373,6 +378,7 @@ const styles = StyleSheet.create({
   dateArrowDisabled: { opacity: 0.25 },
   dateLabelWrap:     { flex: 1, alignItems: 'center', gap: 2 },
   dateLabel:         { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
+  dateLabelHint:     { fontSize: Fs.xs, color: Colors.primary },
   todayLink:         { marginTop: 1 },
   todayLinkText:     { fontSize: Fs.xs, color: Colors.primary },
   // Bouton copier
