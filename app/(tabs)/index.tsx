@@ -201,11 +201,14 @@ export default function DashboardScreen() {
           )}
           <TouchableOpacity
             style={styles.avatarBtn}
-            onPress={() => router.push('/modals/onboarding')}
-            accessibilityLabel="Mon profil et paramètres"
+            onPress={() => router.push('/modals/settings')}
+            accessibilityLabel="Paramètres"
             accessibilityRole="button"
           >
-            <Text style={styles.avatarText}>{user.name[0].toUpperCase()}</Text>
+            {user.name?.trim()
+              ? <Text style={styles.avatarText}>{user.name[0].toUpperCase()}</Text>
+              : <Ionicons name="person" size={18} color={Colors.primary} />
+            }
           </TouchableOpacity>
         </View>
       </View>

@@ -3,7 +3,7 @@ import {
   User, WorkoutSession, Meal, WeightEntry,
   ChatMessage, PersonalRecord, ActiveProgram,
   FavoriteMeal, WaterEntry, StreakData,
-  SavedPlan, MonthlySummary,
+  SavedPlan, MonthlySummary, NotifPrefs,
 } from '../types';
 
 // ─── Clés de stockage ──────────────────────────────────────────────────────────
@@ -203,6 +203,24 @@ export async function saveMonthlySummary(s: MonthlySummary): Promise<void> {
   if (idx >= 0) list[idx] = s; else list.unshift(s);
   await save(K.MONTHLY, list.slice(0, 24));
 }
+
+// ─── Clé API OpenAI (runtime, stockée localement) ────────────────────────────
+
+export const loadApiKey  = () => AsyncStorage.getItem('@fit_openai_key');
+export const saveApiKey  = (key: string) => AsyncStorage.setItem('@fit_openai_key', key);
+export const clearApiKey = () => AsyncStorage.removeItem('@fit_openai_key');
+
+// ─── Préférences de notifications ─────────────────────────────────────────────
+
+const NOTIF_PREFS_KEY = '@fit_notif_prefs';
+
+export async function loadNotifPrefs(): Promise<NotifPrefs> {
+  const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);
+  return raw ? JSON.parse(raw) : { meals: true, workout: true, weekly: true };
+}
+
+export const saveNotifPrefs = (p: NotifPrefs) =>
+  AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(p));
 
 // ─── Suppression de toutes les données (RGPD) ─────────────────────────────────
 

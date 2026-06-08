@@ -2,13 +2,25 @@ import OpenAI from 'openai';
 import { User, WorkoutSession, Meal, ChatMessage, MacroTotals } from '../types';
 
 // Clé lue depuis les variables d'environnement Expo (préfixe EXPO_PUBLIC_)
-const API_KEY = process.env.EXPO_PUBLIC_OPENAI_KEY ?? '';
+const ENV_KEY = process.env.EXPO_PUBLIC_OPENAI_KEY ?? '';
 
+let _runtimeKey = '';
 let _client: OpenAI | null = null;
 
+// Appelé depuis les Paramètres et au démarrage si une clé est stockée
+export function setRuntimeApiKey(key: string): void {
+  _runtimeKey = key;
+  _client = null; // force la réinitialisation du client
+}
+
+export function hasApiKey(): boolean {
+  return !!(_runtimeKey || ENV_KEY);
+}
+
 function getClient(): OpenAI | null {
-  if (!API_KEY) return null;
-  if (!_client) _client = new OpenAI({ apiKey: API_KEY, dangerouslyAllowBrowser: true });
+  const key = _runtimeKey || ENV_KEY;
+  if (!key) return null;
+  if (!_client) _client = new OpenAI({ apiKey: key, dangerouslyAllowBrowser: true });
   return _client;
 }
 

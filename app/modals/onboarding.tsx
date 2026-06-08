@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, Animated, Dimensions, Alert, TextStyle,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { User, Gender, Goal, ActivityLevel } from '../../types';
@@ -102,10 +102,12 @@ const slS = StyleSheet.create({
 
 export default function OnboardingModal() {
   const router   = useRouter();
+  const params   = useLocalSearchParams();
   const store    = useAppStore();
   const existing = store.user;
 
-  const [step,         setStep]         = useState(0);
+  const initialStep = params.step ? Math.max(0, Math.min(parseInt(params.step as string), TOTAL_STEPS - 1)) : 0;
+  const [step,         setStep]         = useState(initialStep);
   const [name,         setName]         = useState(existing?.name     ?? '');
   const [gender,       setGender]       = useState<Gender>(existing?.gender   ?? 'male');
   const [age,          setAge]          = useState<number>(existing?.age      ?? 25);

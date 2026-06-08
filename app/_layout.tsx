@@ -3,13 +3,23 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '../constants/theme';
 import { requestNotificationPermissions, scheduleAllReminders } from '../services/notifications';
+import { loadApiKey, loadNotifPrefs } from '../services/storage';
+import { setRuntimeApiKey } from '../services/openai';
 
 export default function RootLayout() {
   useEffect(() => {
-    // Demande les permissions et planifie les rappels au démarrage
-    requestNotificationPermissions().then(granted => {
-      if (granted) scheduleAllReminders();
-    });
+    (async () => {
+      // Charger la clé API stockée (paramètres utilisateur)
+      const key = await loadApiKey();
+      if (key) setRuntimeApiKey(key);
+
+      // Planifier les rappels selon les préférences sauvegardées
+      const granted = await requestNotificationPermissions();
+      if (granted) {
+        const prefs = await loadNotifPrefs();
+        scheduleAllReminders(prefs);
+      }
+    })();
   }, []);
 
   return (
@@ -53,6 +63,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="modals/monthly-summary"
           options={{ title: 'Bilan mensuel', presentation: 'fullScreenModal', headerShown: false }}
+        />
+        <Stack.Screen
+          name="modals/settings"
+          options={{ headerShown: false, presentation: 'modal' }}
         />
         <Stack.Screen
           name="modals/privacy-policy"

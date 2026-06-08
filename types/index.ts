@@ -161,6 +161,14 @@ export interface WeightEntry {
   weight: number;
 }
 
+// ─── Préférences notifications ────────────────────────────────────────────────
+
+export interface NotifPrefs {
+  meals: boolean;
+  workout: boolean;
+  weekly: boolean;
+}
+
 // ─── Coach IA ─────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
