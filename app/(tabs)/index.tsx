@@ -197,7 +197,12 @@ export default function DashboardScreen() {
               <Text style={styles.streakText}>🔥{streak}</Text>
             </View>
           )}
-          <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/modals/onboarding')}>
+          <TouchableOpacity
+            style={styles.avatarBtn}
+            onPress={() => router.push('/modals/onboarding')}
+            accessibilityLabel="Mon profil et paramètres"
+            accessibilityRole="button"
+          >
             <Text style={styles.avatarText}>{user.name[0].toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
@@ -367,7 +372,12 @@ function QuickAction({ icon, label, color, onPress }: {
   icon: React.ComponentProps<typeof Ionicons>['name']; label: string; color: string; onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={qaStyles.btn} onPress={onPress}>
+    <TouchableOpacity
+      style={qaStyles.btn}
+      onPress={onPress}
+      accessibilityLabel={label}
+      accessibilityRole="button"
+    >
       <View style={[qaStyles.icon, { backgroundColor: color + '18' }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>

@@ -241,7 +241,12 @@ export default function CoachScreen() {
                 <Text style={styles.demoText}>Mode démo — ajoute EXPO_PUBLIC_OPENAI_KEY pour GPT-4o</Text>
               </View>
             )}
-            <TouchableOpacity style={styles.weeklyBtn} onPress={() => sendMessage(WEEKLY_ANALYSIS_PROMPT)}>
+            <TouchableOpacity
+              style={styles.weeklyBtn}
+              onPress={() => sendMessage(WEEKLY_ANALYSIS_PROMPT)}
+              accessibilityLabel="Analyser ma semaine sportive et nutritionnelle"
+              accessibilityRole="button"
+            >
               <Ionicons name="bar-chart-outline" size={16} color="#fff" />
               <Text style={styles.weeklyBtnText}>Analyse ma semaine 📊</Text>
             </TouchableOpacity>
@@ -313,6 +318,8 @@ export default function CoachScreen() {
           style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
           onPress={() => sendMessage(input)}
           disabled={!input.trim() || loading}
+          accessibilityLabel="Envoyer le message au coach"
+          accessibilityRole="button"
         >
           <Ionicons name="send" size={18} color="#fff" />
         </TouchableOpacity>

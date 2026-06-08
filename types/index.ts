@@ -21,6 +21,7 @@ export interface User {
   targetCarbs: number;
   targetFat: number;
   onboardingDone: boolean;
+  gdprAcceptedAt?: string; // ISO date — consentement RGPD obligatoire
   createdAt: string;
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, Animated, Dimensions,
+  StyleSheet, Animated, Dimensions, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,14 +34,16 @@ export default function OnboardingModal() {
   const store   = useAppStore();
   const existing = store.user;
 
-  const [step,     setStep]     = useState(0);
-  const [name,     setName]     = useState(existing?.name     ?? '');
-  const [gender,   setGender]   = useState<Gender>(existing?.gender   ?? 'male');
-  const [age,      setAge]      = useState(existing?.age.toString()   ?? '');
-  const [height,   setHeight]   = useState(existing?.height.toString() ?? '');
-  const [weight,   setWeight]   = useState(existing?.weight.toString() ?? '');
-  const [goal,     setGoal]     = useState<Goal>(existing?.goal     ?? 'maintenance');
-  const [activity, setActivity] = useState<ActivityLevel>(existing?.activityLevel ?? 'moderate');
+  const [step,         setStep]         = useState(0);
+  const [name,         setName]         = useState(existing?.name     ?? '');
+  const [gender,       setGender]       = useState<Gender>(existing?.gender   ?? 'male');
+  const [age,          setAge]          = useState(existing?.age.toString()   ?? '');
+  const [height,       setHeight]       = useState(existing?.height.toString() ?? '');
+  const [weight,       setWeight]       = useState(existing?.weight.toString() ?? '');
+  const [goal,         setGoal]         = useState<Goal>(existing?.goal     ?? 'maintenance');
+  const [activity,     setActivity]     = useState<ActivityLevel>(existing?.activityLevel ?? 'moderate');
+  // RGPD : pré-coché si l'utilisateur a déjà accepté (édition de profil)
+  const [gdprAccepted, setGdprAccepted] = useState(!!existing?.gdprAcceptedAt);
 
   // Calculs TDEE affichés à l'étape 5
   const tdee = (() => {
@@ -55,6 +57,7 @@ export default function OnboardingModal() {
   const canNext = () => {
     if (step === 0) return name.trim().length > 0;
     if (step === 1) return !!parseInt(age) && !!parseFloat(height) && !!parseFloat(weight);
+    if (step === TOTAL_STEPS - 1) return gdprAccepted; // consentement obligatoire
     return true;
   };
 
@@ -77,6 +80,7 @@ export default function OnboardingModal() {
       targetCarbs:   macros.carbs,
       targetFat:     macros.fat,
       onboardingDone: true,
+      gdprAcceptedAt: existing?.gdprAcceptedAt ?? new Date().toISOString(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     await store.setUser(user);
@@ -152,7 +156,7 @@ export default function OnboardingModal() {
           </Step>
         )}
 
-        {/* ── Étape 5 : Récapitulatif TDEE ────────────────────────────── */}
+        {/* ── Étape 5 : Récapitulatif TDEE + RGPD ────────────────────── */}
         {step === 4 && (
           <Step title="Ton plan personnalisé 🔥" subtitle="Calculé avec Harris-Benedict">
             <View style={styles.tdeeCard}>
@@ -178,6 +182,57 @@ export default function OnboardingModal() {
                 {goal === 'maintenance'  && `TDEE = ${tdee} kcal/j (équilibre énergétique)`}
               </Text>
             </View>
+
+            {/* ── Consentement RGPD ──────────────────────────────────── */}
+            <View style={styles.gdprBox}>
+              <TouchableOpacity
+                style={styles.gdprCheckRow}
+                onPress={() => setGdprAccepted(v => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: gdprAccepted }}
+                accessibilityLabel="J'accepte la politique de confidentialité et les conditions d'utilisation"
+              >
+                <View style={[styles.checkbox, gdprAccepted && styles.checkboxChecked]}>
+                  {gdprAccepted && <Ionicons name="checkmark" size={14} color="#fff" />}
+                </View>
+                <Text style={styles.gdprCheckText}>
+                  J'accepte la{' '}
+                  <Text style={styles.gdprLink} onPress={() => router.push('/modals/privacy-policy')}>
+                    politique de confidentialité
+                  </Text>
+                  {' '}et les{' '}
+                  <Text style={styles.gdprLink} onPress={() => router.push('/modals/terms')}>
+                    conditions d'utilisation
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+              <View style={styles.gdprInfo}>
+                <Ionicons name="shield-checkmark-outline" size={13} color={Colors.green} />
+                <Text style={styles.gdprInfoText}>
+                  Données stockées uniquement sur cet appareil. Le coach IA utilise OpenAI.
+                </Text>
+              </View>
+            </View>
+
+            {/* ── Suppression des données (uniquement si édition de profil) */}
+            {!!existing && (
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={() => Alert.alert(
+                  '⚠️ Supprimer toutes mes données',
+                  'Cette action est irréversible. Toutes tes séances, repas, poids et préférences seront supprimés définitivement.',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Supprimer', style: 'destructive', onPress: () => store.deleteAllData() },
+                  ],
+                )}
+                accessibilityLabel="Supprimer toutes mes données"
+                accessibilityRole="button"
+              >
+                <Ionicons name="trash-outline" size={16} color={Colors.red} />
+                <Text style={styles.deleteBtnText}>Supprimer toutes mes données</Text>
+              </TouchableOpacity>
+            )}
           </Step>
         )}
 
@@ -328,4 +383,16 @@ const styles = StyleSheet.create({
   nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
   nextBtnDisabled: { opacity: 0.38 },
   nextBtnText: { color: '#fff', fontSize: Fs.md, fontWeight: Fw.bold },
+  // RGPD
+  gdprBox: { backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, gap: Sp.sm },
+  gdprCheckRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 1, flexShrink: 0 },
+  checkboxChecked: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  gdprCheckText: { flex: 1, fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
+  gdprLink: { color: Colors.primary, fontWeight: Fw.semibold },
+  gdprInfo: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  gdprInfoText: { flex: 1, fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17 },
+  // Suppression des données
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: Sp.md, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '50', backgroundColor: Colors.red + '10' },
+  deleteBtnText: { fontSize: Fs.sm, color: Colors.red, fontWeight: Fw.semibold },
 });

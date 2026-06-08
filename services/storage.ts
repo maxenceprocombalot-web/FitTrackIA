@@ -204,6 +204,12 @@ export async function saveMonthlySummary(s: MonthlySummary): Promise<void> {
   await save(K.MONTHLY, list.slice(0, 24));
 }
 
+// ─── Suppression de toutes les données (RGPD) ─────────────────────────────────
+
+export async function deleteAllData(): Promise<void> {
+  await AsyncStorage.multiRemove(Object.values(K));
+}
+
 // ─── Utilitaire date ──────────────────────────────────────────────────────────
 
 export const today     = (): string => new Date().toISOString().split('T')[0];

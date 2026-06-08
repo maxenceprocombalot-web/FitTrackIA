@@ -54,6 +54,14 @@ export default function RootLayout() {
           name="modals/monthly-summary"
           options={{ title: 'Bilan mensuel', presentation: 'fullScreenModal', headerShown: false }}
         />
+        <Stack.Screen
+          name="modals/privacy-policy"
+          options={{ title: 'Politique de confidentialité', presentation: 'modal', headerShown: false }}
+        />
+        <Stack.Screen
+          name="modals/terms"
+          options={{ title: "Conditions d'utilisation", presentation: 'modal', headerShown: false }}
+        />
       </Stack>
     </>
   );

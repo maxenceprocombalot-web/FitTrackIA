@@ -274,6 +274,20 @@ export function useAppStore() {
     setState({ recentFoods: next });
   }, []);
 
+  // ─── Suppression de toutes les données (RGPD) ───────────────────────────────
+
+  const deleteAllData = useCallback(async () => {
+    await S.deleteAllData();
+    setState({
+      user: null, workouts: [], meals: [], weights: [],
+      chat: [], prs: [], activeProgram: null,
+      favorites: [], water: { date: S.today(), ml: 0 },
+      streak: { current: 0, best: 0, lastWorkoutDate: '' },
+      savedPlans: PREDEFINED_PLANS, recentFoods: [],
+      monthlySummaries: [], loading: false,
+    });
+  }, []);
+
   // ─── Bilan mensuel ───────────────────────────────────────────────────────────
 
   const saveMonthlySummary = useCallback(async (s: MonthlySummary) => {
@@ -334,6 +348,7 @@ export function useAppStore() {
     savePlan, deletePlan,
     pushRecentFood,
     saveMonthlySummary,
+    deleteAllData,
     getTodayMacros, getTodayBurned, getRecentWorkouts, getRecentMeals,
   };
 }
