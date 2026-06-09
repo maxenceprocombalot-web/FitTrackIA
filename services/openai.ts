@@ -24,6 +24,21 @@ function getClient(): OpenAI | null {
   return _client;
 }
 
+// ─── Personas du Coach IA ─────────────────────────────────────────────────────
+
+export type CoachPersona = 'motivateur' | 'scientifique' | 'bienveillant' | 'militaire';
+
+const PERSONA_PROMPTS: Record<CoachPersona, string> = {
+  motivateur:   "PERSONNALITÉ : Tu es un coach ultra-motivant. Utilise un ton énergique, des phrases courtes et percutantes, des emojis fréquents. Commence toujours par un encouragement.",
+  scientifique: "PERSONNALITÉ : Tu es un coach basé sur la science. Cites des données précises, des pourcentages, des références. Ton neutre et analytique. Pas d'emojis.",
+  bienveillant: "PERSONNALITÉ : Tu es un coach doux et empathique. Utilise un ton chaleureux, encourageant, bienveillant. Valide les émotions avant de conseiller.",
+  militaire:    "PERSONNALITÉ : Tu es un coach militaire strict. Ton direct, sans pitié, exigeant. Pas de place pour les excuses. Discipline absolue.",
+};
+
+let _persona: CoachPersona = 'motivateur';
+export function setCoachPersona(p: CoachPersona) { _persona = p; }
+export function getCoachPersona(): CoachPersona { return _persona; }
+
 // ─── Prompt système ────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(
@@ -63,7 +78,10 @@ function buildSystemPrompt(
     .map(w => `- ${w.date} : ${w.name} (${w.duration}min, ${w.caloriesBurned}kcal brûlées)`)
     .join('\n') || 'Aucune séance récente.';
 
-  return `Tu es FitCoach IA, un coach sportif et nutritionnel expert. Tu analyses la corrélation entre les séances de sport et la nutrition de l'utilisateur pour donner des conseils ultra-personnalisés.
+  const personaPrompt = PERSONA_PROMPTS[_persona];
+  return `${personaPrompt}
+
+Tu es FitCoach IA, un coach sportif et nutritionnel expert. Tu analyses la corrélation entre les séances de sport et la nutrition de l'utilisateur pour donner des conseils ultra-personnalisés.
 
 Exemples de patterns à détecter et signaler : si l'utilisateur s'entraîne beaucoup mais mange peu de protéines → dis-le clairement. Si les calories sont insuffisantes les jours de séance → signale-le. Si le volume d'entraînement est trop élevé par rapport à la récupération → avertis. Si les macros sont déséquilibrées par rapport à l'objectif → corrige.
 
@@ -281,4 +299,127 @@ export async function generateMonthlyMessage(user: import('../types').User, stat
     temperature: 0.8,
   });
   return res.choices[0]?.message?.content ?? 'Excellent travail ce mois-ci !';
+}
+
+// ─── Estimation macros d'un plat (Mode Restaurant) ───────────────────────────
+
+export async function estimateDishMacros(dishName: string): Promise<{
+  name: string; portionG: number; caloriesPer100g: number;
+  proteinPer100g: number; carbsPer100g: number; fatPer100g: number;
+} | null> {
+  const client = getClient();
+  if (!client) {
+    await new Promise(r => setTimeout(r, 600));
+    return { name: dishName, portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 };
+  }
+  try {
+    const res = await client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: `Estime les macronutriments pour le plat suivant : "${dishName}". Réponds UNIQUEMENT en JSON avec ce format exact, sans aucun autre texte : {"name":"${dishName}","portionG":300,"caloriesPer100g":150,"proteinPer100g":12,"carbsPer100g":18,"fatPer100g":5}` }],
+      max_tokens: 150, temperature: 0.3,
+    });
+    const text = res.choices[0]?.message?.content ?? '';
+    const jsonMatch = text.match(/\{[^}]+\}/);
+    if (!jsonMatch) return null;
+    return JSON.parse(jsonMatch[0]);
+  } catch { return null; }
+}
+
+// ─── Génération Meal Prep 7 jours + liste de courses ─────────────────────────
+
+export async function generateMealPrepWithShopping(user: import('../types').User): Promise<{ plan: string; shopping: string }> {
+  const client = getClient();
+  const prompt = `Génère un plan de meal prep pour 7 jours pour ${user.name}.
+Objectifs : ${user.targetCalories} kcal/j | P:${user.targetProtein}g | G:${user.targetCarbs}g | L:${user.targetFat}g.
+Fournis :
+1. PLAN REPAS (format : Lun/Mar/Mer/Jeu/Ven/Sam/Dim avec petit-déj, déjeuner, dîner, collation)
+2. LISTE DE COURSES (ingrédients regroupés par rayon)
+
+Utilise des aliments simples et courants. Sois précis sur les quantités.`;
+
+  if (!client) {
+    return {
+      plan: `PLAN MEAL PREP (mode démo)
+
+LUNDI–MERCREDI
+• Petit-déjeuner : Porridge avoine 60g + lait 200ml + banane — 450kcal
+• Déjeuner : Riz 200g + Poulet 150g + Brocoli 150g — 500kcal
+• Dîner : Pâtes 200g + Thon 100g + Tomate — 480kcal
+• Collation : Yaourt 150g + 20g amandes — 220kcal
+
+[Configure EXPO_PUBLIC_OPENAI_KEY pour un plan personnalisé]`,
+      shopping: `LISTE DE COURSES (mode démo)
+
+FÉCULENTS : riz, pâtes, flocons d'avoine
+PROTÉINES : poulet, thon en boîte, œufs
+LÉGUMES : brocoli, tomates, épinards
+LAITIERS : lait, yaourt nature
+FRUITS : bananes, pommes
+DIVERS : amandes, huile d'olive`,
+    };
+  }
+  const res = await client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 });
+  const content = res.choices[0]?.message?.content ?? '';
+  const shoppingIdx = content.toLowerCase().indexOf('liste de courses');
+  if (shoppingIdx > -1) {
+    return { plan: content.slice(0, shoppingIdx).trim(), shopping: content.slice(shoppingIdx).trim() };
+  }
+  return { plan: content, shopping: '' };
+}
+
+// ─── Analyse carences nutritionnelles ────────────────────────────────────────
+
+export async function analyzeNutritionDeficiencies(
+  meals: import('../types').Meal[],
+  user: import('../types').User,
+): Promise<string> {
+  const client = getClient();
+
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+  const since = cutoff.toISOString().split('T')[0];
+  const dayMap: Record<string, { cal: number; prot: number; carb: number; fat: number }> = {};
+  meals.filter(m => m.date >= since).forEach(m => {
+    if (!dayMap[m.date]) dayMap[m.date] = { cal: 0, prot: 0, carb: 0, fat: 0 };
+    m.items.forEach(i => {
+      const r = i.quantity / 100;
+      dayMap[m.date].cal  += i.caloriesPer100g  * r;
+      dayMap[m.date].prot += i.proteinPer100g   * r;
+      dayMap[m.date].carb += i.carbsPer100g     * r;
+      dayMap[m.date].fat  += i.fatPer100g       * r;
+    });
+  });
+  const days = Object.values(dayMap);
+
+  if (!client || days.length === 0) {
+    const avgCal  = days.length ? Math.round(days.reduce((s, d) => s + d.cal, 0) / days.length) : 0;
+    const avgProt = days.length ? Math.round(days.reduce((s, d) => s + d.prot, 0) / days.length) : 0;
+    const targetProt = user.targetProtein;
+    const lines = [`📊 ANALYSE NUTRITIONNELLE — 7 DERNIERS JOURS\n`];
+    if (avgCal === 0) { return 'Pas assez de données. Enregistre tes repas pendant au moins 3 jours.'; }
+    lines.push(`✅ Points positifs :`);
+    if (avgProt >= targetProt * 0.9) lines.push(`• Apport en protéines dans l'objectif (${avgProt}g/j)`);
+    if (avgCal >= user.targetCalories * 0.85) lines.push(`• Apport calorique suffisant (${avgCal} kcal/j en moyenne)`);
+    lines.push(`\n⚠️ Points à améliorer :`);
+    if (avgProt < targetProt * 0.8) lines.push(`• Protéines insuffisantes : ${avgProt}g/j vs objectif ${targetProt}g/j`);
+    if (days.filter(d => d.cal < 1200).length > 0) lines.push(`• ${days.filter(d => d.cal < 1200).length} jour(s) trop restrictifs (< 1200 kcal)`);
+    lines.push(`\n💡 Recommandations :`);
+    if (avgProt < targetProt * 0.8) lines.push(`• Ajoute une source de protéines à chaque repas (œufs, poulet, yaourt)`);
+    return lines.join('\n');
+  }
+
+  const avgCal  = Math.round(days.reduce((s, d) => s + d.cal, 0) / days.length);
+  const avgProt = Math.round(days.reduce((s, d) => s + d.prot, 0) / days.length);
+  const avgCarb = Math.round(days.reduce((s, d) => s + d.carb, 0) / days.length);
+  const avgFat  = Math.round(days.reduce((s, d) => s + d.fat, 0) / days.length);
+  const lowCalDays = days.filter(d => d.cal < 1200).length;
+
+  const res = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: `Analyse ces données nutritionnelles de 7 jours pour ${user.name} (objectif : ${user.targetCalories} kcal/j, ${user.targetProtein}g prot, ${user.targetCarbs}g glucides, ${user.targetFat}g lipides) :
+Moyennes : ${avgCal} kcal/j, ${avgProt}g prot/j, ${avgCarb}g glucides/j, ${avgFat}g lipides/j. Jours < 1200 kcal : ${lowCalDays}.
+
+Structure ta réponse avec : ✅ Points positifs, ⚠️ Points à améliorer, 💡 Recommandations concrètes. Max 200 mots. Réponds en français.` }],
+    max_tokens: 300, temperature: 0.6,
+  });
+  return res.choices[0]?.message?.content ?? 'Impossible d\'analyser.';
 }

@@ -207,3 +207,25 @@ export interface BodyMeasurement {
   thigh?: number;   // tour de cuisse cm
   chest?: number;   // tour de poitrine cm
 }
+
+// ─── Défis hebdomadaires ──────────────────────────────────────────────────────
+
+export interface WeeklyChallenge {
+  id: string;
+  weekKey: string;         // YYYY-MM-DD lundi
+  title: string;
+  description: string;
+  emoji: string;
+  type: 'workouts' | 'cal_days' | 'cardio' | 'water_today' | 'protein_days';
+  target: number;
+  completed: boolean;
+}
+
+// ─── Jeûne intermittent ───────────────────────────────────────────────────────
+
+export interface FastingConfig {
+  active: boolean;
+  protocol: 16 | 18 | 20 | 24;
+  startTime: string;  // "HH:MM"
+  startDate: string;  // YYYY-MM-DD
+}

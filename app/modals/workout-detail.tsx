@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Alert,
+  StyleSheet, Alert, Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import ViewShot from 'react-native-view-shot';
 import { useAppStore } from '../../store/useAppStore';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 
@@ -22,6 +23,7 @@ export default function WorkoutDetailScreen() {
   const router = useRouter();
   const store  = useAppStore();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const viewShotRef = useRef<ViewShot>(null);
 
   const workout = store.workouts.find(w => w.id === id);
 
@@ -78,6 +80,18 @@ export default function WorkoutDetailScreen() {
     router.push({ pathname: '/modals/add-workout', params: { repeatWorkoutId: workout.id } });
   };
 
+  const handleShare = async () => {
+    try {
+      const uri = await viewShotRef.current?.capture?.();
+      if (!uri) {
+        const text = `🏋️ ${workout.name} — ${workout.date}\n⏱ ${workout.duration} min | 🔥 ${workout.caloriesBurned} kcal | 💪 ${Math.round(totalVolume)} kg\n${workout.exercises.map(e => `• ${e.name}: ${e.sets.length} séries`).join('\n')}\n\nPartagé depuis FitTrack IA 💪`;
+        await Share.share({ message: text });
+        return;
+      }
+      await Share.share({ url: uri, message: `Ma séance ${workout.name} 💪 via FitTrack IA` });
+    } catch { /* ignore */ }
+  };
+
   return (
     <View style={styles.container}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -90,6 +104,7 @@ export default function WorkoutDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
+        <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }}>
         {/* ── Info de la séance ──────────────────────────────────────────── */}
         <View style={styles.infoCard}>
           <Text style={styles.workoutName}>{workout.name}</Text>
@@ -130,7 +145,9 @@ export default function WorkoutDetailScreen() {
               return (
                 <View key={ex.id} style={[styles.exSection, exIdx > 0 && styles.exSectionBorder]}>
                   <View style={styles.exHeader}>
-                    <Text style={styles.exName}>{ex.name}</Text>
+                    <TouchableOpacity onPress={() => router.push({ pathname: '/modals/exercise-history', params: { name: ex.name } })}>
+                      <Text style={[styles.exName, { color: Colors.primary }]}>{ex.name}</Text>
+                    </TouchableOpacity>
                     {isPR && <Text style={styles.prBadge}>🏆 PR</Text>}
                     <Text style={styles.exSetCount}>{doneSets}/{ex.sets.length} séries</Text>
                   </View>
@@ -161,8 +178,14 @@ export default function WorkoutDetailScreen() {
             <Text style={styles.notesText}>{workout.notes}</Text>
           </View>
         )}
+        </ViewShot>
 
         {/* ── Actions ───────────────────────────────────────────────────── */}
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShare} accessibilityRole="button">
+          <Ionicons name="share-outline" size={18} color="#fff" />
+          <Text style={styles.repeatBtnText}>Partager cette séance 📸</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.repeatBtn} onPress={handleRepeat} accessibilityRole="button">
           <Ionicons name="refresh-outline" size={18} color="#fff" />
           <Text style={styles.repeatBtnText}>Refaire cette séance</Text>
@@ -235,6 +258,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.xs },
 
+  shareBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green, borderRadius: R, paddingVertical: 14 },
   repeatBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
   repeatBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.md },
 

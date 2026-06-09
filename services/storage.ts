@@ -316,3 +316,24 @@ export async function saveMeasurement(m: import('../types').BodyMeasurement): Pr
   list.sort((a, b) => a.date.localeCompare(b.date));
   await AsyncStorage.setItem('@fit_measurements', JSON.stringify(list));
 }
+
+// ─── Défis hebdomadaires ──────────────────────────────────────────────────────
+
+export async function loadChallenges(weekKey: string): Promise<import('../types').WeeklyChallenge[]> {
+  const raw = await AsyncStorage.getItem(`@fit_challenges_${weekKey}`);
+  return raw ? JSON.parse(raw) : [];
+}
+export async function saveChallenges(weekKey: string, challenges: import('../types').WeeklyChallenge[]): Promise<void> {
+  await AsyncStorage.setItem(`@fit_challenges_${weekKey}`, JSON.stringify(challenges));
+}
+
+// ─── Jeûne intermittent ───────────────────────────────────────────────────────
+
+export async function loadFasting(): Promise<import('../types').FastingConfig | null> {
+  const raw = await AsyncStorage.getItem('@fit_fasting');
+  return raw ? JSON.parse(raw) : null;
+}
+export async function saveFasting(f: import('../types').FastingConfig | null): Promise<void> {
+  if (f === null) await AsyncStorage.removeItem('@fit_fasting');
+  else await AsyncStorage.setItem('@fit_fasting', JSON.stringify(f));
+}

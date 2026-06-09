@@ -7,11 +7,14 @@ import {
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { sendCoachMessage, generateMealPlan } from '../../services/openai';
+import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PERSONA_LABELS: Record<string, string> = { motivateur: '🔥 Motivateur', scientifique: '📊 Scientifique', bienveillant: '🤝 Bienveillant', militaire: '💂 Militaire' };
 
 const WEEKLY_ANALYSIS_PROMPT = "Analyse ma semaine complète : corrèle mes séances de sport avec ma nutrition, identifie les points forts et les axes d'amélioration, et donne-moi 3 recommandations concrètes pour la semaine prochaine.";
 
@@ -123,6 +126,14 @@ export default function CoachScreen() {
   const [generatingMealPlan, setGeneratingMealPlan] = useState(false);
   const [applyingPlan,       setApplyingPlan]      = useState<string | null>(null); // messageId en cours d'application
   const [showHistory,        setShowHistory]       = useState(false);
+  const [analyzingNutrition, setAnalyzingNutrition] = useState(false);
+  const [currentPersona,     setCurrentPersona]    = useState(getCoachPersona());
+
+  useEffect(() => {
+    AsyncStorage.getItem('@fit_coach_persona').then(v => {
+      if (v) { setCoachPersona(v as any); setCurrentPersona(v as any); }
+    });
+  }, []);
 
   // ── Suggestions contextuelles ──────────────────────────────────────────────
   const contextualQuestions = useMemo(() => {
@@ -292,6 +303,64 @@ export default function CoachScreen() {
     );
   }, [store]);
 
+  // ── Analyse récupération ───────────────────────────────────────────────────
+  const recoveryAlerts = useMemo(() => {
+    const alerts: { key: string; message: string }[] = [];
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    const todayMuscles  = new Set(store.workouts.filter(w => w.date === today).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
+    const yestMuscles   = new Set(store.workouts.filter(w => w.date === yesterday).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
+    const overlap = [...todayMuscles].filter(m => yestMuscles.has(m));
+    if (overlap.length > 0) {
+      alerts.push({ key: 'overlap', message: `⚠️ Tu as entraîné tes ${overlap.join(', ')} hier et aujourd'hui. Laisse 48h de récupération pour éviter les blessures.` });
+    }
+
+    let streak = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+      if (store.workouts.some(w => w.date === d)) streak++;
+      else break;
+    }
+    if (streak >= 5) {
+      alerts.push({ key: 'streak', message: `⚠️ Tu t'entraînes depuis ${streak} jours consécutifs. Un jour de récupération active est recommandé.` });
+    }
+
+    const cut7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const muscleVol: Record<string, number> = {};
+    store.workouts.filter(w => w.date >= cut7).forEach(w => {
+      w.exercises.forEach(e => {
+        if (e.category && e.category !== 'Cardio') {
+          muscleVol[e.category] = (muscleVol[e.category] ?? 0) + e.sets.length;
+        }
+      });
+    });
+    Object.entries(muscleVol).filter(([_, v]) => v > 20).forEach(([muscle, vol]) => {
+      alerts.push({ key: `overvol_${muscle}`, message: `⚠️ Volume élevé sur ${muscle} cette semaine (${vol} séries). Réduis ou compense avec du sommeil et de la nutrition.` });
+    });
+
+    return alerts;
+  }, [store.workouts]);
+
+  // ── Analyse carences nutritionnelles ──────────────────────────────────────
+  const handleAnalyzeNutrition = useCallback(async () => {
+    if (!store.user) return;
+    setAnalyzingNutrition(true);
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: '🔬 Analyse mes carences nutritionnelles des 7 derniers jours', timestamp: new Date().toISOString() };
+    await store.addChatMessage(userMsg);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    try {
+      const analysis = await analyzeNutritionDeficiencies(store.meals, store.user);
+      const botMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: analysis, timestamp: new Date().toISOString() };
+      await store.addChatMessage(botMsg);
+    } catch {
+      await store.addChatMessage({ id: (Date.now() + 2).toString(), role: 'assistant', content: 'Erreur lors de l\'analyse.', timestamp: new Date().toISOString() });
+    } finally {
+      setAnalyzingNutrition(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  }, [store]);
+
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
@@ -302,7 +371,7 @@ export default function CoachScreen() {
         </View>
         <View>
           <Text style={styles.coachName}>FitCoach IA</Text>
-          <Text style={styles.coachSub}>{DEMO_MODE ? 'Mode démo (sans clé API)' : 'Propulsé par GPT-4o'}</Text>
+          <Text style={styles.coachSub}>{DEMO_MODE ? 'Mode démo' : `${PERSONA_LABELS[currentPersona] ?? ''} · GPT-4o`}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn}>
           <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
@@ -311,6 +380,23 @@ export default function CoachScreen() {
           <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
       </View>
+
+      {/* ── Alertes de récupération ──────────────────────────────────────── */}
+      {recoveryAlerts.length > 0 && (
+        <View style={{ padding: Sp.sm, gap: Sp.xs }}>
+          {recoveryAlerts.map(alert => (
+            <View key={alert.key} style={{ backgroundColor: Colors.orange + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '40', padding: Sp.sm, flexDirection: 'row', gap: Sp.sm, alignItems: 'flex-start' }}>
+              <Ionicons name="warning-outline" size={16} color={Colors.orange} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: Fs.xs, color: Colors.orange, lineHeight: 18 }}>{alert.message}</Text>
+                <TouchableOpacity onPress={() => sendMessage(alert.message.replace('⚠️ ', '') + ' Que faire ?')} style={{ marginTop: 4 }}>
+                  <Text style={{ fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold }}>Demander au coach →</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* ── Messages ─────────────────────────────────────────────────────── */}
       <ScrollView
@@ -345,6 +431,10 @@ export default function CoachScreen() {
                 ? <ActivityIndicator size="small" color={Colors.green} />
                 : <Ionicons name="calendar-outline" size={16} color={Colors.green} />}
               <Text style={styles.mealPlanBtnText}>📅 Générer mon plan repas semaine</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.nutritionAnalysisBtn} onPress={handleAnalyzeNutrition} disabled={analyzingNutrition}>
+              {analyzingNutrition ? <ActivityIndicator size="small" color={Colors.yellow} /> : <Ionicons name="flask-outline" size={16} color={Colors.yellow} />}
+              <Text style={styles.nutritionAnalysisBtnText}>🔬 Analyser ma nutrition</Text>
             </TouchableOpacity>
             <View style={styles.quickBtns}>
               {contextualQuestions.map(q => (
@@ -536,8 +626,10 @@ const styles = StyleSheet.create({
   demoText:        { fontSize: Fs.xs, color: Colors.orange, flex: 1 },
   weeklyBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8 },
   weeklyBtnText:   { fontSize: Fs.sm, fontWeight: Fw.bold, color: '#fff' },
-  mealPlanBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 12, borderWidth: 1, borderColor: Colors.green + '40' },
+  mealPlanBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8, borderWidth: 1, borderColor: Colors.green + '40' },
   mealPlanBtnText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.green },
+  nutritionAnalysisBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.yellow + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 12, borderWidth: 1, borderColor: Colors.yellow + '40' },
+  nutritionAnalysisBtnText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.yellow },
   quickBtns:       { gap: 8, width: '100%' },
   quickBtn:        { backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, borderWidth: 1, borderColor: Colors.border },
   quickBtnText:    { fontSize: Fs.sm, color: Colors.primary, textAlign: 'center' },

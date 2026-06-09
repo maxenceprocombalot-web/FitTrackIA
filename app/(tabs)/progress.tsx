@@ -9,7 +9,7 @@ import Svg, { Path, Circle, Line, Rect, Text as SvgText } from 'react-native-svg
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { WeightEntry, SavedPlan, BodyMeasurement } from '../../types';
+import { WeightEntry, SavedPlan, BodyMeasurement, WeeklyChallenge } from '../../types';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system';
 import {
   loadProgressPhotos, saveProgressPhoto, deleteProgressPhoto,
   loadMeasurements, saveMeasurement,
+  loadChallenges, saveChallenges,
 } from '../../services/storage';
 import { BADGES } from '../../constants/badges';
 
@@ -25,7 +26,7 @@ const CHART_H = 160;
 const PAD     = { top: 16, bottom: 24, left: 30, right: 10 };
 
 type Period  = '30j' | '90j' | 'tout';
-type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'calories' | 'muscles' | 'corps' | 'badges' | 'plans' | 'photos';
+type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'calories' | 'muscles' | 'corps' | 'badges' | 'plans' | 'photos' | 'defis';
 
 // Régression linéaire
 function linearReg(ys: number[]): { slope: number; intercept: number } {
@@ -224,6 +225,40 @@ function getUnlockedBadges(store: ReturnType<typeof useAppStore>): Set<string> {
   return unlocked;
 }
 
+// ─── Helpers défis ────────────────────────────────────────────────────────────
+
+function getDefaultChallenges(weekKey: string, user: ReturnType<typeof useAppStore>['user']): WeeklyChallenge[] {
+  return [
+    { id: 'ch1', weekKey, emoji: '💪', title: '4 séances cette semaine', description: 'Réalise 4 séances d\'entraînement', type: 'workouts', target: 4, completed: false },
+    { id: 'ch2', weekKey, emoji: '🎯', title: 'Objectif calorique 5 jours', description: `Reste dans ±10% de ${user?.targetCalories ?? 2000} kcal pendant 5 jours`, type: 'cal_days', target: 5, completed: false },
+    { id: 'ch3', weekKey, emoji: '🏃', title: '2 séances de cardio', description: 'Réalise 2 séances cardio ou course', type: 'cardio', target: 2, completed: false },
+  ];
+}
+
+function getChallengeProgress(challenge: WeeklyChallenge, weekKey: string, store: ReturnType<typeof useAppStore>): number {
+  const mon = new Date(weekKey + 'T12:00:00');
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const since = weekKey;
+  const until = sun.toISOString().split('T')[0];
+
+  switch (challenge.type) {
+    case 'workouts':
+      return store.workouts.filter((w: any) => w.date >= since && w.date <= until).length;
+    case 'cal_days': {
+      const target = store.user?.targetCalories ?? 2000;
+      const dm: Record<string, number> = {};
+      store.meals.filter((m: any) => m.date >= since && m.date <= until).forEach((m: any) => {
+        const c = m.items.reduce((s: number, i: any) => s + i.caloriesPer100g * i.quantity / 100, 0);
+        dm[m.date] = (dm[m.date] ?? 0) + c;
+      });
+      return Object.values(dm).filter((v: number) => v >= target * 0.9 && v <= target * 1.1).length;
+    }
+    case 'cardio':
+      return store.workouts.filter((w: any) => w.date >= since && w.date <= until && (w.type === 'cardio' || w.type === 'running')).length;
+    default: return 0;
+  }
+}
+
 export default function ProgressScreen() {
   const store  = useAppStore();
   const router = useRouter();
@@ -248,6 +283,90 @@ export default function ProgressScreen() {
   const [measArm,   setMeasArm]   = useState('');
   const [measThigh, setMeasThigh] = useState('');
   const [measChest, setMeasChest] = useState('');
+
+  // Défis hebdomadaires
+  const [challenges, setChallenges] = useState<WeeklyChallenge[]>([]);
+  const currentWeekKey = useMemo(() => {
+    const d = new Date();
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    d.setDate(d.getDate() - day + 1);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      let saved = await loadChallenges(currentWeekKey);
+      if (saved.length === 0) {
+        saved = getDefaultChallenges(currentWeekKey, store.user);
+        await saveChallenges(currentWeekKey, saved);
+      }
+      setChallenges(saved);
+    })();
+  }, [currentWeekKey, store.user]);
+
+  // Score de forme hebdomadaire
+  const fitnessScore = useMemo(() => {
+    const today = new Date();
+    const cutoff7 = new Date(today); cutoff7.setDate(today.getDate() - 7);
+    const since7 = cutoff7.toISOString().split('T')[0];
+
+    const weekWorkouts = store.workouts.filter(w => w.date >= since7).length;
+    const sportPts = Math.min((weekWorkouts / 3) * 40, 40);
+
+    const target = store.user?.targetCalories ?? 2000;
+    const dayCalMap: Record<string, number> = {};
+    store.meals.filter(m => m.date >= since7).forEach(m => {
+      const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+      dayCalMap[m.date] = (dayCalMap[m.date] ?? 0) + cal;
+    });
+    const daysInRange = Object.values(dayCalMap).filter(v => v >= target * 0.9 && v <= target * 1.1).length;
+    const nutritionPts = (daysInRange / 7) * 40;
+
+    const waterGoal = store.user?.waterGoalMl ?? 2000;
+    const hydroPts = Math.min((store.water.ml / waterGoal) * 10, 10);
+
+    const tw = store.user?.targetWeight;
+    const lw = store.weights[store.weights.length - 1]?.weight;
+    const iw = store.user?.weight;
+    let weightPts = 0;
+    if (tw && lw && iw && Math.abs(tw - iw) > 0.1) {
+      const progress = Math.abs(lw - iw) / Math.abs(tw - iw);
+      weightPts = Math.min(progress * 10, 10);
+    }
+
+    return Math.round(sportPts + nutritionPts + hydroPts + weightPts);
+  }, [store.workouts, store.meals, store.water, store.weights, store.user]);
+
+  const prevScore = useMemo(() => {
+    const today = new Date();
+    const cut14 = new Date(today); cut14.setDate(today.getDate() - 14);
+    const cut7  = new Date(today); cut7.setDate(today.getDate() - 7);
+    const s14 = cut14.toISOString().split('T')[0];
+    const s7  = cut7.toISOString().split('T')[0];
+    const pw = store.workouts.filter(w => w.date >= s14 && w.date < s7).length;
+    const sportP = Math.min((pw / 3) * 40, 40);
+    const target = store.user?.targetCalories ?? 2000;
+    const dcm: Record<string, number> = {};
+    store.meals.filter(m => m.date >= s14 && m.date < s7).forEach(m => {
+      const c = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+      dcm[m.date] = (dcm[m.date] ?? 0) + c;
+    });
+    const dir = Object.values(dcm).filter(v => v >= target * 0.9 && v <= target * 1.1).length;
+    return Math.round(sportP + (dir / 7) * 40);
+  }, [store.workouts, store.meals, store.user]);
+
+  // Animation CountUp du score
+  const scoreAnim = useRef(new Animated.Value(0)).current;
+  const [displayScore, setDisplayScore] = useState(0);
+  useEffect(() => {
+    Animated.timing(scoreAnim, { toValue: fitnessScore, duration: 800, useNativeDriver: false }).start();
+    const id = scoreAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
+    return () => scoreAnim.removeListener(id);
+  }, [fitnessScore]);
+
+  const scoreColor = fitnessScore < 40 ? Colors.red : fitnessScore < 70 ? Colors.orange : Colors.green;
+  const scoreLabel = fitnessScore < 40 ? 'À améliorer 💡' : fitnessScore < 70 ? 'Bien 👍' : 'Excellent 💪';
+  const scoreDiff = fitnessScore - prevScore;
 
   useEffect(() => {
     loadMeasurements().then(setMeasurements);
@@ -399,15 +518,41 @@ export default function ProgressScreen() {
     badges: 'Badges',
     plans: 'Plans',
     photos: 'Photos',
+    defis: 'Défis',
   };
 
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
+      {/* ── Carte Score de forme ──────────────────────────────────────────── */}
+      <Card>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={styles.sectionLabel}>Score de forme</Text>
+            <Text style={{ fontSize: 56, fontWeight: Fw.heavy, color: scoreColor, lineHeight: 64 }}>{displayScore}</Text>
+            <Text style={{ fontSize: Fs.sm, color: scoreColor, fontWeight: Fw.semibold }}>{scoreLabel}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end', gap: Sp.xs }}>
+            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>/100</Text>
+            {scoreDiff !== 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: (scoreDiff > 0 ? Colors.green : Colors.red) + '18', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 }}>
+                <Ionicons name={scoreDiff > 0 ? 'trending-up' : 'trending-down'} size={12} color={scoreDiff > 0 ? Colors.green : Colors.red} />
+                <Text style={{ fontSize: Fs.xs, color: scoreDiff > 0 ? Colors.green : Colors.red, fontWeight: Fw.semibold }}>{scoreDiff > 0 ? '+' : ''}{scoreDiff} vs sem. préc.</Text>
+              </View>
+            )}
+            <View style={{ gap: 4 }}>
+              <ScoreRow label="Sport" pts={Math.round(Math.min((store.workouts.filter(w => { const c7 = new Date(); c7.setDate(c7.getDate()-7); return w.date >= c7.toISOString().split('T')[0]; }).length / 3) * 40, 40))} max={40} color={Colors.primary} />
+              <ScoreRow label="Nutrition" pts={Math.round((Object.values((() => { const dm: Record<string,number> = {}; const c7 = new Date(); c7.setDate(c7.getDate()-7); store.meals.filter(m=>m.date>=c7.toISOString().split('T')[0]).forEach(m=>{ const c=m.items.reduce((s,i)=>s+i.caloriesPer100g*i.quantity/100,0); dm[m.date]=(dm[m.date]??0)+c; }); return dm; })()).filter(v=>v>=(store.user?.targetCalories??2000)*0.9&&v<=(store.user?.targetCalories??2000)*1.1).length / 7) * 40)} max={40} color={Colors.green} />
+              <ScoreRow label="Eau" pts={Math.round(Math.min((store.water.ml/(store.user?.waterGoalMl??2000))*10,10))} max={10} color={Colors.blue} />
+            </View>
+          </View>
+        </View>
+      </Card>
+
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
-        {(['weight', 'sport', 'nutrition', 'calories', 'muscles', 'corps', 'badges', 'plans', 'photos'] as ActiveTab[]).map(tab => (
+        {(['weight', 'sport', 'nutrition', 'calories', 'muscles', 'corps', 'badges', 'plans', 'photos', 'defis'] as ActiveTab[]).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -932,6 +1077,41 @@ export default function ProgressScreen() {
         </>
       )}
 
+      {/* ── Onglet Défis ─────────────────────────────────────────────────── */}
+      {activeTab === 'defis' && (
+        <>
+          <Card>
+            <Text style={styles.sectionLabel}>Défis de la semaine</Text>
+            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm }}>
+              {new Date(currentWeekKey).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} → {new Date(new Date(currentWeekKey).getTime() + 6*86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+            </Text>
+            {challenges.map(ch => {
+              const progress = getChallengeProgress(ch, currentWeekKey, store);
+              const pct = Math.min(progress / ch.target, 1);
+              const done = pct >= 1;
+              return (
+                <View key={ch.id} style={{ marginBottom: Sp.md, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: done ? Colors.green + '50' : Colors.border, padding: Sp.md }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginBottom: Sp.sm }}>
+                    <Text style={{ fontSize: 24 }}>{ch.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: Fs.md, fontWeight: Fw.semibold, color: done ? Colors.green : Colors.text }}>{ch.title}</Text>
+                      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 }}>{ch.description}</Text>
+                    </View>
+                    {done && <Ionicons name="checkmark-circle" size={22} color={Colors.green} />}
+                  </View>
+                  <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: `${pct * 100}%`, backgroundColor: done ? Colors.green : Colors.primary, borderRadius: 3 }} />
+                  </View>
+                  <Text style={{ fontSize: Fs.xs, color: done ? Colors.green : Colors.textSecondary, marginTop: 4, fontWeight: done ? Fw.semibold : Fw.regular }}>
+                    {progress} / {ch.target} {done ? '— Défi relevé ! 🎉' : ''}
+                  </Text>
+                </View>
+              );
+            })}
+          </Card>
+        </>
+      )}
+
       {/* ── Rapport mensuel (visible depuis tous les onglets) ─────────────── */}
       <TouchableOpacity
         style={styles.reportBtn}
@@ -1092,6 +1272,18 @@ const pcStyles = StyleSheet.create({
 });
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
+
+function ScoreRow({ label, pts, max, color }: { label: string; pts: number; max: number; color: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, width: 52 }}>{label}</Text>
+      <View style={{ width: 60, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+        <View style={{ height: '100%', width: `${(pts/max)*100}%`, backgroundColor: color, borderRadius: 2 }} />
+      </View>
+      <Text style={{ fontSize: Fs.xs, color, fontWeight: Fw.semibold }}>{pts}/{max}</Text>
+    </View>
+  );
+}
 
 function WBadge({ label, value, color }: { label: string; value: string; color: string }) {
   return (

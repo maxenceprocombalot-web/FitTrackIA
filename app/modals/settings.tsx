@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey } from '../../services/openai';
+import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, CoachPersona, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
@@ -125,6 +125,9 @@ export default function SettingsScreen() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiKeySaved,   setApiKeySaved]   = useState(false);
 
+  // ── Persona Coach IA ──────────────────────────────────────────────────────
+  const [persona, setPersona] = useState<CoachPersona>('motivateur');
+
   // ── Apple Health ─────────────────────────────────────────────────────────
   const [healthSync, setHealthSync] = useState(false);
 
@@ -132,6 +135,9 @@ export default function SettingsScreen() {
     loadApiKey().then(k => { if (k) setApiKey(k); });
     loadNotifPrefs().then(p => setNotifPrefs(p));
     AsyncStorage.getItem('@fit_health_sync').then(v => setHealthSync(v === 'true'));
+    AsyncStorage.getItem('@fit_coach_persona').then(v => {
+      if (v) { setPersona(v as CoachPersona); setCoachPersona(v as CoachPersona); }
+    });
   }, []);
 
   // ── Sauvegarder les objectifs ────────────────────────────────────────────
@@ -356,6 +362,31 @@ export default function SettingsScreen() {
           <View style={styles.apiKeyNote}>
             <Ionicons name="lock-closed-outline" size={12} color={Colors.green} />
             <Text style={styles.apiKeyNoteText}>Ta clé API reste sur ton téléphone uniquement — jamais transmise à nos serveurs.</Text>
+          </View>
+
+          {/* Sélecteur persona */}
+          <Text style={styles.fieldLabel}>Personnalité du coach</Text>
+          <View style={{ gap: Sp.xs, paddingHorizontal: Sp.md, paddingBottom: Sp.md }}>
+            {([
+              { id: 'motivateur',   label: '🔥 Motivateur',   desc: 'Énergique, phrases courtes, emojis' },
+              { id: 'scientifique', label: '📊 Scientifique',  desc: 'Données précises, ton neutre' },
+              { id: 'bienveillant', label: '🤝 Bienveillant',  desc: 'Doux, empathique, encourageant' },
+              { id: 'militaire',    label: '💂 Militaire',     desc: 'Direct, discipline, sans pitié' },
+            ] as const).map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={[{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, paddingVertical: 10, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: persona === p.id ? Colors.primary : Colors.border, backgroundColor: persona === p.id ? Colors.primary + '12' : Colors.surfaceElevated }]}
+                onPress={async () => {
+                  setPersona(p.id as CoachPersona);
+                  setCoachPersona(p.id as CoachPersona);
+                  await AsyncStorage.setItem('@fit_coach_persona', p.id);
+                }}
+              >
+                <Text style={{ flex: 1, fontSize: Fs.sm, color: persona === p.id ? Colors.primary : Colors.text, fontWeight: Fw.medium }}>{p.label}</Text>
+                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{p.desc}</Text>
+                {persona === p.id && <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 

@@ -1,19 +1,21 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Alert, Platform, Animated, PanResponder, Dimensions,
-  Modal, FlatList,
+  Modal, FlatList, TextInput, ActivityIndicator, Share,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { Meal, MealType, FoodItem, Recipe } from '../../types';
+import { Meal, MealType, FoodItem, Recipe, FastingConfig } from '../../types';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+import { loadFasting, saveFasting } from '../../services/storage';
+import { estimateDishMacros, generateMealPrepWithShopping } from '../../services/openai';
 import { PREDEFINED_RECIPES } from '../../constants/recipes';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
@@ -57,6 +59,48 @@ export default function NutritionScreen() {
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const isToday = selectedDate === TODAY;
   const [showRecipes, setShowRecipes] = useState(false);
+  const [showRestaurant, setShowRestaurant] = useState(false);
+  const [showMealPrep, setShowMealPrep] = useState(false);
+
+  // Jeûne intermittent
+  const [fastingConfig, setFastingConfig] = useState<FastingConfig | null>(null);
+  const [showFastingModal, setShowFastingModal] = useState(false);
+  const [fastProtocol, setFastProtocol] = useState<16|18|20|24>(16);
+  const [fastStartTime, setFastStartTime] = useState('20:00');
+  const [fastTimerText, setFastTimerText] = useState('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    loadFasting().then(setFastingConfig);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!fastingConfig?.active) { setFastTimerText(''); return; }
+
+    const update = () => {
+      const now = new Date();
+      const fastStart = new Date(fastingConfig.startDate + `T${fastingConfig.startTime}:00`);
+      const fastEnd   = new Date(fastStart.getTime() + fastingConfig.protocol * 3600000);
+      const eatEnd    = new Date(fastEnd.getTime() + (24 - fastingConfig.protocol) * 3600000);
+
+      if (now < fastEnd) {
+        const rem = Math.max(0, fastEnd.getTime() - now.getTime());
+        const rh = Math.floor(rem / 3600000), rm = Math.floor((rem % 3600000) / 60000);
+        setFastTimerText(`🔒 Fenêtre de jeûne — encore ${rh}h ${rm}min`);
+      } else if (now < eatEnd) {
+        const rem = Math.max(0, eatEnd.getTime() - now.getTime());
+        const rh = Math.floor(rem / 3600000), rm = Math.floor((rem % 3600000) / 60000);
+        setFastTimerText(`✅ Fenêtre alimentaire — encore ${rh}h ${rm}min`);
+      } else {
+        setFastTimerText('Jeûne terminé');
+      }
+    };
+    update();
+    timerRef.current = setInterval(update, 60000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [fastingConfig]);
 
   // Navigation par date
   const goToPrev = () => {
@@ -198,11 +242,30 @@ export default function NutritionScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Bouton recettes ──────────────────────────────────────────────── */}
-      <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRecipes(true)}>
-        <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
-        <Text style={styles.recipesBtnText}>Recettes</Text>
-      </TouchableOpacity>
+      {/* ── Bouton jeûne ─────────────────────────────────────────────────── */}
+      <View style={{ flexDirection: 'row', gap: Sp.sm }}>
+        <TouchableOpacity style={styles.fastBtn} onPress={() => setShowFastingModal(true)}>
+          <Ionicons name="time-outline" size={15} color={Colors.yellow} />
+          <Text style={styles.fastBtnText}>⏱ Jeûne</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRecipes(true)}>
+          <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
+          <Text style={styles.recipesBtnText}>Recettes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRestaurant(true)}>
+          <Ionicons name="fast-food-outline" size={16} color={Colors.orange} />
+          <Text style={[styles.recipesBtnText, { color: Colors.orange }]}>Restaurant</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowMealPrep(true)}>
+          <Ionicons name="clipboard-outline" size={16} color={Colors.green} />
+          <Text style={[styles.recipesBtnText, { color: Colors.green }]}>Meal Prep</Text>
+        </TouchableOpacity>
+      </View>
+      {fastTimerText !== '' && (
+        <View style={[styles.fastTimer, { borderColor: fastTimerText.startsWith('🔒') ? Colors.orange + '50' : Colors.green + '50', backgroundColor: fastTimerText.startsWith('🔒') ? Colors.orange + '10' : Colors.green + '10' }]}>
+          <Text style={{ fontSize: Fs.sm, color: fastTimerText.startsWith('🔒') ? Colors.orange : Colors.green, fontWeight: Fw.semibold }}>{fastTimerText}</Text>
+        </View>
+      )}
 
       {/* ── Bouton copier depuis le jour précédent ───────────────────────── */}
       {prevMeals.length > 0 && (
@@ -285,6 +348,50 @@ export default function NutritionScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    {/* ── Modal jeûne ─────────────────────────────────────────────────── */}
+    {showFastingModal && (
+      <FastingModal
+        config={fastingConfig}
+        protocol={fastProtocol}
+        startTime={fastStartTime}
+        onProtocol={setFastProtocol}
+        onStartTime={setFastStartTime}
+        onSave={async () => {
+          const cfg: FastingConfig = { active: true, protocol: fastProtocol, startTime: fastStartTime, startDate: new Date().toISOString().split('T')[0] };
+          await saveFasting(cfg);
+          setFastingConfig(cfg);
+          setShowFastingModal(false);
+        }}
+        onStop={async () => {
+          await saveFasting(null);
+          setFastingConfig(null);
+          setFastTimerText('');
+          setShowFastingModal(false);
+        }}
+        onClose={() => setShowFastingModal(false)}
+      />
+    )}
+
+    {/* ── Modal restaurant ──────────────────────────────────────────────── */}
+    {showRestaurant && (
+      <RestaurantModal
+        onClose={() => setShowRestaurant(false)}
+        onAdd={(item: FoodItem) => {
+          const existing = selectedMeals.find(m => m.type === 'lunch');
+          const meal: Meal = existing
+            ? { ...existing, items: [...existing.items, item] }
+            : { id: Date.now().toString(), date: selectedDate, type: 'lunch', items: [item] };
+          store.addMeal(meal);
+          setShowRestaurant(false);
+        }}
+      />
+    )}
+
+    {/* ── Modal meal prep ───────────────────────────────────────────────── */}
+    <Modal visible={showMealPrep} animationType="slide" onRequestClose={() => setShowMealPrep(false)}>
+      <MealPrepModal user={user} onClose={() => setShowMealPrep(false)} />
+    </Modal>
 
     {/* ── Modal recettes ────────────────────────────────────────────────── */}
     {showRecipes && (
@@ -446,8 +553,12 @@ const styles = StyleSheet.create({
   addBtn:      { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   emptyMeal:   { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
   // Recettes
-  recipesBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30', paddingVertical: 8, paddingHorizontal: Sp.md },
+  recipesBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30', paddingVertical: 8, paddingHorizontal: Sp.sm, flex: 1, justifyContent: 'center' },
   recipesBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold },
+  // Jeûne
+  fastBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.yellow + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '35', paddingVertical: 8, paddingHorizontal: Sp.sm, flex: 1, justifyContent: 'center' },
+  fastBtnText: { fontSize: Fs.xs, color: Colors.yellow, fontWeight: Fw.semibold },
+  fastTimer: { borderRadius: R, borderWidth: 1, padding: Sp.sm, alignItems: 'center' },
 });
 
 // ─── Modal Recettes ───────────────────────────────────────────────────────────
@@ -521,3 +632,191 @@ const recipeStyles = StyleSheet.create({
   addBtn:    { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6 },
   addBtnText:{ fontSize: Fs.xs, color: '#fff', fontWeight: Fw.bold },
 });
+
+// ─── Modal Jeûne intermittent ─────────────────────────────────────────────────
+
+function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, onSave, onStop, onClose }: {
+  config: FastingConfig | null;
+  protocol: 16|18|20|24;
+  startTime: string;
+  onProtocol: (p: 16|18|20|24) => void;
+  onStartTime: (t: string) => void;
+  onSave: () => void;
+  onStop: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <View style={fmStyles.overlay}>
+      <View style={fmStyles.card}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
+          <Text style={{ fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>⏱ Jeûne intermittent</Text>
+          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+        </View>
+
+        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.sm }}>Protocole</Text>
+        <View style={{ flexDirection: 'row', gap: Sp.xs, marginBottom: Sp.md }}>
+          {([16,18,20,24] as const).map(p => (
+            <TouchableOpacity key={p} style={{ flex: 1, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: protocol === p ? Colors.yellow : Colors.border, backgroundColor: protocol === p ? Colors.yellow + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onProtocol(p)}>
+              <Text style={{ fontSize: Fs.sm, color: protocol === p ? Colors.yellow : Colors.textSecondary, fontWeight: Fw.semibold }}>{p}h/{24-p}h</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.xs }}>Début du jeûne</Text>
+        <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.lg }}>
+          {['18:00','19:00','20:00','21:00','22:00'].map(t => (
+            <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: startTime === t ? Colors.primary : Colors.border, backgroundColor: startTime === t ? Colors.primary + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onStartTime(t)}>
+              <Text style={{ fontSize: Fs.xs, color: startTime === t ? Colors.primary : Colors.textMuted }}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.md }}>
+          Fenêtre alimentaire : {startTime} + {protocol}h = {`${(parseInt(startTime.split(':')[0]) + protocol) % 24}:${startTime.split(':')[1]}`} → {`${(parseInt(startTime.split(':')[0]) + protocol + (24 - protocol)) % 24}:00`}
+        </Text>
+
+        <TouchableOpacity style={{ backgroundColor: Colors.yellow, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm }} onPress={onSave}>
+          <Text style={{ color: '#000', fontWeight: Fw.bold }}>Démarrer le jeûne</Text>
+        </TouchableOpacity>
+        {config?.active && (
+          <TouchableOpacity style={{ borderRadius: R, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.red + '50' }} onPress={onStop}>
+            <Text style={{ color: Colors.red, fontWeight: Fw.medium }}>Arrêter le jeûne</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+const fmStyles = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', zIndex: 999 },
+  card: { backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border },
+});
+
+// ─── Modal Restaurant ─────────────────────────────────────────────────────────
+
+function RestaurantModal({ onClose, onAdd }: {
+  onClose: () => void;
+  onAdd: (item: FoodItem) => void;
+}) {
+  const [dish, setDish] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [portion, setPortion] = useState('');
+
+  const handleEstimate = async () => {
+    if (!dish.trim()) return;
+    setLoading(true);
+    const r = await estimateDishMacros(dish.trim());
+    if (r) { setResult(r); setPortion(String(r.portionG)); }
+    setLoading(false);
+  };
+
+  const qty = parseFloat(portion) || 300;
+  const cal = result ? Math.round(result.caloriesPer100g * qty / 100) : 0;
+
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', zIndex: 999 }}>
+      <View style={{ backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
+          <Text style={{ fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>🍽️ Mode Restaurant</Text>
+          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+        </View>
+        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton plat</Text>
+        <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md }}>
+          <TextInput
+            style={{ flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border }}
+            value={dish}
+            onChangeText={setDish}
+            placeholder="Steak frites, Pizza margherita..."
+            placeholderTextColor={Colors.textMuted}
+            onSubmitEditing={handleEstimate}
+          />
+          <TouchableOpacity style={{ backgroundColor: Colors.orange, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', minWidth: 48 }} onPress={handleEstimate} disabled={loading}>
+            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="sparkles" size={18} color="#fff" />}
+          </TouchableOpacity>
+        </View>
+        {result && (
+          <>
+            <View style={{ backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, marginBottom: Sp.sm, gap: Sp.xs }}>
+              <Text style={{ fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginBottom: 4 }}>{result.name}</Text>
+              <View style={{ flexDirection: 'row', gap: Sp.sm }}>
+                {[
+                  { label: 'kcal', value: cal, color: Colors.caloriesColor },
+                  { label: 'P', value: `${Math.round(result.proteinPer100g * qty / 100)}g`, color: Colors.proteinColor },
+                  { label: 'G', value: `${Math.round(result.carbsPer100g * qty / 100)}g`, color: Colors.carbsColor },
+                  { label: 'L', value: `${Math.round(result.fatPer100g * qty / 100)}g`, color: Colors.fatColor },
+                ].map(m => (
+                  <View key={m.label} style={{ flex: 1, alignItems: 'center', backgroundColor: m.color + '15', borderRadius: R, paddingVertical: 8 }}>
+                    <Text style={{ fontSize: Fs.md, fontWeight: Fw.bold, color: m.color }}>{m.value}</Text>
+                    <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{m.label}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginTop: 4 }}>
+                <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary }}>Portion :</Text>
+                <TextInput style={{ backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6, fontSize: Fs.sm, color: Colors.text, borderWidth: 1, borderColor: Colors.border, width: 70, textAlign: 'center' }} value={portion} onChangeText={setPortion} keyboardType="number-pad" />
+                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>g</Text>
+              </View>
+              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4 }}>⚠️ Estimation IA — peut varier selon la portion réelle</Text>
+            </View>
+            <TouchableOpacity style={{ backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center' }} onPress={() => {
+              const item: FoodItem = { id: `rest_${Date.now()}`, name: `🍽️ ${result.name}`, quantity: qty, caloriesPer100g: result.caloriesPer100g, proteinPer100g: result.proteinPer100g, carbsPer100g: result.carbsPer100g, fatPer100g: result.fatPer100g };
+              onAdd(item);
+            }}>
+              <Text style={{ color: '#fff', fontWeight: Fw.bold }}>Ajouter à mon repas</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ─── Modal Meal Prep ──────────────────────────────────────────────────────────
+
+function MealPrepModal({ user, onClose }: { user: any; onClose: () => void }) {
+  const [plan, setPlan] = useState('');
+  const [shopping, setShopping] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<'plan'|'shopping'>('plan');
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    generateMealPrepWithShopping(user).then(r => { setPlan(r.plan); setShopping(r.shopping); setLoading(false); });
+  }, []);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+        <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>📋 Meal Prep 7 jours</Text>
+        <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
+      </View>
+      {loading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={{ color: Colors.textSecondary, fontSize: Fs.sm }}>Génération du plan en cours…</Text>
+        </View>
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', padding: Sp.sm, gap: Sp.xs }}>
+            {(['plan', 'shopping'] as const).map(t => (
+              <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: tab === t ? Colors.primary : Colors.border, backgroundColor: tab === t ? Colors.primary + '18' : Colors.surface, alignItems: 'center' }} onPress={() => setTab(t)}>
+                <Text style={{ fontSize: Fs.sm, color: tab === t ? Colors.primary : Colors.textSecondary, fontWeight: Fw.semibold }}>{t === 'plan' ? '📅 Plan repas' : '🛒 Courses'}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <ScrollView contentContainerStyle={{ padding: Sp.md, paddingBottom: 100 }}>
+            <Text style={{ fontSize: Fs.sm, color: Colors.text, lineHeight: 22 }}>{tab === 'plan' ? plan : shopping}</Text>
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: Sp.sm, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border }}>
+            <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 12 }} onPress={() => Share.share({ message: `${plan}\n\n${shopping}`, title: 'Mon Meal Prep' })}>
+              <Ionicons name="share-outline" size={16} color="#fff" />
+              <Text style={{ color: '#fff', fontWeight: Fw.semibold, fontSize: Fs.sm }}>Exporter</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
