@@ -1,8 +1,8 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Modal, FlatList,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { sendCoachMessage, generateMealPlan } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
 
 const WEEKLY_ANALYSIS_PROMPT = "Analyse ma semaine complète : corrèle mes séances de sport avec ma nutrition, identifie les points forts et les axes d'amélioration, et donne-moi 3 recommandations concrètes pour la semaine prochaine.";
 
@@ -121,6 +122,7 @@ export default function CoachScreen() {
   const [loading,            setLoading]           = useState(false);
   const [generatingMealPlan, setGeneratingMealPlan] = useState(false);
   const [applyingPlan,       setApplyingPlan]      = useState<string | null>(null); // messageId en cours d'application
+  const [showHistory,        setShowHistory]       = useState(false);
 
   // ── Suggestions contextuelles ──────────────────────────────────────────────
   const contextualQuestions = useMemo(() => {
@@ -191,6 +193,19 @@ export default function CoachScreen() {
 
     return questions.slice(0, 4); // max 4 suggestions
   }, [store.workouts, store.meals, store.prs, store.user]);
+
+  const handleNewConversation = useCallback(async () => {
+    if (store.chat.length === 0) return;
+    const title = store.chat[0]?.content?.slice(0, 50) ?? `Conversation du ${new Date().toLocaleDateString('fr-FR')}`;
+    const conv: StoredConversation = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      title,
+      messages: store.chat,
+    };
+    await saveConversation(conv);
+    store.clearChat();
+  }, [store]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !store.user) return;
@@ -289,7 +304,10 @@ export default function CoachScreen() {
           <Text style={styles.coachName}>FitCoach IA</Text>
           <Text style={styles.coachSub}>{DEMO_MODE ? 'Mode démo (sans clé API)' : 'Propulsé par GPT-4o'}</Text>
         </View>
-        <TouchableOpacity onPress={store.clearChat} style={styles.clearBtn}>
+        <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn}>
+          <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleNewConversation} style={styles.clearBtn}>
           <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
       </View>
@@ -397,6 +415,15 @@ export default function CoachScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+
+    {/* ── Modal historique ────────────────────────────────────────────────── */}
+    <Modal visible={showHistory} animationType="slide" onRequestClose={() => setShowHistory(false)}>
+      <ConversationHistoryModal
+        onClose={() => setShowHistory(false)}
+        onRestore={() => setShowHistory(false)}
+      />
+    </Modal>
+
     </AnimatedScreen>
   );
 }
@@ -417,6 +444,65 @@ function Bubble({ msg }: { msg: ChatMessage }) {
         <Text style={[bStyles.text, isUser && bStyles.userText]}>{msg.content}</Text>
         <Text style={[bStyles.time, isUser && { color: 'rgba(255,255,255,0.45)' }]}>{time}</Text>
       </View>
+    </View>
+  );
+}
+
+// ─── Modal historique des conversations ───────────────────────────────────────
+
+function ConversationHistoryModal({ onClose, onRestore }: {
+  onClose: () => void;
+  onRestore: (conv: StoredConversation) => void;
+}) {
+  const [conversations, setConversations] = useState<StoredConversation[]>([]);
+  const [selected, setSelected] = useState<StoredConversation | null>(null);
+
+  useEffect(() => { loadConversations().then(setConversations); }, []);
+
+  if (selected) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+          <TouchableOpacity onPress={() => setSelected(null)}><Ionicons name="arrow-back" size={20} color={Colors.text} /></TouchableOpacity>
+          <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }} numberOfLines={1}>{selected.title}</Text>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}>
+          {selected.messages.map(msg => (
+            <View key={msg.id} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%', backgroundColor: msg.role === 'user' ? Colors.primary : Colors.surfaceElevated, borderRadius: 12, padding: Sp.sm }}>
+              <Text style={{ color: '#fff', fontSize: Fs.sm }}>{msg.content}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+        <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>Historique</Text>
+        <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
+      </View>
+      {conversations.length === 0 ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: Colors.textMuted, fontSize: Fs.md }}>Aucune conversation sauvegardée</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={c => c.id}
+          contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={{ backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md }}
+              onPress={() => setSelected(item)}
+            >
+              <Text style={{ fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text }} numberOfLines={2}>{item.title}</Text>
+              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 4 }}>{item.date} · {item.messages.length} messages</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 }

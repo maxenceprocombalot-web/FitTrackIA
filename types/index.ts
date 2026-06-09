@@ -177,3 +177,33 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
 }
+
+// ─── Recettes ─────────────────────────────────────────────────────────────────
+
+export interface RecipeIngredient {
+  name: string;
+  quantity: number;       // grammes
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  emoji: string;
+  ingredients: RecipeIngredient[];
+  servings: number;       // portions
+  isPredefined?: boolean;
+}
+
+// ─── Mensurations ─────────────────────────────────────────────────────────────
+
+export interface BodyMeasurement {
+  date: string;
+  waist?: number;   // tour de taille cm
+  arm?: number;     // tour de bras cm
+  thigh?: number;   // tour de cuisse cm
+  chest?: number;   // tour de poitrine cm
+}

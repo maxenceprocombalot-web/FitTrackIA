@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey } from '../../services/openai';
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import { ActivityLevel, NotifPrefs } from '../../types';
@@ -124,9 +125,13 @@ export default function SettingsScreen() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiKeySaved,   setApiKeySaved]   = useState(false);
 
+  // ── Apple Health ─────────────────────────────────────────────────────────
+  const [healthSync, setHealthSync] = useState(false);
+
   useEffect(() => {
     loadApiKey().then(k => { if (k) setApiKey(k); });
     loadNotifPrefs().then(p => setNotifPrefs(p));
+    AsyncStorage.getItem('@fit_health_sync').then(v => setHealthSync(v === 'true'));
   }, []);
 
   // ── Sauvegarder les objectifs ────────────────────────────────────────────
@@ -445,6 +450,35 @@ export default function SettingsScreen() {
             </View>
           </>
         )}
+
+        {/* ── INTÉGRATIONS ─────────────────────────────────────────────── */}
+        <SectionHeader title="INTÉGRATIONS" />
+        <View style={styles.card}>
+          <RowToggle
+            icon="heart-outline"
+            label="Apple Santé"
+            sublabel={Platform.OS === 'ios' ? "Synchroniser poids, calories et séances" : "iOS uniquement"}
+            value={healthSync}
+            onToggle={async (v) => {
+              if (Platform.OS !== 'ios') {
+                Alert.alert('Non disponible', 'La synchronisation Apple Santé est uniquement disponible sur iOS.');
+                return;
+              }
+              setHealthSync(v);
+              await AsyncStorage.setItem('@fit_health_sync', v ? 'true' : 'false');
+              if (v) {
+                Alert.alert('Apple Santé', 'La synchronisation nécessite un build natif (pas disponible dans Expo Go). Elle sera activée lors du prochain build.', [{ text: 'Compris' }]);
+              }
+            }}
+          />
+          {Platform.OS === 'ios' && healthSync && (
+            <View style={{ paddingHorizontal: Sp.md, paddingBottom: Sp.sm }}>
+              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17 }}>
+                ⚠️ Nécessite un build natif. Données synchronisées : poids, calories actives, séances d'entraînement.
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <View style={styles.footer}>

@@ -254,3 +254,65 @@ export const saveWeeklyBilanShown = (weekKey: string) => AsyncStorage.setItem(`@
 
 export const today     = (): string => new Date().toISOString().split('T')[0];
 export const thisMonth = (): string => new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+// ─── Recettes ─────────────────────────────────────────────────────────────────
+
+export async function loadRecipes(): Promise<import('../types').Recipe[]> {
+  return (await load<import('../types').Recipe[]>('@fit_recipes')) ?? [];
+}
+export async function saveRecipe(r: import('../types').Recipe): Promise<void> {
+  const list = await loadRecipes();
+  const idx  = list.findIndex(x => x.id === r.id);
+  if (idx >= 0) list[idx] = r; else list.push(r);
+  await AsyncStorage.setItem('@fit_recipes', JSON.stringify(list));
+}
+export async function deleteRecipe(id: string): Promise<void> {
+  const list = await loadRecipes();
+  await AsyncStorage.setItem('@fit_recipes', JSON.stringify(list.filter(r => r.id !== id)));
+}
+
+// ─── Photos de progression ────────────────────────────────────────────────────
+
+export async function loadProgressPhotos(): Promise<{ id: string; uri: string; date: string }[]> {
+  const raw = await AsyncStorage.getItem('@fit_progress_photos');
+  return raw ? JSON.parse(raw) : [];
+}
+export async function saveProgressPhoto(photo: { id: string; uri: string; date: string }): Promise<void> {
+  const list = await loadProgressPhotos();
+  await AsyncStorage.setItem('@fit_progress_photos', JSON.stringify([...list, photo]));
+}
+export async function deleteProgressPhoto(id: string): Promise<void> {
+  const list = await loadProgressPhotos();
+  await AsyncStorage.setItem('@fit_progress_photos', JSON.stringify(list.filter(p => p.id !== id)));
+}
+
+// ─── Historique conversations Coach IA ────────────────────────────────────────
+
+export interface StoredConversation {
+  id: string;
+  date: string;
+  title: string;
+  messages: import('../types').ChatMessage[];
+}
+export async function loadConversations(): Promise<StoredConversation[]> {
+  const raw = await AsyncStorage.getItem('@fit_conversations');
+  return raw ? JSON.parse(raw) : [];
+}
+export async function saveConversation(conv: StoredConversation): Promise<void> {
+  const list = await loadConversations();
+  const trimmed = [conv, ...list.filter(c => c.id !== conv.id)].slice(0, 30);
+  await AsyncStorage.setItem('@fit_conversations', JSON.stringify(trimmed));
+}
+
+// ─── Mensurations ─────────────────────────────────────────────────────────────
+
+export async function loadMeasurements(): Promise<import('../types').BodyMeasurement[]> {
+  return (await load<import('../types').BodyMeasurement[]>('@fit_measurements')) ?? [];
+}
+export async function saveMeasurement(m: import('../types').BodyMeasurement): Promise<void> {
+  const list = await loadMeasurements();
+  const idx  = list.findIndex(x => x.date === m.date);
+  if (idx >= 0) list[idx] = m; else list.push(m);
+  list.sort((a, b) => a.date.localeCompare(b.date));
+  await AsyncStorage.setItem('@fit_measurements', JSON.stringify(list));
+}

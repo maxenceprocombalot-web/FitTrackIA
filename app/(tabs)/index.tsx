@@ -333,6 +333,11 @@ export default function DashboardScreen() {
             <RingStat label="Net"       value={`${Math.round(macros.calories - burned)}`} unit="kcal" color={Colors.primary} />
           </View>
         </View>
+        {burned > 0 && (
+          <Text style={styles.adjustedGoalText}>
+            🔥 Objectif ajusté : {user.targetCalories + burned} kcal (+{burned} brûlées)
+          </Text>
+        )}
       </Card>
 
       {/* ── Macros ──────────────────────────────────────────────────────────── */}
@@ -711,6 +716,7 @@ const styles = StyleSheet.create({
   ringCard: {},
   ringRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Sp.md },
   ringStats: { flex: 1, gap: 10 },
+  adjustedGoalText: { fontSize: Fs.xs, color: Colors.orange, textAlign: 'center', marginTop: Sp.xs, fontWeight: Fw.medium },
   sectionTitle: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, marginBottom: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Eau
   waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.sm },

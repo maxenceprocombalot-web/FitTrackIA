@@ -2,22 +2,30 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TextInput,
   TouchableOpacity, StyleSheet, Dimensions, Animated,
+  Share, Image, Modal, Alert,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import Svg, { Path, Circle, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { WeightEntry, SavedPlan } from '../../types';
+import { WeightEntry, SavedPlan, BodyMeasurement } from '../../types';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import {
+  loadProgressPhotos, saveProgressPhoto, deleteProgressPhoto,
+  loadMeasurements, saveMeasurement,
+} from '../../services/storage';
+import { BADGES } from '../../constants/badges';
 
 const CHART_W = Dimensions.get('window').width - Sp.md * 2 - Sp.md * 2;
 const CHART_H = 160;
 const PAD     = { top: 16, bottom: 24, left: 30, right: 10 };
 
 type Period  = '30j' | '90j' | 'tout';
-type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'plans' | 'calories';
+type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'calories' | 'muscles' | 'corps' | 'badges' | 'plans' | 'photos';
 
 // Régression linéaire
 function linearReg(ys: number[]): { slope: number; intercept: number } {
@@ -127,7 +135,6 @@ function CaloriesChart({ entries, target }: {
 
   return (
     <Svg width={CHART_W} height={CHART_H}>
-      {/* Grille horizontale */}
       {yLabels.map((v, i) => (
         <Line key={i}
           x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)}
@@ -139,19 +146,15 @@ function CaloriesChart({ entries, target }: {
           {v}
         </SvgText>
       ))}
-      {/* Ligne objectif (pointillée) */}
       <Line
         x1={PAD.left} y1={targetY} x2={CHART_W - PAD.right} y2={targetY}
         stroke={Colors.primary} strokeWidth={1.5} strokeDasharray="5,4" opacity={0.8}
       />
       <SvgText x={CHART_W - PAD.right + 2} y={targetY + 4} fontSize={8} fill={Colors.primary}>obj</SvgText>
-      {/* Courbe */}
       <Path d={linePath} stroke={Colors.green} strokeWidth={2} fill="none" />
-      {/* Points colorés selon l'objectif */}
       {points.map((p, i) => (
         <Circle key={i} cx={p.x} cy={p.y} r={3} fill={p.cal > target ? Colors.red : Colors.green} />
       ))}
-      {/* Labels dates */}
       {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
         <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
           {entries[i].date.slice(5).replace('-', '/')}
@@ -159,6 +162,66 @@ function CaloriesChart({ entries, target }: {
       ))}
     </Svg>
   );
+}
+
+// ─── Badges helper ────────────────────────────────────────────────────────────
+
+function getUnlockedBadges(store: ReturnType<typeof useAppStore>): Set<string> {
+  const unlocked = new Set<string>();
+  const { workouts, meals, weights, prs, streak, chat, user } = store;
+
+  if (workouts.length >= 1)   unlocked.add('b01');
+  if (streak.best >= 7)       unlocked.add('b02');
+  if (prs.length >= 1)        unlocked.add('b03');
+  if (prs.length >= 10)       unlocked.add('b04');
+
+  const mealDays = new Set(meals.map(m => m.date)).size;
+  if (mealDays >= 30)         unlocked.add('b05');
+  if (workouts.length >= 100) unlocked.add('b06');
+
+  if (user) {
+    let streak7 = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      const dayMeals = meals.filter(m => m.date === ds);
+      if (!dayMeals.length) { streak7 = 0; continue; }
+      const cal = dayMeals.flatMap(m => m.items).reduce((s, item) => s + item.caloriesPer100g * item.quantity / 100, 0);
+      if (cal >= user.targetCalories * 0.9 && cal <= user.targetCalories * 1.1) streak7++;
+      else streak7 = 0;
+      if (streak7 >= 7) { unlocked.add('b07'); break; }
+    }
+  }
+
+  const workoutTypes = new Set(workouts.map(w => w.type)).size;
+  if (workoutTypes >= 5) unlocked.add('b09');
+
+  if (user?.createdAt) {
+    const days = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / 86400000);
+    if (days >= 365) unlocked.add('b10');
+  }
+
+  const cardioW = workouts.filter(w => w.type === 'cardio' || w.type === 'running').length;
+  if (cardioW >= 10) unlocked.add('b11');
+  if (cardioW >= 50) unlocked.add('b20');
+
+  if (meals.length >= 100) unlocked.add('b12');
+  if (weights.length >= 7) unlocked.add('b13');
+
+  const totalVolume = workouts.reduce((sv, w) => sv + w.exercises.reduce((se, e) => se + e.sets.reduce((ss, s) => ss + s.reps * s.weight, 0), 0), 0);
+  if (totalVolume >= 10000) unlocked.add('b14');
+
+  if (chat.filter(m => m.role === 'user').length >= 20) unlocked.add('b17');
+
+  if (unlocked.size >= 10) unlocked.add('b18');
+
+  if (user && weights.length >= 2) {
+    const startW = weights[0].weight;
+    const lastW  = weights[weights.length - 1].weight;
+    if (Math.abs(lastW - startW) >= 5) unlocked.add('b19');
+  }
+
+  return unlocked;
 }
 
 export default function ProgressScreen() {
@@ -169,6 +232,41 @@ export default function ProgressScreen() {
   const [activeTab,     setActiveTab]     = useState<ActiveTab>('weight');
   const [plansFilter,   setPlansFilter]   = useState<'all' | 'sport' | 'nutrition'>('all');
   const [selectedExo,   setSelectedExo]   = useState<string | null>(null);
+
+  // Photos de progression
+  const [photos, setPhotos] = useState<{ id: string; uri: string; date: string }[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+
+  useEffect(() => {
+    loadProgressPhotos().then(setPhotos);
+  }, []);
+
+  // Mensurations
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
+  const [measWaist, setMeasWaist] = useState('');
+  const [measArm,   setMeasArm]   = useState('');
+  const [measThigh, setMeasThigh] = useState('');
+  const [measChest, setMeasChest] = useState('');
+
+  useEffect(() => {
+    loadMeasurements().then(setMeasurements);
+  }, []);
+
+  // Volume musculaire 7 jours
+  const muscleVolume = useMemo(() => {
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+    const since = cutoff.toISOString().split('T')[0];
+    const vol: Record<string, number> = {};
+    store.workouts.filter(w => w.date >= since).forEach(w => {
+      w.exercises.forEach(ex => {
+        if (ex.category && ex.category !== 'Cardio') {
+          vol[ex.category] = (vol[ex.category] ?? 0) + ex.sets.length;
+        }
+      });
+    });
+    return vol;
+  }, [store.workouts]);
 
   // ── Historique par exercice (pour le graphique) ───────────────────────────
   const exerciseHistory = useMemo(() => {
@@ -188,7 +286,6 @@ export default function ProgressScreen() {
 
   const exerciseNames = Object.keys(exerciseHistory).sort();
 
-  // Données de progression pour l'exercice sélectionné (30 derniers jours)
   const exoData = useMemo(() => {
     const name = selectedExo ?? exerciseNames[0];
     if (!name) return [];
@@ -231,7 +328,6 @@ export default function ProgressScreen() {
     return days > 0 && days < 1000 ? days : null;
   })();
 
-  // Stats sport
   const totalWorkouts  = store.workouts.length;
   const totalVolume    = store.workouts.reduce((s, w) =>
     s + w.exercises.reduce((sv, e) =>
@@ -242,7 +338,6 @@ export default function ProgressScreen() {
   }));
   const topExercise = Object.entries(exerciseCount).sort((a, b) => b[1] - a[1])[0];
 
-  // Bilan nutrition hebdo
   const last7 = (() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
@@ -261,12 +356,10 @@ export default function ProgressScreen() {
     return { avg, daysTracked: vals.length, daysInRange: inRange };
   })();
 
-  // Plans filtrés
   const filteredPlans = plansFilter === 'all'
     ? store.savedPlans
     : store.savedPlans.filter(p => p.type === plansFilter);
 
-  // Données calories sur 30 jours
   const calories30 = useMemo(() => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
@@ -296,24 +389,32 @@ export default function ProgressScreen() {
     setWeightIn('');
   };
 
+  const TAB_LABELS: Record<ActiveTab, string> = {
+    weight: 'Poids',
+    sport: 'Sport',
+    nutrition: 'Nutrition',
+    calories: 'Calories',
+    muscles: 'Muscles',
+    corps: 'Corps',
+    badges: 'Badges',
+    plans: 'Plans',
+    photos: 'Photos',
+  };
+
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
-        {(['weight', 'sport', 'nutrition', 'calories', 'plans'] as ActiveTab[]).map(tab => (
+        {(['weight', 'sport', 'nutrition', 'calories', 'muscles', 'corps', 'badges', 'plans', 'photos'] as ActiveTab[]).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'weight' ? 'Poids'
-                : tab === 'sport' ? 'Sport'
-                : tab === 'nutrition' ? 'Nutrition'
-                : tab === 'calories' ? 'Calories'
-                : 'Plans'}
+              {TAB_LABELS[tab]}
             </Text>
           </TouchableOpacity>
         ))}
@@ -391,7 +492,6 @@ export default function ProgressScreen() {
       {/* ── Onglet Sport ─────────────────────────────────────────────────── */}
       {activeTab === 'sport' && (
         <>
-          {/* Streak */}
           {(store.streak.current > 0 || store.streak.best > 0) && (
             <Card style={styles.streakCard}>
               <View style={styles.streakRow}>
@@ -443,11 +543,9 @@ export default function ProgressScreen() {
                 );
               })}
           </Card>
-          {/* Progression par exercice */}
           {exerciseNames.length > 0 && (
             <Card>
               <Text style={styles.sectionLabel}>Progression par exercice</Text>
-              {/* Sélecteur d'exercice */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exoScroll} contentContainerStyle={styles.exoScrollContent}>
                 {exerciseNames.map(name => (
                   <TouchableOpacity
@@ -462,7 +560,6 @@ export default function ProgressScreen() {
                 ))}
               </ScrollView>
 
-              {/* Stats résumé */}
               {effectiveExo && (
                 <View style={styles.exoStats}>
                   <ExoStat label="Meilleur" value={`${exoBestWeight} kg`} color={Colors.yellow} />
@@ -475,7 +572,6 @@ export default function ProgressScreen() {
                 </View>
               )}
 
-              {/* Graphique */}
               <ExerciseChart data={exoData} />
             </Card>
           )}
@@ -504,7 +600,6 @@ export default function ProgressScreen() {
       {/* ── Onglet Calories ──────────────────────────────────────────────── */}
       {activeTab === 'calories' && (
         <>
-          {/* Stats en haut */}
           <View style={styles.statGrid}>
             <BigStat value={String(calAvg)}     label={`moy. 30j (obj: ${calTarget})`} color={calAvg > calTarget ? Colors.red : Colors.green} />
             <BigStat value={String(calInRange)}  label="jours dans l'objectif (±10%)"  color={Colors.primary} />
@@ -520,7 +615,6 @@ export default function ProgressScreen() {
               </Text>
             </Card>
           )}
-          {/* Graphique */}
           <Card style={styles.chartCard}>
             <Text style={styles.sectionLabel}>Évolution sur 30 jours</Text>
             <View style={styles.calLegend}>
@@ -542,10 +636,161 @@ export default function ProgressScreen() {
         </>
       )}
 
+      {/* ── Onglet Muscles ───────────────────────────────────────────────── */}
+      {activeTab === 'muscles' && (
+        <>
+          <Card>
+            <Text style={styles.sectionLabel}>Volume musculaire – 7 derniers jours</Text>
+            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.md }}>
+              Volume recommandé : 10–20 séries/semaine par muscle
+            </Text>
+            {['Pectoraux','Dos','Épaules','Bras','Jambes','Abdos'].map(muscle => {
+              const sets = muscleVolume[muscle] ?? 0;
+              const color = sets === 0 ? Colors.textMuted : sets < 10 ? Colors.orange : sets <= 20 ? Colors.green : Colors.red;
+              const label = sets === 0 ? 'Non travaillé' : sets < 10 ? 'Insuffisant' : sets <= 20 ? 'Optimal' : 'Surentraîné';
+              const barWidth = Math.min((sets / 25) * 100, 100);
+              return (
+                <View key={muscle} style={{ marginBottom: Sp.sm }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text style={{ fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium }}>{muscle}</Text>
+                    <Text style={{ fontSize: Fs.xs, color, fontWeight: Fw.semibold }}>{sets} séries · {label}</Text>
+                  </View>
+                  <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: `${barWidth}%`, backgroundColor: color, borderRadius: 4 }} />
+                  </View>
+                </View>
+              );
+            })}
+          </Card>
+          {Object.keys(muscleVolume).length === 0 && (
+            <View style={{ alignItems: 'center', paddingVertical: 50 }}>
+              <Ionicons name="barbell-outline" size={48} color={Colors.textMuted} />
+              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md }}>Aucune séance cette semaine</Text>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* ── Onglet Corps ─────────────────────────────────────────────────── */}
+      {activeTab === 'corps' && (
+        <>
+          {store.user && (() => {
+            const w = store.weights[store.weights.length - 1]?.weight ?? store.user.weight;
+            const h = store.user.height / 100;
+            const imc = w / (h * h);
+            const cat = imc < 18.5 ? 'Insuffisance pondérale' : imc < 25 ? 'Poids normal' : imc < 30 ? 'Surpoids' : 'Obésité';
+            const color = imc < 18.5 ? Colors.orange : imc < 25 ? Colors.green : imc < 30 ? Colors.orange : Colors.red;
+            return (
+              <Card>
+                <Text style={styles.sectionLabel}>IMC</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 40, fontWeight: Fw.heavy, color }}>{imc.toFixed(1)}</Text>
+                  <Text style={{ fontSize: Fs.md, color, fontWeight: Fw.semibold }}>{cat}</Text>
+                </View>
+                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 4 }}>{w} kg · {store.user.height} cm</Text>
+              </Card>
+            );
+          })()}
+
+          <Card>
+            <Text style={styles.sectionLabel}>Saisir les mensurations du jour</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm }}>
+              {[
+                { label: 'Taille (cm)', value: measWaist, setter: setMeasWaist },
+                { label: 'Bras (cm)',   value: measArm,   setter: setMeasArm },
+                { label: 'Cuisse (cm)', value: measThigh, setter: setMeasThigh },
+                { label: 'Poitrine (cm)', value: measChest, setter: setMeasChest },
+              ].map(field => (
+                <View key={field.label} style={{ width: '48%' }}>
+                  <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: 3 }}>{field.label}</Text>
+                  <TextInput
+                    style={styles.weightInput}
+                    value={field.value}
+                    onChangeText={field.setter}
+                    keyboardType="decimal-pad"
+                    placeholder="—"
+                    placeholderTextColor={Colors.textMuted}
+                  />
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.saveBtn, { marginTop: Sp.sm }]}
+              onPress={async () => {
+                const m: BodyMeasurement = {
+                  date:  new Date().toISOString().split('T')[0],
+                  waist: measWaist  ? parseFloat(measWaist)  : undefined,
+                  arm:   measArm    ? parseFloat(measArm)    : undefined,
+                  thigh: measThigh  ? parseFloat(measThigh)  : undefined,
+                  chest: measChest  ? parseFloat(measChest)  : undefined,
+                };
+                await saveMeasurement(m);
+                setMeasurements(prev => {
+                  const idx = prev.findIndex(x => x.date === m.date);
+                  return idx >= 0 ? prev.map((x, i) => i === idx ? m : x) : [...prev, m].sort((a, b) => a.date.localeCompare(b.date));
+                });
+                setMeasWaist(''); setMeasArm(''); setMeasThigh(''); setMeasChest('');
+              }}
+            >
+              <Text style={styles.saveBtnText}>Enregistrer</Text>
+            </TouchableOpacity>
+          </Card>
+
+          {measurements.length > 0 && (
+            <Card>
+              <Text style={styles.sectionLabel}>Historique</Text>
+              <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.border, paddingBottom: 6, marginBottom: 6 }}>
+                {['Date','Taille','Bras','Cuisse','Poitrine'].map(h => (
+                  <Text key={h} style={{ flex: 1, fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center' }}>{h}</Text>
+                ))}
+              </View>
+              {[...measurements].reverse().slice(0, 10).map(m => (
+                <View key={m.date} style={{ flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+                  <Text style={{ flex: 1, fontSize: Fs.xs, color: Colors.textSecondary, textAlign: 'center' }}>{m.date.slice(5).replace('-', '/')}</Text>
+                  {[m.waist, m.arm, m.thigh, m.chest].map((v, i) => (
+                    <Text key={i} style={{ flex: 1, fontSize: Fs.xs, color: v ? Colors.text : Colors.textMuted, fontWeight: v ? Fw.semibold : Fw.regular, textAlign: 'center' }}>
+                      {v ? `${v}` : '—'}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* ── Onglet Badges ────────────────────────────────────────────────── */}
+      {activeTab === 'badges' && (() => {
+        const unlocked = getUnlockedBadges(store);
+        const count = unlocked.size;
+        return (
+          <>
+            <Card>
+              <Text style={styles.sectionLabel}>Badges débloqués : {count} / {BADGES.length}</Text>
+              <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', marginTop: 4 }}>
+                <View style={{ height: '100%', width: `${(count / BADGES.length) * 100}%`, backgroundColor: Colors.yellow, borderRadius: 3 }} />
+              </View>
+            </Card>
+            <View style={styles.badgesGrid}>
+              {BADGES.map(badge => {
+                const isUnlocked = unlocked.has(badge.id);
+                return (
+                  <View key={badge.id} style={[styles.badgeCard, !isUnlocked && styles.badgeCardLocked]}>
+                    <Text style={[styles.badgeEmoji, !isUnlocked && styles.badgeEmojiLocked]}>{badge.emoji}</Text>
+                    <Text style={[styles.badgeTitle, !isUnlocked && styles.badgeTitleLocked]} numberOfLines={1}>{badge.title}</Text>
+                    <Text style={styles.badgeDesc} numberOfLines={2}>{badge.description}</Text>
+                    {!isUnlocked && <Ionicons name="lock-closed" size={12} color={Colors.textMuted} style={{ marginTop: 2 }} />}
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        );
+      })()}
+
       {/* ── Onglet Plans ─────────────────────────────────────────────────── */}
       {activeTab === 'plans' && (
         <>
-          {/* Filtres type */}
           <View style={styles.plansFilterRow}>
             {(['all', 'sport', 'nutrition'] as const).map(f => (
               <TouchableOpacity
@@ -579,6 +824,162 @@ export default function ProgressScreen() {
           )}
         </>
       )}
+
+      {/* ── Onglet Photos ────────────────────────────────────────────────── */}
+      {activeTab === 'photos' && (
+        <>
+          <TouchableOpacity style={styles.addPhotoBtn} onPress={async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') { Alert.alert('Permission refusée', 'Active l\'accès à la photothèque dans les réglages.'); return; }
+            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+            if (!result.canceled && result.assets[0]) {
+              const asset = result.assets[0];
+              const destDir = FileSystem.documentDirectory + 'progress_photos/';
+              await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
+              const filename = `photo_${Date.now()}.jpg`;
+              await FileSystem.copyAsync({ from: asset.uri, to: destDir + filename });
+              const photo = { id: filename, uri: destDir + filename, date: new Date().toISOString().split('T')[0] };
+              await saveProgressPhoto(photo);
+              setPhotos(prev => [...prev, photo]);
+            }
+          }}>
+            <Ionicons name="camera-outline" size={18} color={Colors.primary} />
+            <Text style={styles.addPhotoBtnText}>📸 Ajouter une photo</Text>
+          </TouchableOpacity>
+
+          {selectedPhotos.length === 2 && (
+            <TouchableOpacity style={styles.beforeAfterBtn} onPress={() => setShowBeforeAfter(true)}>
+              <Text style={styles.beforeAfterBtnText}>Voir Before / After</Text>
+            </TouchableOpacity>
+          )}
+
+          {photos.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 50 }}>
+              <Text style={{ fontSize: 48 }}>📸</Text>
+              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md }}>Aucune photo</Text>
+              <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, textAlign: 'center', marginTop: 6 }}>
+                Ajoute des photos pour suivre ta transformation
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.photosGrid}>
+              {photos.map(photo => {
+                const isSelected = selectedPhotos.includes(photo.id);
+                return (
+                  <TouchableOpacity
+                    key={photo.id}
+                    style={[styles.photoThumb, isSelected && styles.photoThumbSelected]}
+                    onPress={() => {
+                      setSelectedPhotos(prev =>
+                        prev.includes(photo.id)
+                          ? prev.filter(id => id !== photo.id)
+                          : prev.length < 2 ? [...prev, photo.id] : [prev[1], photo.id]
+                      );
+                    }}
+                    onLongPress={() => Alert.alert('Supprimer', 'Supprimer cette photo ?', [
+                      { text: 'Annuler', style: 'cancel' },
+                      { text: 'Supprimer', style: 'destructive', onPress: async () => {
+                          await FileSystem.deleteAsync(photo.uri, { idempotent: true });
+                          await deleteProgressPhoto(photo.id);
+                          setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                          setSelectedPhotos(prev => prev.filter(id => id !== photo.id));
+                        }
+                      },
+                    ])}
+                  >
+                    <Image source={{ uri: photo.uri }} style={styles.photoImg} />
+                    {isSelected && (
+                      <View style={styles.photoCheckOverlay}>
+                        <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
+                      </View>
+                    )}
+                    <Text style={styles.photoDate}>{photo.date.slice(5).replace('-', '/')}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {showBeforeAfter && selectedPhotos.length === 2 && (() => {
+            const p1 = photos.find(p => p.id === selectedPhotos[0]);
+            const p2 = photos.find(p => p.id === selectedPhotos[1]);
+            return p1 && p2 ? (
+              <Modal visible animationType="fade" onRequestClose={() => setShowBeforeAfter(false)}>
+                <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }}>
+                  <TouchableOpacity onPress={() => setShowBeforeAfter(false)} style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}>
+                    <Ionicons name="close" size={28} color="#fff" />
+                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}>
+                    <View style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '700', marginBottom: 4 }}>Avant · {p1.date.slice(5).replace('-', '/')}</Text>
+                      <Image source={{ uri: p1.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontWeight: '700', marginBottom: 4 }}>Après · {p2.date.slice(5).replace('-', '/')}</Text>
+                      <Image source={{ uri: p2.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={{ margin: 20, backgroundColor: Colors.primary, borderRadius: R, padding: 14, alignItems: 'center' }}
+                    onPress={() => Share.share({ message: `Ma transformation FitTrack IA : de ${p1.date} à ${p2.date} 💪` })}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>Partager</Text>
+                  </TouchableOpacity>
+                </View>
+              </Modal>
+            ) : null;
+          })()}
+        </>
+      )}
+
+      {/* ── Rapport mensuel (visible depuis tous les onglets) ─────────────── */}
+      <TouchableOpacity
+        style={styles.reportBtn}
+        onPress={() => {
+          const month = new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+          const totalVol = store.workouts.reduce((sv, w) => sv + w.exercises.reduce((se, e) => se + e.sets.reduce((ss, s) => ss + s.reps * s.weight, 0), 0), 0);
+          const latestWeight = store.weights[store.weights.length - 1]?.weight;
+          const unlockedBadgesCount = getUnlockedBadges(store).size;
+          const thisMonthKey = new Date().toISOString().slice(0, 7);
+          const monthWorkouts = store.workouts.filter(w => w.date.startsWith(thisMonthKey));
+          const dayCalMap: Record<string, number> = {};
+          store.meals.filter(m => m.date.startsWith(thisMonthKey)).forEach(m => {
+            const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+            dayCalMap[m.date] = (dayCalMap[m.date] ?? 0) + cal;
+          });
+          const calVals = Object.values(dayCalMap);
+          const avgCal  = calVals.length ? Math.round(calVals.reduce((a, b) => a + b, 0) / calVals.length) : 0;
+          const newPRs  = store.prs.filter(p => p.date.startsWith(thisMonthKey));
+
+          const report = `📊 RAPPORT MENSUEL FITTRACK IA
+${month.toUpperCase()}
+${'─'.repeat(30)}
+
+⚖️ POIDS
+• Poids actuel : ${latestWeight ? `${latestWeight} kg` : 'Non renseigné'}
+
+🏋️ SPORT
+• Séances réalisées : ${monthWorkouts.length}
+• Volume total : ${Math.round(totalVol)} kg
+• PRs battus ce mois : ${newPRs.length}
+${newPRs.map(pr => `  - ${pr.exerciseName} : ${pr.weight} kg × ${pr.reps}`).join('\n')}
+
+🍽️ NUTRITION
+• Calories moyennes : ${avgCal} kcal/j
+• Objectif : ${store.user?.targetCalories ?? '?'} kcal/j
+
+🏅 BADGES
+• Badges débloqués : ${unlockedBadgesCount} / ${BADGES.length}
+
+${'─'.repeat(30)}
+Généré par FitTrack IA · ${new Date().toLocaleDateString('fr-FR')}`;
+
+          Share.share({ message: report, title: `Rapport FitTrack IA - ${month}` });
+        }}
+      >
+        <Ionicons name="document-text-outline" size={16} color={Colors.primary} />
+        <Text style={styles.reportBtnText}>📄 Générer mon rapport mensuel</Text>
+      </TouchableOpacity>
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -748,7 +1149,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.sm },
   weightInputRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md },
   weightInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
-  saveBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center' },
+  saveBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', paddingVertical: 10 },
   saveBtnText: { color: '#fff', fontWeight: Fw.semibold },
   weightSummary: { flexDirection: 'row' },
   periodRow: { flexDirection: 'row', gap: Sp.xs },
@@ -777,13 +1178,11 @@ const styles = StyleSheet.create({
   inRangeBar: { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 },
   inRangeFill: { height: '100%', backgroundColor: Colors.green, borderRadius: 99 },
   inRangeText: { fontSize: Fs.sm, color: Colors.textSecondary },
-  // Streak dans Sport
   streakCard: { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   streakEmoji: { fontSize: 28 },
   streakTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
   streakSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
-  // Sélecteur exercice
   exoScroll:        { marginHorizontal: -Sp.md },
   exoScrollContent: { paddingHorizontal: Sp.md, paddingVertical: 6, gap: 6 },
   exoChip:          { paddingHorizontal: Sp.sm, paddingVertical: 5, borderRadius: 99, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, maxWidth: 150 },
@@ -791,7 +1190,6 @@ const styles = StyleSheet.create({
   exoChipText:      { fontSize: Fs.xs, color: Colors.textSecondary },
   exoChipTextActive:{ color: Colors.yellow, fontWeight: Fw.semibold },
   exoStats:         { flexDirection: 'row', gap: Sp.xs, marginBottom: 4 },
-  // Plans
   plansFilterRow: { flexDirection: 'row', gap: Sp.xs },
   plansFilterBtn: { flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, alignItems: 'center' },
   plansFilterBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
@@ -801,4 +1199,27 @@ const styles = StyleSheet.create({
   plansEmpty: { alignItems: 'center', paddingVertical: 50, gap: 8 },
   plansEmptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontWeight: Fw.semibold },
   plansEmptySub: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
+  // Badges
+  badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
+  badgeCard: { width: '30%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '40', padding: Sp.sm, alignItems: 'center', gap: 3 },
+  badgeCardLocked: { borderColor: Colors.border, opacity: 0.5 },
+  badgeEmoji: { fontSize: 28 },
+  badgeEmojiLocked: { opacity: 0.4 },
+  badgeTitle: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.text, textAlign: 'center' },
+  badgeTitleLocked: { color: Colors.textMuted },
+  badgeDesc: { fontSize: 9, color: Colors.textMuted, textAlign: 'center', lineHeight: 12 },
+  // Photos
+  addPhotoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary + '18', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', paddingVertical: 14, marginBottom: Sp.sm },
+  addPhotoBtnText: { fontSize: Fs.md, color: Colors.primary, fontWeight: Fw.semibold },
+  beforeAfterBtn: { backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm },
+  beforeAfterBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.sm },
+  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs },
+  photoThumb: { width: '31.5%', aspectRatio: 1, borderRadius: R, overflow: 'hidden', position: 'relative' },
+  photoThumbSelected: { borderWidth: 2, borderColor: Colors.primary },
+  photoImg: { width: '100%', height: '100%' },
+  photoCheckOverlay: { position: 'absolute', top: 4, right: 4 },
+  photoDate: { position: 'absolute', bottom: 4, left: 4, color: '#fff', fontSize: Fs.xs, fontWeight: Fw.semibold, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
+  // Rapport mensuel
+  reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '35', paddingVertical: 14, marginTop: Sp.sm },
+  reportBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.semibold },
 });

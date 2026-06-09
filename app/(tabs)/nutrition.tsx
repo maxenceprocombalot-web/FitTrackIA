@@ -2,17 +2,19 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Alert, Platform, Animated, PanResponder, Dimensions,
+  Modal, FlatList,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { Meal, MealType, FoodItem } from '../../types';
+import { Meal, MealType, FoodItem, Recipe } from '../../types';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+import { PREDEFINED_RECIPES } from '../../constants/recipes';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
   breakfast: { label: 'Petit-déjeuner', icon: 'sunny-outline',     color: Colors.yellow },
@@ -54,6 +56,7 @@ export default function NutritionScreen() {
   const TODAY = storage.today();
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const isToday = selectedDate === TODAY;
+  const [showRecipes, setShowRecipes] = useState(false);
 
   // Navigation par date
   const goToPrev = () => {
@@ -195,6 +198,12 @@ export default function NutritionScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* ── Bouton recettes ──────────────────────────────────────────────── */}
+      <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRecipes(true)}>
+        <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
+        <Text style={styles.recipesBtnText}>Recettes</Text>
+      </TouchableOpacity>
+
       {/* ── Bouton copier depuis le jour précédent ───────────────────────── */}
       {prevMeals.length > 0 && (
         <TouchableOpacity style={styles.copyBtn} onPress={handleCopyFromPrev}>
@@ -276,6 +285,37 @@ export default function NutritionScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    {/* ── Modal recettes ────────────────────────────────────────────────── */}
+    {showRecipes && (
+      <RecipesModal
+        onClose={() => setShowRecipes(false)}
+        onAddRecipe={(recipe) => {
+          const totalCal  = recipe.ingredients.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+          const totalProt = recipe.ingredients.reduce((s, i) => s + i.proteinPer100g  * i.quantity / 100, 0);
+          const totalCarb = recipe.ingredients.reduce((s, i) => s + i.carbsPer100g    * i.quantity / 100, 0);
+          const totalFat  = recipe.ingredients.reduce((s, i) => s + i.fatPer100g      * i.quantity / 100, 0);
+          const totalQty  = recipe.ingredients.reduce((s, i) => s + i.quantity, 0);
+          const perPortion = recipe.servings;
+          const item: FoodItem = {
+            id: `recipe_${Date.now()}`,
+            name: `${recipe.emoji} ${recipe.name} (1 portion)`,
+            quantity: Math.round(totalQty / perPortion),
+            caloriesPer100g: Math.round((totalCal / perPortion) / (totalQty / perPortion / 100)),
+            proteinPer100g:  Math.round((totalProt / perPortion) / (totalQty / perPortion / 100) * 10) / 10,
+            carbsPer100g:    Math.round((totalCarb / perPortion) / (totalQty / perPortion / 100) * 10) / 10,
+            fatPer100g:      Math.round((totalFat  / perPortion) / (totalQty / perPortion / 100) * 10) / 10,
+          };
+          const existing = selectedMeals.find(m => m.type === 'lunch');
+          const meal: Meal = existing
+            ? { ...existing, items: [...existing.items, item] }
+            : { id: Date.now().toString(), date: selectedDate, type: 'lunch', items: [item] };
+          store.addMeal(meal);
+          setShowRecipes(false);
+        }}
+      />
+    )}
+
     </AnimatedScreen>
   );
 }
@@ -405,4 +445,79 @@ const styles = StyleSheet.create({
   favBtn:      { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.yellow + '15' },
   addBtn:      { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   emptyMeal:   { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
+  // Recettes
+  recipesBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30', paddingVertical: 8, paddingHorizontal: Sp.md },
+  recipesBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold },
+});
+
+// ─── Modal Recettes ───────────────────────────────────────────────────────────
+
+function RecipesModal({ onClose, onAddRecipe }: {
+  onClose: () => void;
+  onAddRecipe: (recipe: Recipe) => void;
+}) {
+  const allRecipes = PREDEFINED_RECIPES;
+
+  const renderRecipe = ({ item }: { item: Recipe }) => {
+    const totalCal  = item.ingredients.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
+    const totalProt = item.ingredients.reduce((s, i) => s + i.proteinPer100g  * i.quantity / 100, 0);
+    const totalCarb = item.ingredients.reduce((s, i) => s + i.carbsPer100g    * i.quantity / 100, 0);
+    const totalFat  = item.ingredients.reduce((s, i) => s + i.fatPer100g      * i.quantity / 100, 0);
+    const calPer = Math.round(totalCal / item.servings);
+    const protPer = Math.round(totalProt / item.servings);
+    const carbPer = Math.round(totalCarb / item.servings);
+    const fatPer  = Math.round(totalFat  / item.servings);
+    return (
+      <View style={recipeStyles.card}>
+        <View style={recipeStyles.row}>
+          <Text style={recipeStyles.emoji}>{item.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={recipeStyles.name}>{item.name}</Text>
+            <View style={recipeStyles.macroRow}>
+              <Text style={recipeStyles.calText}>{calPer} kcal</Text>
+              <Text style={recipeStyles.macroText}>P:{protPer}g  G:{carbPer}g  L:{fatPer}g</Text>
+            </View>
+            <Text style={recipeStyles.servings}>Pour {item.servings} portion{item.servings > 1 ? 's' : ''}</Text>
+          </View>
+          <TouchableOpacity style={recipeStyles.addBtn} onPress={() => onAddRecipe(item)}>
+            <Text style={recipeStyles.addBtnText}>Ajouter</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <Modal visible animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+        <View style={recipeStyles.header}>
+          <Text style={recipeStyles.title}>🥘 Recettes</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={22} color={Colors.text} />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={allRecipes}
+          keyExtractor={r => r.id}
+          contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}
+          renderItem={renderRecipe}
+        />
+      </View>
+    </Modal>
+  );
+}
+
+const recipeStyles = StyleSheet.create({
+  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
+  title:     { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  card:      { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
+  row:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
+  emoji:     { fontSize: 32 },
+  name:      { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text, marginBottom: 3 },
+  macroRow:  { flexDirection: 'row', gap: Sp.sm, alignItems: 'center', marginBottom: 2 },
+  calText:   { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.caloriesColor },
+  macroText: { fontSize: Fs.xs, color: Colors.textSecondary },
+  servings:  { fontSize: Fs.xs, color: Colors.textMuted },
+  addBtn:    { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6 },
+  addBtnText:{ fontSize: Fs.xs, color: '#fff', fontWeight: Fw.bold },
 });

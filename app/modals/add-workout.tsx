@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, Alert, SectionList, Animated,
-  Modal, Dimensions, Share,
+  Modal, Dimensions, Share, PanResponder,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,6 +107,11 @@ export default function AddWorkoutModal() {
   // Flash doré PR : set (exIdx, setIdx) pour l'animation
   const [prFlash, setPrFlash] = useState<string | null>(null);
   const prFlashAnim = useRef(new Animated.Value(0)).current;
+
+  // Mode Focus
+  const [showFocus,   setShowFocus]   = useState(false);
+  const [focusExIdx,  setFocusExIdx]  = useState(0);
+  const [focusSetIdx, setFocusSetIdx] = useState(0);
 
   const triggerPRFlash = useCallback((key: string) => {
     setPrFlash(key);
@@ -284,6 +289,29 @@ export default function AddWorkoutModal() {
         onClose={() => { setSummary(null); router.back(); }}
       />
     )}
+    {/* Mode Focus */}
+    {showFocus && exercises.length > 0 && (
+      <FocusModeModal
+        exercises={exercises}
+        exIdx={focusExIdx}
+        setIdx={focusSetIdx}
+        onSetDone={(exIdx, setIdx) => {
+          updateSet(exIdx, setIdx, 'completed', true);
+          const ex = exercises[exIdx];
+          if (setIdx < ex.sets.length - 1) setFocusSetIdx(setIdx + 1);
+          else if (exIdx < exercises.length - 1) { setFocusExIdx(exIdx + 1); setFocusSetIdx(0); }
+          else { setShowFocus(false); }
+        }}
+        onNext={() => { if (focusExIdx < exercises.length - 1) { setFocusExIdx(focusExIdx + 1); setFocusSetIdx(0); } }}
+        onPrev={() => { if (focusExIdx > 0) { setFocusExIdx(focusExIdx - 1); setFocusSetIdx(0); } }}
+        onClose={() => {
+          Alert.alert('Quitter le mode Focus ?', 'Ta progression sera conservée.', [
+            { text: 'Rester', style: 'cancel' },
+            { text: 'Quitter', onPress: () => setShowFocus(false) },
+          ]);
+        }}
+      />
+    )}
     <RestTimer visible={timerVisible} onClose={() => setTimerVisible(false)} />
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
@@ -297,6 +325,13 @@ export default function AddWorkoutModal() {
         placeholderTextColor={Colors.textMuted}
         autoFocus
       />
+      {/* ── Bouton Mode Focus ────────────────────────────────────────────── */}
+      {exercises.length > 0 && (
+        <TouchableOpacity style={styles.focusBtn} onPress={() => setShowFocus(true)}>
+          <Ionicons name="eye-outline" size={16} color={Colors.orange} />
+          <Text style={styles.focusBtnText}>Mode Focus 🎯</Text>
+        </TouchableOpacity>
+      )}
 
       {/* ── Type ────────────────────────────────────────────────────────── */}
       <Label text="Type" />
@@ -476,6 +511,9 @@ const styles = StyleSheet.create({
   exercisePickerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.md, paddingVertical: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: Sp.sm },
   exercisePickerName: { flex: 1, fontSize: Fs.md, color: Colors.text },
   exercisePickerMeta: { fontSize: Fs.xs, color: Colors.textMuted },
+  // Mode Focus
+  focusBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end', paddingHorizontal: Sp.sm, paddingVertical: 6, borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '50', backgroundColor: Colors.orange + '0A', marginBottom: Sp.sm },
+  focusBtnText: { fontSize: Fs.xs, color: Colors.orange, fontWeight: Fw.semibold },
 });
 
 // ─── Modal résumé de fin de séance ───────────────────────────────────────────
@@ -618,4 +656,127 @@ const smStyles = StyleSheet.create({
   shareBtnText:{ fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
   continueBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', justifyContent: 'center' },
   continueBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
+});
+
+// ─── Mode Focus ───────────────────────────────────────────────────────────────
+
+function FocusModeModal({ exercises, exIdx, setIdx, onSetDone, onNext, onPrev, onClose }: {
+  exercises: ExerciseLog[];
+  exIdx: number;
+  setIdx: number;
+  onSetDone: (e: number, s: number) => void;
+  onNext: () => void;
+  onPrev: () => void;
+  onClose: () => void;
+}) {
+  const ex = exercises[exIdx];
+  const set = ex?.sets[setIdx];
+  const [restSecs, setRestSecs] = useState(0);
+  const [resting, setResting] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const panX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (resting) {
+      intervalRef.current = setInterval(() => setRestSecs(s => {
+        if (s <= 1) {
+          clearInterval(intervalRef.current!);
+          setResting(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          return 0;
+        }
+        return s - 1;
+      }), 1000);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [resting]);
+
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 30 && Math.abs(g.dy) < 40,
+    onPanResponderRelease: (_, g) => {
+      if (g.dx < -80) onNext();
+      else if (g.dx > 80) onPrev();
+      Animated.spring(panX, { toValue: 0, useNativeDriver: true }).start();
+    },
+    onPanResponderMove: (_, g) => panX.setValue(g.dx * 0.3),
+  })).current;
+
+  return (
+    <Modal visible animationType="fade" statusBarTranslucent>
+      <View style={focusStyles.bg} {...panResponder.panHandlers}>
+        {/* Header */}
+        <View style={focusStyles.header}>
+          <Text style={focusStyles.progress}>{exIdx + 1} / {exercises.length}</Text>
+          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={26} color="rgba(255,255,255,0.5)" /></TouchableOpacity>
+        </View>
+
+        {/* Exercice en grand */}
+        <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', transform: [{ translateX: panX }] }}>
+          <Text style={focusStyles.exName}>{ex?.name}</Text>
+          <Text style={focusStyles.setInfo}>Série {setIdx + 1} / {ex?.sets.length}</Text>
+          {set && (
+            <View style={focusStyles.setDetail}>
+              {set.weight > 0 && <Text style={focusStyles.setVal}>{set.weight} kg</Text>}
+              <Text style={focusStyles.setVal}>{set.reps} reps</Text>
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Timer de repos ou bouton */}
+        {resting ? (
+          <View style={focusStyles.restBox}>
+            <Text style={focusStyles.restTitle}>Repos</Text>
+            <Text style={focusStyles.restTimer}>{restSecs}s</Text>
+            <TouchableOpacity style={focusStyles.skipRestBtn} onPress={() => { setResting(false); setRestSecs(0); }}>
+              <Text style={focusStyles.skipRestText}>Passer →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={focusStyles.doneBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onSetDone(exIdx, setIdx);
+              setRestSecs(90);
+              setResting(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={focusStyles.doneBtnText}>Série complète ✓</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Navigation */}
+        <View style={focusStyles.navRow}>
+          <TouchableOpacity onPress={onPrev} disabled={exIdx === 0} style={[focusStyles.navBtn, exIdx === 0 && { opacity: 0.3 }]}>
+            <Ionicons name="arrow-back" size={20} color="#fff" />
+          </TouchableOpacity>
+          <Text style={focusStyles.swipeHint}>← Swipe pour changer d'exercice →</Text>
+          <TouchableOpacity onPress={onNext} disabled={exIdx === exercises.length - 1} style={[focusStyles.navBtn, exIdx === exercises.length - 1 && { opacity: 0.3 }]}>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const focusStyles = StyleSheet.create({
+  bg:          { flex: 1, backgroundColor: '#050508', paddingHorizontal: Sp.lg },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 60, paddingBottom: Sp.lg },
+  progress:    { fontSize: Fs.sm, color: 'rgba(255,255,255,0.4)', fontWeight: Fw.medium },
+  exName:      { fontSize: 36, fontWeight: Fw.heavy, color: '#fff', textAlign: 'center', lineHeight: 44 },
+  setInfo:     { fontSize: Fs.xl, color: Colors.primary, marginTop: Sp.md, fontWeight: Fw.semibold },
+  setDetail:   { flexDirection: 'row', gap: Sp.xl, marginTop: Sp.lg },
+  setVal:      { fontSize: 52, fontWeight: Fw.heavy, color: Colors.orange },
+  restBox:     { alignItems: 'center', paddingBottom: 40 },
+  restTitle:   { fontSize: Fs.md, color: 'rgba(255,255,255,0.5)', marginBottom: 4 },
+  restTimer:   { fontSize: 72, fontWeight: Fw.heavy, color: Colors.primary },
+  skipRestBtn: { marginTop: Sp.md, paddingHorizontal: Sp.lg, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
+  skipRestText:{ color: Colors.primary, fontWeight: Fw.semibold },
+  doneBtn:     { marginBottom: 50, backgroundColor: Colors.green, borderRadius: 24, paddingVertical: 24, marginHorizontal: Sp.md, alignItems: 'center', shadowColor: Colors.green, shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 0 }, elevation: 10 },
+  doneBtnText: { fontSize: 26, fontWeight: Fw.heavy, color: '#fff', letterSpacing: 0.5 },
+  navRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 50, paddingHorizontal: Sp.md },
+  navBtn:      { padding: 12 },
+  swipeHint:   { fontSize: Fs.xs, color: 'rgba(255,255,255,0.2)' },
 });
