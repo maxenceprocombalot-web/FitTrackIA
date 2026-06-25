@@ -251,9 +251,10 @@ export const loadWeeklyBilanShown = (weekKey: string) => AsyncStorage.getItem(`@
 export const saveWeeklyBilanShown = (weekKey: string) => AsyncStorage.setItem(`@fit_weekly_bilan_${weekKey}`, 'true');
 
 // ─── Utilitaire date ──────────────────────────────────────────────────────────
+// Réexporté depuis services/date pour garder une API stable tout en utilisant
+// des dates en heure LOCALE (et non UTC — voir services/date.ts).
 
-export const today     = (): string => new Date().toISOString().split('T')[0];
-export const thisMonth = (): string => new Date().toISOString().slice(0, 7); // "YYYY-MM"
+export { today, thisMonth, yesterday, daysAgo, localISO } from './date';
 
 // ─── Recettes ─────────────────────────────────────────────────────────────────
 

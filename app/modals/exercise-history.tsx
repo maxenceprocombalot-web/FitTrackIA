@@ -4,6 +4,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
+import { estimate1RM } from '../../services/metrics';
+import { daysAgo } from '../../services/date';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 
 const CW = Dimensions.get('window').width - 32;
@@ -29,7 +31,7 @@ export default function ExerciseHistoryScreen() {
   }, [store.workouts, name]);
 
   // 90 derniers jours
-  const cutoff90 = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
+  const cutoff90 = daysAgo(90);
   const recentSessions = sessions.filter(s => s.date >= cutoff90);
 
   // Stats globales
@@ -40,10 +42,9 @@ export default function ExerciseHistoryScreen() {
   const firstDate   = sessions[0]?.date;
   const progressWeeks = firstDate ? Math.round((Date.now() - new Date(firstDate).getTime()) / (7 * 86400000)) : 0;
 
-  // 1RM Brzycki : weight / (1.0278 - 0.0278 × reps)
+  // 1RM estimé (Brzycki) — meilleur sur l'historique
   const best1RM = sessions.reduce((best, s) => {
-    if (s.maxWeight <= 0 || s.bestReps <= 0) return best;
-    const rm = s.maxWeight / (1.0278 - 0.0278 * s.bestReps);
+    const rm = estimate1RM(s.maxWeight, s.bestReps);
     return rm > best ? rm : best;
   }, 0);
 

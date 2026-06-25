@@ -18,6 +18,7 @@ import {
 import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
+import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
 
 // ─── Type résumé de séance ────────────────────────────────────────────────────
 
@@ -190,6 +191,30 @@ export default function AddWorkoutModal() {
   const removeExercise = (exIdx: number) => {
     setExercises(prev => prev.filter((_, i) => i !== exIdx));
   };
+
+  // ── Surcharge progressive : suggestion par exercice depuis l'historique ──────
+  // Clé stable : ne dépend que du nom et des reps planifiées (pas du poids/✓),
+  // pour ne pas recalculer à chaque frappe dans les champs de poids.
+  const progKey = exercises.map(e => `${e.name}:${e.sets[0]?.reps ?? ''}`).join('|');
+  const progressionByName = useMemo(() => {
+    const map: Record<string, ProgressionSuggestion> = {};
+    exercises.forEach(ex => {
+      if (map[ex.name]) return;
+      const targetReps = ex.sets[0]?.reps ?? 10;
+      const s = suggestProgression(store.workouts, ex.name, { min: targetReps, max: targetReps });
+      if (s) map[ex.name] = s;
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progKey, store.workouts]);
+
+  // Applique le poids suggéré aux séries encore vides (poids 0), sans écraser
+  // les séries déjà saisies ou validées.
+  const applySuggestedWeight = useCallback((exIdx: number, weight: number) => {
+    Haptics.selectionAsync();
+    setExercises(prev => prev.map((ex, i) =>
+      i !== exIdx ? ex : { ...ex, sets: ex.sets.map(s => (s.weight === 0 ? { ...s, weight } : s)) }));
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim()) { Alert.alert('Erreur', 'Donne un nom à ta séance.'); return; }
@@ -384,6 +409,34 @@ export default function AddWorkoutModal() {
               <Ionicons name="close-circle" size={18} color={Colors.red} />
             </TouchableOpacity>
           </View>
+          {/* Surcharge progressive : dernière perf + suggestion appliquable */}
+          {(() => {
+            const sug = progressionByName[ex.name];
+            if (!sug) return null;
+            return (
+              <TouchableOpacity
+                style={styles.progRow}
+                activeOpacity={0.7}
+                onPress={() => applySuggestedWeight(exIdx, sug.weight)}
+                accessibilityRole="button"
+                accessibilityLabel={`Dernière fois ${sug.last.weight} kilos pour ${sug.last.reps} répétitions. ${sug.hint}. Toucher pour appliquer ${sug.weight} kilos aux séries non remplies.`}
+              >
+                <Ionicons
+                  name={sug.increased ? 'trending-up' : 'repeat'}
+                  size={13}
+                  color={sug.increased ? Colors.green : Colors.primary}
+                />
+                <Text style={styles.progText} numberOfLines={1}>
+                  <Text style={styles.progMuted}>
+                    Dernière : {sug.last.weight}kg × {sug.last.reps} · </Text>
+                  {sug.hint}
+                </Text>
+                <View style={styles.progApply}>
+                  <Text style={styles.progApplyText}>{sug.weight}kg</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })()}
           {/* En-têtes colonnes */}
           <View style={styles.setHeaderRow}>
             <Text style={[styles.setHeaderText, { width: 28 }]}>Set</Text>
@@ -485,6 +538,12 @@ const styles = StyleSheet.create({
   exerciseCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', marginBottom: 4 },
   exerciseCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Sp.sm + 4 },
   exerciseName: { flex: 1, fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text },
+  // Suggestion de surcharge progressive
+  progRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: Sp.sm, marginBottom: 6, paddingHorizontal: Sp.sm, paddingVertical: 6, borderRadius: 8, backgroundColor: Colors.primary + '0E', borderWidth: 1, borderColor: Colors.primary + '20' },
+  progText: { flex: 1, fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.medium },
+  progMuted: { color: Colors.textMuted, fontWeight: Fw.regular },
+  progApply: { backgroundColor: Colors.primary, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  progApplyText: { fontSize: Fs.xs, color: '#fff', fontWeight: Fw.bold },
   setHeaderRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.sm, paddingBottom: 4 },
   setHeaderText: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center' },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.sm, paddingVertical: 5, gap: 6, borderTopWidth: 1, borderTopColor: Colors.border },

@@ -13,6 +13,7 @@ import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
+import { localISO } from '../../services/date';
 import { generateMonthlyMessage } from '../../services/openai';
 import { MonthlySummary } from '../../types';
 
@@ -179,7 +180,7 @@ export default function DashboardScreen() {
     // Clé de la semaine précédente : lundi au dimanche
     const lastMonday = new Date(today);
     lastMonday.setDate(today.getDate() - 7);
-    const weekKey = lastMonday.toISOString().split('T')[0];
+    const weekKey = localISO(lastMonday);
 
     const alreadyShown = await loadWeeklyBilanShown(weekKey);
     if (alreadyShown) return;
@@ -187,10 +188,10 @@ export default function DashboardScreen() {
     weeklyBilanShown.current = true;
 
     // Calcul des stats de la semaine précédente
-    const since = lastMonday.toISOString().split('T')[0];
+    const since = localISO(lastMonday);
     const until = new Date(lastMonday);
     until.setDate(lastMonday.getDate() + 6);
-    const untilStr = until.toISOString().split('T')[0];
+    const untilStr = localISO(until);
 
     const weekWorkouts = store.workouts.filter(w => w.date >= since && w.date <= untilStr);
     const weekMeals    = store.meals.filter(m => m.date >= since && m.date <= untilStr);

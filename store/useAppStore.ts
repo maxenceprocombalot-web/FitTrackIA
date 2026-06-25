@@ -6,6 +6,7 @@ import {
   FoodItem,
 } from '../types';
 import * as S from '../services/storage';
+import { sumMeals } from '../services/metrics';
 import { PREDEFINED_PLANS } from '../constants/predefined-plans';
 
 // ─── État global ──────────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ function computeStreak(workouts: WorkoutSession[], stored: StreakData): StreakDa
   if (!dates.length) return { ...stored, current: 0 };
 
   const todayStr     = S.today();
-  const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
+  const yesterdayStr = S.yesterday();
 
   // Le streak se casse si la dernière séance n'est ni aujourd'hui ni hier
   if (dates[0] !== todayStr && dates[0] !== yesterdayStr) {
@@ -323,18 +324,7 @@ export function useAppStore() {
 
   const getTodayMacros = useCallback((): MacroTotals => {
     const t = S.today();
-    return _state.meals
-      .filter(m => m.date === t)
-      .reduce<MacroTotals>((acc, meal) => {
-        meal.items.forEach(item => {
-          const r = item.quantity / 100;
-          acc.calories += item.caloriesPer100g * r;
-          acc.protein  += item.proteinPer100g  * r;
-          acc.carbs    += item.carbsPer100g    * r;
-          acc.fat      += item.fatPer100g      * r;
-        });
-        return acc;
-      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    return sumMeals(_state.meals.filter(m => m.date === t));
   }, []);
 
   const getTodayBurned = useCallback((): number =>
@@ -342,12 +332,12 @@ export function useAppStore() {
   []);
 
   const getRecentWorkouts = useCallback((days = 7): WorkoutSession[] => {
-    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0];
+    const since = S.daysAgo(days);
     return _state.workouts.filter(w => w.date >= since);
   }, []);
 
   const getRecentMeals = useCallback((days = 7): Meal[] => {
-    const since = new Date(Date.now() - days * 86_400_000).toISOString().split('T')[0];
+    const since = S.daysAgo(days);
     return _state.meals.filter(m => m.date >= since);
   }, []);
 

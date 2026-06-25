@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { User, WorkoutSession, Meal, ChatMessage, MacroTotals } from '../types';
+import { daysAgo } from './date';
 
 // Clé lue depuis les variables d'environnement Expo (préfixe EXPO_PUBLIC_)
 const ENV_KEY = process.env.EXPO_PUBLIC_OPENAI_KEY ?? '';
@@ -375,8 +376,7 @@ export async function analyzeNutritionDeficiencies(
 ): Promise<string> {
   const client = getClient();
 
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-  const since = cutoff.toISOString().split('T')[0];
+  const since = daysAgo(7);
   const dayMap: Record<string, { cal: number; prot: number; carb: number; fat: number }> = {};
   meals.filter(m => m.date >= since).forEach(m => {
     if (!dayMap[m.date]) dayMap[m.date] = { cal: 0, prot: 0, carb: 0, fat: 0 };

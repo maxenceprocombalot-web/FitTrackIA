@@ -15,6 +15,7 @@ import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
+import { today, localISO } from '../../services/date';
 import { estimateDishMacros, generateMealPrepWithShopping } from '../../services/openai';
 import { PREDEFINED_RECIPES } from '../../constants/recipes';
 
@@ -44,9 +45,9 @@ function calcMacros(items: FoodItem[]) {
 // Formate une date YYYY-MM-DD de façon lisible
 function fmtDate(dateStr: string, todayStr: string): string {
   if (dateStr === todayStr) return "Aujourd'hui";
-  const yesterday = new Date(todayStr);
+  const yesterday = new Date(todayStr + 'T12:00:00');
   yesterday.setDate(yesterday.getDate() - 1);
-  if (dateStr === yesterday.toISOString().split('T')[0]) return 'Hier';
+  if (dateStr === localISO(yesterday)) return 'Hier';
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
@@ -104,15 +105,15 @@ export default function NutritionScreen() {
 
   // Navigation par date
   const goToPrev = () => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(localISO(d));
   };
   const goToNext = () => {
     if (isToday) return;
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + 1);
-    const next = d.toISOString().split('T')[0];
+    const next = localISO(d);
     if (next <= TODAY) setSelectedDate(next);
   };
 
@@ -121,9 +122,9 @@ export default function NutritionScreen() {
   const macros = calcMacros(selectedMeals.flatMap(m => m.items));
 
   // Jour précédent pour le bouton "Copier"
-  const prevDate = new Date(selectedDate);
+  const prevDate = new Date(selectedDate + 'T12:00:00');
   prevDate.setDate(prevDate.getDate() - 1);
-  const prevDateStr = prevDate.toISOString().split('T')[0];
+  const prevDateStr = localISO(prevDate);
   const prevMeals   = store.meals.filter(m => m.date === prevDateStr);
 
   // ── Supprimer un aliment ──────────────────────────────────────────────────
@@ -358,7 +359,7 @@ export default function NutritionScreen() {
         onProtocol={setFastProtocol}
         onStartTime={setFastStartTime}
         onSave={async () => {
-          const cfg: FastingConfig = { active: true, protocol: fastProtocol, startTime: fastStartTime, startDate: new Date().toISOString().split('T')[0] };
+          const cfg: FastingConfig = { active: true, protocol: fastProtocol, startTime: fastStartTime, startDate: today() };
           await saveFasting(cfg);
           setFastingConfig(cfg);
           setShowFastingModal(false);

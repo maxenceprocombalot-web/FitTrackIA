@@ -12,6 +12,7 @@ import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
+import { today, yesterday, daysAgo, localISO } from '../../services/date';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PERSONA_LABELS: Record<string, string> = { motivateur: '🔥 Motivateur', scientifique: '📊 Scientifique', bienveillant: '🤝 Bienveillant', militaire: '💂 Militaire' };
@@ -82,7 +83,7 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
       // Date du jour correspondant
       const date = new Date(monday);
       date.setDate(monday.getDate() + currentDayIdx);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = localISO(date);
 
       // Aliment placeholder : quantity=totalCal, cal_per_100g=100 → affichage = totalCal kcal
       const item: FoodItem = {
@@ -153,9 +154,7 @@ export default function CoachScreen() {
 
     // 2. Calories trop basses cette semaine (< 80% de l'objectif en moyenne)
     if (store.user) {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      const since = cutoff.toISOString().split('T')[0];
+      const since = daysAgo(7);
       const dayMap: Record<string, number> = {};
       store.meals.filter(m => m.date >= since).forEach(m => {
         const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
@@ -171,9 +170,8 @@ export default function CoachScreen() {
     }
 
     // 3. PR battu cette semaine
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const recentPR = store.prs.find(p => p.date >= oneWeekAgo.toISOString().split('T')[0]);
+    const weekAgoStr = daysAgo(7);
+    const recentPR = store.prs.find(p => p.date >= weekAgoStr);
     if (recentPR) {
       questions.push(`J'ai battu mon PR sur ${recentPR.exerciseName} — comment continuer à progresser ?`);
     }
@@ -182,9 +180,7 @@ export default function CoachScreen() {
     if (store.user) {
       let streak = 0;
       for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dStr = d.toISOString().split('T')[0];
+        const dStr = daysAgo(i);
         const dayMeals = store.meals.filter(m => m.date === dStr);
         if (dayMeals.length === 0) break;
         const cal = dayMeals.flatMap(m => m.items).reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
@@ -210,7 +206,7 @@ export default function CoachScreen() {
     const title = store.chat[0]?.content?.slice(0, 50) ?? `Conversation du ${new Date().toLocaleDateString('fr-FR')}`;
     const conv: StoredConversation = {
       id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
+      date: today(),
       title,
       messages: store.chat,
     };
@@ -306,11 +302,11 @@ export default function CoachScreen() {
   // ── Analyse récupération ───────────────────────────────────────────────────
   const recoveryAlerts = useMemo(() => {
     const alerts: { key: string; message: string }[] = [];
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const todayStr = today();
+    const yestStr = yesterday();
 
-    const todayMuscles  = new Set(store.workouts.filter(w => w.date === today).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
-    const yestMuscles   = new Set(store.workouts.filter(w => w.date === yesterday).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
+    const todayMuscles  = new Set(store.workouts.filter(w => w.date === todayStr).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
+    const yestMuscles   = new Set(store.workouts.filter(w => w.date === yestStr).flatMap(w => w.exercises.map(e => e.category)).filter(Boolean));
     const overlap = [...todayMuscles].filter(m => yestMuscles.has(m));
     if (overlap.length > 0) {
       alerts.push({ key: 'overlap', message: `⚠️ Tu as entraîné tes ${overlap.join(', ')} hier et aujourd'hui. Laisse 48h de récupération pour éviter les blessures.` });
@@ -318,7 +314,7 @@ export default function CoachScreen() {
 
     let streak = 0;
     for (let i = 0; i < 7; i++) {
-      const d = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+      const d = daysAgo(i);
       if (store.workouts.some(w => w.date === d)) streak++;
       else break;
     }
@@ -326,7 +322,7 @@ export default function CoachScreen() {
       alerts.push({ key: 'streak', message: `⚠️ Tu t'entraînes depuis ${streak} jours consécutifs. Un jour de récupération active est recommandé.` });
     }
 
-    const cut7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const cut7 = daysAgo(7);
     const muscleVol: Record<string, number> = {};
     store.workouts.filter(w => w.date >= cut7).forEach(w => {
       w.exercises.forEach(e => {

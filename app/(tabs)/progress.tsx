@@ -19,6 +19,7 @@ import {
   loadMeasurements, saveMeasurement,
   loadChallenges, saveChallenges,
 } from '../../services/storage';
+import { today, thisMonth, daysAgo, localISO } from '../../services/date';
 import { BADGES } from '../../constants/badges';
 
 const CHART_W = Dimensions.get('window').width - Sp.md * 2 - Sp.md * 2;
@@ -184,7 +185,7 @@ function getUnlockedBadges(store: ReturnType<typeof useAppStore>): Set<string> {
     let streak7 = 0;
     for (let i = 0; i < 14; i++) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
+      const ds = localISO(d);
       const dayMeals = meals.filter(m => m.date === ds);
       if (!dayMeals.length) { streak7 = 0; continue; }
       const cal = dayMeals.flatMap(m => m.items).reduce((s, item) => s + item.caloriesPer100g * item.quantity / 100, 0);
@@ -239,7 +240,7 @@ function getChallengeProgress(challenge: WeeklyChallenge, weekKey: string, store
   const mon = new Date(weekKey + 'T12:00:00');
   const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   const since = weekKey;
-  const until = sun.toISOString().split('T')[0];
+  const until = localISO(sun);
 
   switch (challenge.type) {
     case 'workouts':
@@ -290,7 +291,7 @@ export default function ProgressScreen() {
     const d = new Date();
     const day = d.getDay() === 0 ? 7 : d.getDay();
     d.setDate(d.getDate() - day + 1);
-    return d.toISOString().split('T')[0];
+    return localISO(d);
   }, []);
 
   useEffect(() => {
@@ -306,9 +307,7 @@ export default function ProgressScreen() {
 
   // Score de forme hebdomadaire
   const fitnessScore = useMemo(() => {
-    const today = new Date();
-    const cutoff7 = new Date(today); cutoff7.setDate(today.getDate() - 7);
-    const since7 = cutoff7.toISOString().split('T')[0];
+    const since7 = daysAgo(7);
 
     const weekWorkouts = store.workouts.filter(w => w.date >= since7).length;
     const sportPts = Math.min((weekWorkouts / 3) * 40, 40);
@@ -338,11 +337,8 @@ export default function ProgressScreen() {
   }, [store.workouts, store.meals, store.water, store.weights, store.user]);
 
   const prevScore = useMemo(() => {
-    const today = new Date();
-    const cut14 = new Date(today); cut14.setDate(today.getDate() - 14);
-    const cut7  = new Date(today); cut7.setDate(today.getDate() - 7);
-    const s14 = cut14.toISOString().split('T')[0];
-    const s7  = cut7.toISOString().split('T')[0];
+    const s14 = daysAgo(14);
+    const s7  = daysAgo(7);
     const pw = store.workouts.filter(w => w.date >= s14 && w.date < s7).length;
     const sportP = Math.min((pw / 3) * 40, 40);
     const target = store.user?.targetCalories ?? 2000;
@@ -374,8 +370,7 @@ export default function ProgressScreen() {
 
   // Volume musculaire 7 jours
   const muscleVolume = useMemo(() => {
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-    const since = cutoff.toISOString().split('T')[0];
+    const since = daysAgo(7);
     const vol: Record<string, number> = {};
     store.workouts.filter(w => w.date >= since).forEach(w => {
       w.exercises.forEach(ex => {
@@ -408,9 +403,7 @@ export default function ProgressScreen() {
   const exoData = useMemo(() => {
     const name = selectedExo ?? exerciseNames[0];
     if (!name) return [];
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    const since = cutoff.toISOString().split('T')[0];
+    const since = daysAgo(30);
     return (exerciseHistory[name] ?? [])
       .filter(e => e.date >= since)
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -424,9 +417,7 @@ export default function ProgressScreen() {
 
   const filteredWeights = (() => {
     const days   = period === '30j' ? 30 : period === '90j' ? 90 : 9999;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    const since  = cutoff.toISOString().split('T')[0];
+    const since  = daysAgo(days);
     return store.weights.filter(w => w.date >= since);
   })();
 
@@ -458,9 +449,7 @@ export default function ProgressScreen() {
   const topExercise = Object.entries(exerciseCount).sort((a, b) => b[1] - a[1])[0];
 
   const last7 = (() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    const since = cutoff.toISOString().split('T')[0];
+    const since = daysAgo(7);
     const dayMap: Record<string, number> = {};
     store.meals
       .filter(m => m.date >= since)
@@ -480,9 +469,7 @@ export default function ProgressScreen() {
     : store.savedPlans.filter(p => p.type === plansFilter);
 
   const calories30 = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    const since = cutoff.toISOString().split('T')[0];
+    const since = daysAgo(30);
     const dayMap: Record<string, number> = {};
     store.meals.filter(m => m.date >= since).forEach(m => {
       const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
@@ -504,7 +491,7 @@ export default function ProgressScreen() {
   const handleSaveWeight = () => {
     const w = parseFloat(weightIn);
     if (!w || isNaN(w) || w < 20 || w > 300) return;
-    store.addWeight({ date: new Date().toISOString().split('T')[0], weight: w });
+    store.addWeight({ date: today(), weight: w });
     setWeightIn('');
   };
 
@@ -542,8 +529,8 @@ export default function ProgressScreen() {
               </View>
             )}
             <View style={{ gap: 4 }}>
-              <ScoreRow label="Sport" pts={Math.round(Math.min((store.workouts.filter(w => { const c7 = new Date(); c7.setDate(c7.getDate()-7); return w.date >= c7.toISOString().split('T')[0]; }).length / 3) * 40, 40))} max={40} color={Colors.primary} />
-              <ScoreRow label="Nutrition" pts={Math.round((Object.values((() => { const dm: Record<string,number> = {}; const c7 = new Date(); c7.setDate(c7.getDate()-7); store.meals.filter(m=>m.date>=c7.toISOString().split('T')[0]).forEach(m=>{ const c=m.items.reduce((s,i)=>s+i.caloriesPer100g*i.quantity/100,0); dm[m.date]=(dm[m.date]??0)+c; }); return dm; })()).filter(v=>v>=(store.user?.targetCalories??2000)*0.9&&v<=(store.user?.targetCalories??2000)*1.1).length / 7) * 40)} max={40} color={Colors.green} />
+              <ScoreRow label="Sport" pts={Math.round(Math.min((store.workouts.filter(w => w.date >= daysAgo(7)).length / 3) * 40, 40))} max={40} color={Colors.primary} />
+              <ScoreRow label="Nutrition" pts={Math.round((Object.values((() => { const dm: Record<string,number> = {}; const c7 = daysAgo(7); store.meals.filter(m=>m.date>=c7).forEach(m=>{ const c=m.items.reduce((s,i)=>s+i.caloriesPer100g*i.quantity/100,0); dm[m.date]=(dm[m.date]??0)+c; }); return dm; })()).filter(v=>v>=(store.user?.targetCalories??2000)*0.9&&v<=(store.user?.targetCalories??2000)*1.1).length / 7) * 40)} max={40} color={Colors.green} />
               <ScoreRow label="Eau" pts={Math.round(Math.min((store.water.ml/(store.user?.waterGoalMl??2000))*10,10))} max={10} color={Colors.blue} />
             </View>
           </View>
@@ -863,7 +850,7 @@ export default function ProgressScreen() {
               style={[styles.saveBtn, { marginTop: Sp.sm }]}
               onPress={async () => {
                 const m: BodyMeasurement = {
-                  date:  new Date().toISOString().split('T')[0],
+                  date:  today(),
                   waist: measWaist  ? parseFloat(measWaist)  : undefined,
                   arm:   measArm    ? parseFloat(measArm)    : undefined,
                   thigh: measThigh  ? parseFloat(measThigh)  : undefined,
@@ -983,7 +970,7 @@ export default function ProgressScreen() {
               await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
               const filename = `photo_${Date.now()}.jpg`;
               await FileSystem.copyAsync({ from: asset.uri, to: destDir + filename });
-              const photo = { id: filename, uri: destDir + filename, date: new Date().toISOString().split('T')[0] };
+              const photo = { id: filename, uri: destDir + filename, date: today() };
               await saveProgressPhoto(photo);
               setPhotos(prev => [...prev, photo]);
             }
@@ -1120,7 +1107,7 @@ export default function ProgressScreen() {
           const totalVol = store.workouts.reduce((sv, w) => sv + w.exercises.reduce((se, e) => se + e.sets.reduce((ss, s) => ss + s.reps * s.weight, 0), 0), 0);
           const latestWeight = store.weights[store.weights.length - 1]?.weight;
           const unlockedBadgesCount = getUnlockedBadges(store).size;
-          const thisMonthKey = new Date().toISOString().slice(0, 7);
+          const thisMonthKey = thisMonth();
           const monthWorkouts = store.workouts.filter(w => w.date.startsWith(thisMonthKey));
           const dayCalMap: Record<string, number> = {};
           store.meals.filter(m => m.date.startsWith(thisMonthKey)).forEach(m => {
