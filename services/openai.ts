@@ -18,6 +18,12 @@ export function hasApiKey(): boolean {
   return !!(_runtimeKey || ENV_KEY);
 }
 
+// Valide le format d'une clé OpenAI (sk-... ou sk-proj-...) avant de l'accepter,
+// pour éviter d'enregistrer une saisie erronée ou une chaîne arbitraire.
+export function isValidApiKey(key: string): boolean {
+  return /^sk-[A-Za-z0-9_-]{20,}$/.test(key.trim());
+}
+
 function getClient(): OpenAI | null {
   const key = _runtimeKey || ENV_KEY;
   if (!key) return null;
@@ -322,7 +328,24 @@ export async function estimateDishMacros(dishName: string): Promise<{
     const text = res.choices[0]?.message?.content ?? '';
     const jsonMatch = text.match(/\{[^}]+\}/);
     if (!jsonMatch) return null;
-    return JSON.parse(jsonMatch[0]);
+    const raw = JSON.parse(jsonMatch[0]);
+
+    // Assainissement : ne jamais faire confiance à la sortie du modèle. On borne
+    // chaque nombre dans une plage plausible et on rejette les valeurs non finies,
+    // pour éviter d'injecter des macros aberrantes (NaN, négatif, démesuré) dans
+    // les données de l'utilisateur.
+    const num = (v: unknown, max: number): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0;
+    };
+    return {
+      name:           typeof raw.name === 'string' ? raw.name.slice(0, 80) : dishName,
+      portionG:       num(raw.portionG, 5000) || 100,
+      caloriesPer100g: num(raw.caloriesPer100g, 900),  // max physiologique ~900 (huiles)
+      proteinPer100g: num(raw.proteinPer100g, 100),
+      carbsPer100g:   num(raw.carbsPer100g, 100),
+      fatPer100g:     num(raw.fatPer100g, 100),
+    };
   } catch { return null; }
 }
 

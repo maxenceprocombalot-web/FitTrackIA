@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, CoachPersona, setCoachPersona, getCoachPersona } from '../../services/openai';
+import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, isValidApiKey, CoachPersona, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
@@ -178,6 +178,10 @@ export default function SettingsScreen() {
   const handleSaveApiKey = useCallback(async () => {
     const trimmed = apiKey.trim();
     if (trimmed) {
+      if (!isValidApiKey(trimmed)) {
+        Alert.alert('Clé invalide', 'Une clé OpenAI commence par « sk- ». Vérifie ta saisie.');
+        return;
+      }
       await saveApiKey(trimmed);
       setRuntimeApiKey(trimmed);
     } else {

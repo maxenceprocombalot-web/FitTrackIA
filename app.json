@@ -25,7 +25,9 @@
         "backgroundColor": "#080a0e"
       },
       "package": "com.fittrackia.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -45,7 +47,8 @@
         {
           "cameraPermission": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

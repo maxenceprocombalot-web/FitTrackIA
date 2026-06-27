@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import {
   User, WorkoutSession, Meal, WeightEntry,
   ChatMessage, PersonalRecord, ActiveProgram,
@@ -204,11 +206,44 @@ export async function saveMonthlySummary(s: MonthlySummary): Promise<void> {
   await save(K.MONTHLY, list.slice(0, 24));
 }
 
-// ─── Clé API OpenAI (runtime, stockée localement) ────────────────────────────
+// ─── Clé API OpenAI (stockage CHIFFRÉ) ────────────────────────────────────────
+// La clé est stockée dans le Keychain (iOS) / Keystore (Android) via
+// expo-secure-store, chiffrée au repos. Sur le web (pas de SecureStore), on
+// retombe sur AsyncStorage. Une migration déplace toute ancienne clé stockée en
+// clair dans AsyncStorage vers le coffre chiffré.
 
-export const loadApiKey  = () => AsyncStorage.getItem('@fit_openai_key');
-export const saveApiKey  = (key: string) => AsyncStorage.setItem('@fit_openai_key', key);
-export const clearApiKey = () => AsyncStorage.removeItem('@fit_openai_key');
+const API_KEY_LEGACY = '@fit_openai_key'; // ancien emplacement (clair)
+const API_KEY_SECURE = 'fit_openai_key';  // coffre chiffré (clés alphanum. only)
+
+async function secureGet(): Promise<string | null> {
+  if (Platform.OS === 'web') return AsyncStorage.getItem(API_KEY_SECURE);
+  try { return await SecureStore.getItemAsync(API_KEY_SECURE); } catch { return null; }
+}
+async function secureSet(key: string): Promise<void> {
+  if (Platform.OS === 'web') { await AsyncStorage.setItem(API_KEY_SECURE, key); return; }
+  await SecureStore.setItemAsync(API_KEY_SECURE, key);
+}
+async function secureDel(): Promise<void> {
+  if (Platform.OS === 'web') { await AsyncStorage.removeItem(API_KEY_SECURE); return; }
+  try { await SecureStore.deleteItemAsync(API_KEY_SECURE); } catch { /* déjà absent */ }
+}
+
+export async function loadApiKey(): Promise<string | null> {
+  // Migration : ancienne clé en clair dans AsyncStorage → coffre chiffré.
+  const legacy = await AsyncStorage.getItem(API_KEY_LEGACY);
+  if (legacy) {
+    await secureSet(legacy).catch(() => {});
+    await AsyncStorage.removeItem(API_KEY_LEGACY);
+    return legacy;
+  }
+  return secureGet();
+}
+
+export const saveApiKey  = (key: string) => secureSet(key);
+export async function clearApiKey(): Promise<void> {
+  await secureDel();
+  await AsyncStorage.removeItem(API_KEY_LEGACY);
+}
 
 // ─── Préférences de notifications ─────────────────────────────────────────────
 
