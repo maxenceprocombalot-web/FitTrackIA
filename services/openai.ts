@@ -5,6 +5,14 @@ import { daysAgo } from './date';
 // Clé lue depuis les variables d'environnement Expo (préfixe EXPO_PUBLIC_)
 const ENV_KEY = process.env.EXPO_PUBLIC_OPENAI_KEY ?? '';
 
+// ─── Mode proxy (recommandé pour distribuer l'app) ────────────────────────────
+// Si un proxy est configuré, l'app appelle CE proxy au lieu d'OpenAI directement.
+// La vraie clé OpenAI vit alors sur le serveur, jamais dans l'app. APP_TOKEN est
+// un simple laissez-passer partagé app↔proxy (voir server/README.md).
+const PROXY_URL = process.env.EXPO_PUBLIC_PROXY_URL ?? '';   // ex : https://fittrackia-proxy.xxx.workers.dev/v1
+const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? '';
+const PROXY_ON  = !!(PROXY_URL && APP_TOKEN);
+
 let _runtimeKey = '';
 let _client: OpenAI | null = null;
 
@@ -15,7 +23,7 @@ export function setRuntimeApiKey(key: string): void {
 }
 
 export function hasApiKey(): boolean {
-  return !!(_runtimeKey || ENV_KEY);
+  return PROXY_ON || !!(_runtimeKey || ENV_KEY);
 }
 
 // Valide le format d'une clé OpenAI (sk-... ou sk-proj-...) avant de l'accepter,
@@ -25,6 +33,12 @@ export function isValidApiKey(key: string): boolean {
 }
 
 function getClient(): OpenAI | null {
+  // Mode proxy : on pointe le SDK vers notre serveur et on envoie APP_TOKEN à la
+  // place de la clé. Le proxy remplace ce token par la vraie clé côté serveur.
+  if (PROXY_ON) {
+    if (!_client) _client = new OpenAI({ baseURL: PROXY_URL, apiKey: APP_TOKEN, dangerouslyAllowBrowser: true });
+    return _client;
+  }
   const key = _runtimeKey || ENV_KEY;
   if (!key) return null;
   if (!_client) _client = new OpenAI({ apiKey: key, dangerouslyAllowBrowser: true });

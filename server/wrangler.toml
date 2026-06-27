@@ -1,0 +1,7 @@
+# Configuration du proxy Cloudflare Worker pour FitTrackIA.
+# Les SECRETS (OPENAI_API_KEY, APP_TOKEN) ne sont PAS ici — ils se configurent
+# avec `wrangler secret put` (voir README.md). Ce fichier peut être commité.
+
+name = "fittrackia-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
