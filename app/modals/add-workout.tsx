@@ -19,6 +19,7 @@ import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
+import Button from '../../components/ui/Button';
 
 // ─── Type résumé de séance ────────────────────────────────────────────────────
 
@@ -504,10 +505,13 @@ export default function AddWorkoutModal() {
       />
 
       {/* ── Bouton sauvegarder ──────────────────────────────────────────── */}
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
-        <Text style={styles.saveBtnText}>Enregistrer la séance</Text>
-      </TouchableOpacity>
+      <Button
+        title="Enregistrer la séance"
+        icon="checkmark-circle-outline"
+        onPress={handleSave}
+        size="lg"
+        style={{ marginTop: Sp.lg }}
+      />
     </ScrollView>
     </>
   );

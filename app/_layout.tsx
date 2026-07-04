@@ -88,6 +88,10 @@ export default function RootLayout() {
           name="modals/exercise-history"
           options={{ headerShown: false, presentation: 'card' }}
         />
+        <Stack.Screen
+          name="modals/plate-calculator"
+          options={{ headerShown: false, presentation: 'modal' }}
+        />
       </Stack>
     </>
   );

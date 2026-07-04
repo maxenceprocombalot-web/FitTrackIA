@@ -56,6 +56,16 @@ export default function WorkoutScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
         </TouchableOpacity>
 
+        {/* ── Calculateur de charge ──────────────────────────────────────── */}
+        <TouchableOpacity style={styles.toolRow} onPress={() => router.push('/modals/plate-calculator')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Ouvrir le calculateur de charge">
+          <Ionicons name="calculator-outline" size={18} color={Colors.blue} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toolTitle}>🏋️ Calculateur de charge</Text>
+            <Text style={styles.toolSub}>Quels disques mettre par côté</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+        </TouchableOpacity>
+
         {/* ── Reprendre la dernière séance ───────────────────────────────── */}
         {lastWorkout && (
           <TouchableOpacity
@@ -299,6 +309,14 @@ const styles = StyleSheet.create({
   },
   repeatBtnTitle: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.text },
   repeatBtnSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  toolRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Sp.sm,
+    backgroundColor: Colors.blue + '10',
+    borderRadius: R, borderWidth: 1, borderColor: Colors.blue + '30',
+    padding: Sp.md,
+  },
+  toolTitle: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.text },
+  toolSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: Sp.sm },
   filterScroll: { marginHorizontal: -Sp.md },
   filterContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
