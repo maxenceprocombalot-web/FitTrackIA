@@ -20,6 +20,7 @@ import {
   loadChallenges, saveChallenges,
 } from '../../services/storage';
 import { today, thisMonth, daysAgo, localISO } from '../../services/date';
+import { projectWeight } from '../../services/metrics';
 import { BADGES } from '../../constants/badges';
 
 const CHART_W = Dimensions.get('window').width - Sp.md * 2 - Sp.md * 2;
@@ -424,19 +425,14 @@ export default function ProgressScreen() {
   const latest = store.weights[store.weights.length - 1];
   const first  = store.weights[0];
 
-  const projection = (() => {
-    if (filteredWeights.length < 2 || !store.user) return null;
-    const reg  = linearReg(filteredWeights.map(w => w.weight));
-    if (Math.abs(reg.slope) < 0.001) return null;
-    const goal = store.user.goal === 'weight_loss'
-      ? store.user.weight * 0.9
-      : store.user.goal === 'muscle_gain'
-        ? store.user.weight * 1.05
-        : null;
-    if (!goal || !latest) return null;
-    const days = Math.round((goal - latest.weight) / reg.slope);
-    return days > 0 && days < 1000 ? days : null;
-  })();
+  // Objectif : poids cible explicite, sinon dérivé de l'objectif général.
+  const projTarget = store.user?.targetWeight
+    ?? (store.user
+        ? (store.user.goal === 'weight_loss'  ? Math.round(store.user.weight * 0.9)
+         : store.user.goal === 'muscle_gain' ? Math.round(store.user.weight * 1.05)
+         : undefined)
+        : undefined);
+  const weightProj = projectWeight(filteredWeights, projTarget);
 
   const totalWorkouts  = store.workouts.length;
   const totalVolume    = store.workouts.reduce((s, w) =>
@@ -599,12 +595,30 @@ export default function ProgressScreen() {
             <Text style={styles.sectionLabel}>Courbe de poids ({filteredWeights.length} pesées)</Text>
             <WeightChart entries={filteredWeights} />
           </Card>
-          {projection !== null && (
+          {weightProj && (
             <Card style={styles.projCard}>
-              <Ionicons name="flag-outline" size={18} color={Colors.primary} />
-              <Text style={styles.projText}>
-                À ce rythme, tu atteins ton objectif dans <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>{projection} jours</Text>.
-              </Text>
+              <Ionicons
+                name={weightProj.slopePerWeek < -0.01 ? 'trending-down' : weightProj.slopePerWeek > 0.01 ? 'trending-up' : 'remove-outline'}
+                size={18}
+                color={Colors.primary}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.projText}>
+                  Tendance : <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>
+                    {weightProj.slopePerWeek > 0 ? '+' : ''}{weightProj.slopePerWeek} kg/semaine
+                  </Text>
+                </Text>
+                {weightProj.etaDate ? (
+                  <Text style={styles.projSub}>
+                    🎯 Objectif {weightProj.target} kg atteint vers le{' '}
+                    <Text style={{ color: Colors.text, fontWeight: Fw.semibold }}>
+                      {new Date(weightProj.etaDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </Text>.
+                  </Text>
+                ) : weightProj.target !== undefined && !weightProj.onTrack && Math.abs(weightProj.slopePerWeek) > 0.01 ? (
+                  <Text style={styles.projSub}>Ta tendance ne va pas vers ton objectif de {weightProj.target} kg — ajuste nutrition/activité.</Text>
+                ) : null}
+              </View>
             </Card>
           )}
           {store.weights.length > 0 && (
@@ -1338,7 +1352,8 @@ const styles = StyleSheet.create({
   periodTextActive: { color: Colors.primary, fontWeight: Fw.semibold },
   chartCard: { overflow: 'hidden' },
   projCard: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  projText: { flex: 1, fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 19 },
+  projText: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 19 },
+  projSub: { fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17, marginTop: 3 },
   histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: Colors.border },
   histDate: { fontSize: Fs.sm, color: Colors.textSecondary },
   histVal: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text },

@@ -11,6 +11,7 @@ import {
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 
 // Jour ISO courant : 1=Lundi … 7=Dimanche
 function getTodayISO(): 1 | 2 | 3 | 4 | 5 | 6 | 7 {
@@ -110,10 +111,8 @@ export default function ProgramDetailScreen() {
             <Text style={styles.todayTitle}>Séance du jour — {todaySession.dayLabel}</Text>
           </View>
           <Text style={styles.todayName}>{todaySession.name}</Text>
-          <TouchableOpacity style={styles.startSessionBtn} onPress={() => handleStartSession(todaySession)}>
-            <Ionicons name="play-circle-outline" size={18} color="#fff" />
-            <Text style={styles.startSessionBtnText}>Commencer cette séance</Text>
-          </TouchableOpacity>
+          <Button title="Commencer cette séance" icon="play-circle-outline" onPress={() => handleStartSession(todaySession)} />
+
         </View>
       ) : (
         <View style={styles.restCard}>

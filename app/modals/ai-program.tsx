@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { generateCustomProgram } from '../../services/openai';
 import { SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 
 type Level     = 'Débutant' | 'Intermédiaire' | 'Avancé';
@@ -154,18 +155,13 @@ export default function AIProgramModal() {
       </Section>
 
       {/* Bouton générer */}
-      <TouchableOpacity
-        style={[styles.generateBtn, loading && { opacity: 0.6 }]}
+      <Button
+        title="Générer mon programme"
+        icon="sparkles"
         onPress={handleGenerate}
-        disabled={loading}
-      >
-        {loading
-          ? <ActivityIndicator size="small" color="#fff" />
-          : <Ionicons name="sparkles" size={20} color="#fff" />}
-        <Text style={styles.generateBtnText}>
-          {loading ? 'Génération en cours…' : 'Générer mon programme'}
-        </Text>
-      </TouchableOpacity>
+        loading={loading}
+        size="lg"
+      />
 
       <View style={{ height: 60 }} />
     </ScrollView>

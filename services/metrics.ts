@@ -3,7 +3,8 @@
 // Centralise des formules qui étaient dupliquées dans le store, les écrans
 // nutrition/progress et les modals. Une seule source de vérité = moins de bugs.
 
-import { FoodItem, Meal, MacroTotals, WorkoutSession } from '../types';
+import { FoodItem, Meal, MacroTotals, WorkoutSession, WeightEntry } from '../types';
+import { localISO } from './date';
 
 // ─── Macronutriments ──────────────────────────────────────────────────────────
 
@@ -132,4 +133,71 @@ export function suggestProgression(
     increased: false,
     hint: `Vise ${Math.min(last.reps + 1, repRange.max)} reps à ${last.weight} kg`,
   };
+}
+
+// ─── Projection de poids (tendance lissée) ────────────────────────────────────
+
+export interface WeightProjection {
+  current: number;         // dernier poids enregistré
+  slopePerWeek: number;    // kg/semaine (négatif = perte, positif = prise)
+  target?: number;         // objectif de poids si défini
+  etaDate?: string;        // date estimée d'atteinte de l'objectif (YYYY-MM-DD)
+  onTrack: boolean;        // true si la tendance va vers l'objectif
+}
+
+const dayNumber = (iso: string): number =>
+  Math.round(new Date(iso + 'T12:00:00').getTime() / 86_400_000);
+
+/**
+ * Régression linéaire sur les pesées pour estimer la tendance (kg/semaine) et,
+ * si un objectif est défini, la date d'atteinte au rythme actuel.
+ * Renvoie null si trop peu de données ou tendance plate.
+ */
+export function projectWeight(
+  weights: WeightEntry[],
+  target?: number,
+): WeightProjection | null {
+  const pts = [...weights]
+    .filter(w => Number.isFinite(w.weight))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (pts.length < 3) return null;
+
+  const x0 = dayNumber(pts[0].date);
+  const xs = pts.map(p => dayNumber(p.date) - x0);
+  const ys = pts.map(p => p.weight);
+  const n  = pts.length;
+
+  // Pente des moindres carrés (kg/jour).
+  const sx = xs.reduce((s, v) => s + v, 0);
+  const sy = ys.reduce((s, v) => s + v, 0);
+  const sxx = xs.reduce((s, v) => s + v * v, 0);
+  const sxy = xs.reduce((s, v, i) => s + v * ys[i], 0);
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return null;
+  const slopePerDay = (n * sxy - sx * sy) / denom;
+
+  const current = ys[ys.length - 1];
+  const slopePerWeek = slopePerDay * 7;
+
+  const proj: WeightProjection = {
+    current,
+    slopePerWeek: Math.round(slopePerWeek * 100) / 100,
+    target,
+    onTrack: false,
+  };
+
+  if (target !== undefined && Math.abs(slopePerDay) > 1e-4) {
+    const remaining = target - current;                 // signe = direction à prendre
+    const movingToward = Math.sign(remaining) === Math.sign(slopePerDay);
+    proj.onTrack = movingToward;
+    if (movingToward) {
+      const days = Math.round(remaining / slopePerDay);
+      if (days > 0 && days < 3650) {                    // borne : < 10 ans
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        proj.etaDate = localISO(d);
+      }
+    }
+  }
+  return proj;
 }

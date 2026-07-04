@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import ViewShot from 'react-native-view-shot';
 import { useAppStore } from '../../store/useAppStore';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 
 const TYPE_LABELS: Record<string, string> = {
   strength: 'Musculation',
@@ -186,10 +187,7 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.repeatBtnText}>Partager cette séance 📸</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.repeatBtn} onPress={handleRepeat} accessibilityRole="button">
-          <Ionicons name="refresh-outline" size={18} color="#fff" />
-          <Text style={styles.repeatBtnText}>Refaire cette séance</Text>
-        </TouchableOpacity>
+        <Button title="Refaire cette séance" icon="refresh-outline" onPress={handleRepeat} style={{ marginTop: Sp.sm }} />
 
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} accessibilityRole="button">
           <Ionicons name="trash-outline" size={16} color={Colors.red} />

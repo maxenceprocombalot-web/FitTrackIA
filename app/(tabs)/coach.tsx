@@ -10,6 +10,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
 import { today, yesterday, daysAgo, localISO } from '../../services/date';
@@ -413,15 +414,12 @@ export default function CoachScreen() {
                 <Text style={styles.demoText}>Mode démo — ajoute EXPO_PUBLIC_OPENAI_KEY pour GPT-4o</Text>
               </View>
             )}
-            <TouchableOpacity
-              style={styles.weeklyBtn}
+            <Button
+              title="Analyse ma semaine 📊"
+              icon="bar-chart-outline"
               onPress={() => sendMessage(WEEKLY_ANALYSIS_PROMPT)}
-              accessibilityLabel="Analyser ma semaine sportive et nutritionnelle"
-              accessibilityRole="button"
-            >
-              <Ionicons name="bar-chart-outline" size={16} color="#fff" />
-              <Text style={styles.weeklyBtnText}>Analyse ma semaine 📊</Text>
-            </TouchableOpacity>
+              style={{ marginBottom: 8 }}
+            />
             <TouchableOpacity style={styles.mealPlanBtn} onPress={handleGenerateMealPlan} disabled={generatingMealPlan}>
               {generatingMealPlan
                 ? <ActivityIndicator size="small" color={Colors.green} />
