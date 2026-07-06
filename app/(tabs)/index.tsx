@@ -58,6 +58,15 @@ function weightProjection(weights: { date: string; weight: number }[], targetWei
   return days > 0 && days < 730 ? days : null;
 }
 
+// Salutation contextuelle selon l'heure de la journée
+function getGreeting(): { word: string; emoji: string } {
+  const h = new Date().getHours();
+  if (h < 6)  return { word: 'Bonne nuit',    emoji: '🌙' };
+  if (h < 12) return { word: 'Bonjour',        emoji: '☀️' };
+  if (h < 18) return { word: 'Bon après-midi', emoji: '👋' };
+  return { word: 'Bonsoir', emoji: '🌆' };
+}
+
 // Message de motivation hebdo
 function motivationMessage(avgCal: number, target: number, workouts: number): string {
   if (workouts >= 4 && avgCal >= target * 0.9) return "Semaine exceptionnelle ! Tu as enchaîné les séances tout en respectant ton alimentation. Continue sur cette lancée ! 💪";
@@ -272,6 +281,7 @@ export default function DashboardScreen() {
   const weightPct     = targetWeight && latestWeight ? Math.min(Math.abs(latestWeight - user.weight) / Math.abs(targetWeight - user.weight), 1) : 0;
 
   const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const greeting = getGreeting();
 
   return (
     <AnimatedScreen style={{ flex: 1 }}>
@@ -317,7 +327,7 @@ export default function DashboardScreen() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Bonjour {user.name} 👋</Text>
+          <Text style={styles.greeting}>{greeting.word} {user.name} {greeting.emoji}</Text>
           <Text style={styles.date} numberOfLines={1}>{dateStr}</Text>
         </View>
         <View style={styles.headerRight}>
@@ -442,11 +452,12 @@ export default function DashboardScreen() {
           <View style={styles.goalTrack}>
             <View style={[styles.goalFill, { width: `${Math.max(weightPct * 100, 2)}%` }]} />
           </View>
-          <Text style={styles.goalProjection}>
-            {latestWeight && targetWeight
-              ? `Il te reste ${Math.abs(latestWeight - targetWeight).toFixed(1)} kg`
-              : ''}
-          </Text>
+          {latestWeight && targetWeight && (
+            <View style={styles.goalRemaining}>
+              <Text style={styles.goalRemainingLabel}>Il te reste</Text>
+              <Text style={styles.goalRemainingValue}>{Math.abs(latestWeight - targetWeight).toFixed(1)} kg</Text>
+            </View>
+          )}
           {projectionDays !== null ? (
             <Text style={styles.goalProjection}>
               📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontFamily: Fonts.bold }}>{projectionDays} jours</Text>
@@ -792,6 +803,9 @@ const styles = StyleSheet.create({
   goalArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
   goalTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 },
   goalFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 99 },
+  goalRemaining: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: 6 },
+  goalRemainingLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  goalRemainingValue: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary },
   goalProjection: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18 },
   // Stats
   statRow: { flexDirection: 'row', gap: Sp.sm },
