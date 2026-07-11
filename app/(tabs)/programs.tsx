@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useAppStore } from '../../store/useAppStore';
 import {
   PROGRAMS, ProgramTemplate, ProgramCategory, ProgramLevel, ProgramGoal,
@@ -41,8 +42,16 @@ export default function ProgramsScreen() {
     return true;
   }), [daysFilter, levelFilter, goalFilter]);
 
+  const resetFilters = () => {
+    setDaysFilter('all');
+    setLevelFilter('all');
+    setGoalFilter('all');
+  };
+  const hasActiveFilter = daysFilter !== 'all' || levelFilter !== 'all' || goalFilter !== 'all';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <AnimatedScreen style={styles.container}>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Créer un programme IA ────────────────────────────────────────── */}
       <TouchableOpacity
@@ -116,16 +125,25 @@ export default function ProgramsScreen() {
       </ScrollView>
 
       {/* ── Résultats ────────────────────────────────────────────────────── */}
-      <Text style={styles.resultCount}>{filtered.length} programme{filtered.length > 1 ? 's' : ''}</Text>
+      <View style={styles.resultsHeader}>
+        <Text style={styles.resultsTitle}>Bibliothèque</Text>
+        <View style={styles.resultCountPill}>
+          <Text style={styles.resultCountText}>{filtered.length}</Text>
+        </View>
+      </View>
 
-      {filtered.map(p => (
-        <ProgramCard
-          key={p.id}
-          program={p}
-          isActive={p.id === store.activeProgram?.programId}
-          onPress={() => router.push(`/programs/${p.id}`)}
-        />
-      ))}
+      {filtered.length === 0 ? (
+        <EmptyPrograms onReset={hasActiveFilter ? resetFilters : undefined} />
+      ) : (
+        filtered.map(p => (
+          <ProgramCard
+            key={p.id}
+            program={p}
+            isActive={p.id === store.activeProgram?.programId}
+            onPress={() => router.push(`/programs/${p.id}`)}
+          />
+        ))
+      )}
 
       {/* ── Mes plans sauvegardés (coach IA + prédéfinis) ─────────────────── */}
       <Text style={styles.filterLabel}>Mes plans sauvegardés</Text>
@@ -143,6 +161,27 @@ export default function ProgramsScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </AnimatedScreen>
+  );
+}
+
+// ─── État vide (aucun programme ne correspond aux filtres) ──────────────────────
+
+function EmptyPrograms({ onReset }: { onReset?: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyIconBox}>
+        <Ionicons name="search-outline" size={30} color={Colors.textMuted} />
+      </View>
+      <Text style={styles.emptyTitle}>Aucun programme</Text>
+      <Text style={styles.emptySub}>Aucun programme ne correspond à ces filtres.</Text>
+      {onReset && (
+        <TouchableOpacity style={styles.emptyBtn} onPress={onReset} activeOpacity={0.85}>
+          <Ionicons name="refresh-outline" size={16} color={Colors.primary} />
+          <Text style={styles.emptyBtnText}>Réinitialiser les filtres</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
@@ -308,7 +347,18 @@ const styles = StyleSheet.create({
   filterScroll: { marginHorizontal: -Sp.md },
   filterRow: { paddingHorizontal: Sp.md, paddingVertical: 6 },
   // Résultats
+  resultsHeader: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginTop: Sp.sm, marginBottom: 2 },
+  resultsTitle: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  resultCountPill: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceHighlight },
+  resultCountText: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary },
   resultCount: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4 },
+  // Etat vide
+  empty: { alignItems: 'center', paddingVertical: 48, gap: Sp.sm },
+  emptyIconBox: { width: 64, height: 64, borderRadius: 20, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle: { fontSize: Fs.lg, fontFamily: Fonts.semibold, color: Colors.textSecondary },
+  emptySub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 8, borderRadius: 99, borderWidth: 1, borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '12' },
+  emptyBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   // Carte
   card: {
     backgroundColor: Colors.surface, borderRadius: R,
