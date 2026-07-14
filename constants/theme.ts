@@ -1,34 +1,38 @@
-// Palette premium sombre — direction Streakly
+// Palette OR & NOIR — direction sportive (Strava / Nike), design FitTrack IA
 
 export const Colors = {
   // Fonds
-  bg: '#080a0e',
-  surface: '#0f1117',
-  surfaceElevated: '#141720',
-  surfaceHighlight: '#1a1f2e',
+  bg: '#0A0A0B',            // noir profond
+  surface: '#161618',       // cartes
+  surfaceElevated: '#1E1E22',
+  surfaceHighlight: '#26231A', // surbrillance teintée or
 
-  // Marques
-  primary: '#7c6dfa',    // violet
-  green: '#22c97a',
-  red: '#e8445a',
-  orange: '#f07830',
-  yellow: '#f5c542',
-  blue: '#4a9eff',
+  // Marque (or)
+  primary: '#E8B84B',       // or principal (accent, CTA)
+  primaryDeep: '#D4A017',   // or profond (dégradés, pressé)
+  onPrimary: '#0A0A0B',     // texte/icônes SUR l'or → foncé (contraste)
+
+  // Couleurs fonctionnelles (statuts, graphes)
+  green: '#3FB96B',
+  red: '#E8546B',
+  orange: '#E8894B',
+  yellow: '#F0CC5A',
+  blue: '#5B9BE8',
 
   // Texte
-  text: '#f0f2fa',
-  textSecondary: '#8891aa',
-  textMuted: '#565d7a',
+  text: '#F5F2EA',          // crème
+  textSecondary: '#8A8578', // gris-or atténué
+  textMuted: '#5C584F',
 
   // Bordures
-  border: 'rgba(255,255,255,0.05)',
-  borderStrong: 'rgba(255,255,255,0.10)',
+  border: 'rgba(255,255,255,0.06)',
+  borderStrong: 'rgba(232,184,75,0.20)', // liseré or subtil
 
   // Macros
-  proteinColor: '#4a9eff',
-  carbsColor: '#f07830',
-  fatColor: '#f5c542',
-  caloriesColor: '#22c97a',
+  proteinColor: '#5B9BE8',
+  carbsColor: '#E8894B',
+  fatColor: '#F0CC5A',
+  caloriesColor: '#E8B84B',
 };
 
 export const R = 14; // border radius par défaut

@@ -123,7 +123,7 @@ export default function MonthlySummaryModal() {
 
       {/* ── Bouton partager ──────────────────────────────────────────────── */}
       <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-        <Ionicons name="share-social-outline" size={20} color="#fff" />
+        <Ionicons name="share-social-outline" size={20} color={Colors.onPrimary} />
         <Text style={styles.shareBtnText}>Partager mon bilan</Text>
       </TouchableOpacity>
 
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md,
   },
-  shareBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
+  shareBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.onPrimary },
   closeBtn: { alignItems: 'center', padding: Sp.sm },
   closeBtnText: { fontSize: Fs.sm, color: Colors.textMuted },
 });

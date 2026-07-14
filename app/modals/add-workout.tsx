@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   progText: { flex: 1, fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.medium },
   progMuted: { color: Colors.textMuted, fontWeight: Fw.regular },
   progApply: { backgroundColor: Colors.primary, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  progApplyText: { fontSize: Fs.xs, color: '#fff', fontWeight: Fw.bold },
+  progApplyText: { fontSize: Fs.xs, color: Colors.onPrimary, fontWeight: Fw.bold },
   setHeaderRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.sm, paddingBottom: 4 },
   setHeaderText: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center' },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.sm, paddingVertical: 5, gap: 6, borderTopWidth: 1, borderTopColor: Colors.border },
@@ -718,7 +718,7 @@ const smStyles = StyleSheet.create({
   shareBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Sp.sm, paddingHorizontal: Sp.lg, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
   shareBtnText:{ fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
   continueBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', justifyContent: 'center' },
-  continueBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
+  continueBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.onPrimary },
 });
 
 // ─── Mode Focus ───────────────────────────────────────────────────────────────

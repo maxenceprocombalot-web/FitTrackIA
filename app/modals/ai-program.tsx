@@ -90,7 +90,7 @@ export default function AIProgramModal() {
             style={[styles.saveBtn, saved && { backgroundColor: Colors.green }]}
             onPress={saved ? () => router.back() : handleSave}
           >
-            <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={16} color="#fff" />
+            <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={16} color={Colors.onPrimary} />
             <Text style={styles.saveBtnText}>{saved ? '✓ Sauvegardé' : '💾 Sauvegarder'}</Text>
           </TouchableOpacity>
         </View>
@@ -224,5 +224,5 @@ const styles = StyleSheet.create({
   newBtn: { paddingHorizontal: Sp.lg, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   newBtnText: { fontSize: Fs.sm, color: Colors.textSecondary },
   saveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm },
-  saveBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: '#fff' },
+  saveBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.onPrimary },
 });

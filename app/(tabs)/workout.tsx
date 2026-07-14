@@ -119,7 +119,7 @@ export default function WorkoutScreen() {
 
       {/* ── FAB ──────────────────────────────────────────────────────────── */}
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/modals/add-workout')}>
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={Colors.onPrimary} />
       </TouchableOpacity>
     </AnimatedScreen>
   );

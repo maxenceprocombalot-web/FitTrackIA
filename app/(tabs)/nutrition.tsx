@@ -631,7 +631,7 @@ const recipeStyles = StyleSheet.create({
   macroText: { fontSize: Fs.xs, color: Colors.textSecondary },
   servings:  { fontSize: Fs.xs, color: Colors.textMuted },
   addBtn:    { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6 },
-  addBtnText:{ fontSize: Fs.xs, color: '#fff', fontWeight: Fw.bold },
+  addBtnText:{ fontSize: Fs.xs, color: Colors.onPrimary, fontWeight: Fw.bold },
 });
 
 // ─── Modal Jeûne intermittent ─────────────────────────────────────────────────

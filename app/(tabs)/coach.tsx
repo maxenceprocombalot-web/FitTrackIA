@@ -495,7 +495,7 @@ export default function CoachScreen() {
           accessibilityLabel="Envoyer le message au coach"
           accessibilityRole="button"
         >
-          <Ionicons name="send" size={18} color="#fff" />
+          <Ionicons name="send" size={18} color={Colors.onPrimary} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

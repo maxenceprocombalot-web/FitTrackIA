@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   // Bouton démarrer
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md },
   startBtnActive: { backgroundColor: Colors.green },
-  startBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
+  startBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.onPrimary },
   // Plan
   planTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginTop: Sp.xs },
 });

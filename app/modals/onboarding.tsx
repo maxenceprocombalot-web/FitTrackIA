@@ -374,7 +374,7 @@ export default function OnboardingModal() {
                   accessibilityLabel="J'accepte la politique de confidentialité et les conditions d'utilisation"
                 >
                   <View style={[styles.checkbox, gdprAccepted && styles.checkboxChecked]}>
-                    {gdprAccepted && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    {gdprAccepted && <Ionicons name="checkmark" size={14} color={Colors.onPrimary} />}
                   </View>
                   <Text style={styles.gdprCheckText}>
                     J'accepte la{' '}
@@ -458,7 +458,7 @@ export default function OnboardingModal() {
               <Text style={styles.nextBtnText}>
                 {step < TOTAL_STEPS - 1 ? 'Suivant' : "C'est parti 🚀"}
               </Text>
-              <Ionicons name={step < TOTAL_STEPS - 1 ? 'arrow-forward' : 'checkmark'} size={18} color="#fff" />
+              <Ionicons name={step < TOTAL_STEPS - 1 ? 'arrow-forward' : 'checkmark'} size={18} color={Colors.onPrimary} />
             </TouchableOpacity>
           </View>
         )}
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   welcomeTagline: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   welcomeActions: { gap: Sp.md, alignItems: 'center', paddingBottom: Sp.lg },
   startBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 16, paddingHorizontal: 48, alignSelf: 'center' },
-  startBtnText: { color: '#fff', fontSize: Fs.lg, fontWeight: Fw.bold },
+  startBtnText: { color: Colors.onPrimary, fontSize: Fs.lg, fontWeight: Fw.bold },
   legalText: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center', textDecorationLine: 'underline' },
 
   // Steps
@@ -574,5 +574,5 @@ const styles = StyleSheet.create({
   backBtnText: { fontSize: Fs.md, color: Colors.textSecondary },
   nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
   nextBtnDisabled: { opacity: 0.38 },
-  nextBtnText: { color: '#fff', fontSize: Fs.md, fontWeight: Fw.bold },
+  nextBtnText: { color: Colors.onPrimary, fontSize: Fs.md, fontWeight: Fw.bold },
 });

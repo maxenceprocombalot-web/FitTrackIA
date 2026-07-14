@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   ringSub: { fontSize: Fs.xs, color: Colors.textMuted },
   btnRow: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
   startBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, alignItems: 'center' },
-  startBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.md },
+  startBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold, fontSize: Fs.md },
   stopBtn: { flex: 1, backgroundColor: Colors.red + '20', borderRadius: R, padding: Sp.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.red },
   stopBtnText: { color: Colors.red, fontWeight: Fw.bold, fontSize: Fs.md },
   closeBtn: { borderRadius: R, padding: Sp.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Sp.lg },

@@ -597,7 +597,7 @@ const wbStyles = StyleSheet.create({
   motivText: { fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
   btns: { flexDirection: 'row', gap: Sp.sm },
   detailBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center' },
-  detailBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.sm },
+  detailBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold, fontSize: Fs.sm },
   closeActionBtn: { flex: 1, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
   closeActionBtnText: { color: Colors.textSecondary, fontSize: Fs.sm },
 });
@@ -654,7 +654,7 @@ const weightModalStyles = StyleSheet.create({
   cancelBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   cancelText: { color: Colors.textSecondary },
   saveBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
-  saveText: { color: '#fff', fontWeight: Fw.bold },
+  saveText: { color: Colors.onPrimary, fontWeight: Fw.bold },
 });
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────

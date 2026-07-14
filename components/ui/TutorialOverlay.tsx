@@ -184,5 +184,5 @@ const styles = StyleSheet.create({
     borderRadius: R, backgroundColor: Colors.primary,
     alignItems: 'center',
   },
-  nextText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: '#fff' },
+  nextText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.onPrimary },
 });

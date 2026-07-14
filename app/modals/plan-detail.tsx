@@ -98,7 +98,7 @@ export default function PlanDetailModal() {
 
         {plan.programId && (
           <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
-            <Ionicons name="rocket-outline" size={16} color="#fff" />
+            <Ionicons name="rocket-outline" size={16} color={Colors.onPrimary} />
             <Text style={styles.applyBtnText}>Appliquer ce programme</Text>
           </TouchableOpacity>
         )}
@@ -153,5 +153,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center', gap: 8,
     backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm,
   },
-  applyBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: '#fff' },
+  applyBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.onPrimary },
 });

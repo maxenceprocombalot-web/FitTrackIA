@@ -411,7 +411,7 @@ export default function AddFoodModal() {
               onSubmitEditing={handleSearch}
             />
             <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={searching}>
-              {searching ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="search" size={18} color="#fff" />}
+              {searching ? <ActivityIndicator size="small" color={Colors.onPrimary} /> : <Ionicons name="search" size={18} color={Colors.onPrimary} />}
             </TouchableOpacity>
           </View>
 
@@ -615,11 +615,11 @@ const styles = StyleSheet.create({
   scanFrame: { width: 240, height: 140, borderWidth: 2, borderColor: Colors.primary, borderRadius: R },
   scanHint: { marginTop: 20, color: Colors.text, fontSize: Fs.sm, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: R },
   rescanBtn: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: 24, paddingVertical: 12 },
-  rescanBtnText: { color: '#fff', fontWeight: Fw.semibold },
+  rescanBtnText: { color: Colors.onPrimary, fontWeight: Fw.semibold },
   permContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md, padding: Sp.xl },
   permText: { fontSize: Fs.sm, color: Colors.textSecondary, textAlign: 'center' },
   permBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.xl, paddingVertical: Sp.md },
-  permBtnText: { color: '#fff', fontWeight: Fw.bold },
+  permBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold },
   // Manuel
   manualContent: { padding: Sp.md, paddingBottom: 80 },
   manualRow: { flexDirection: 'row', marginHorizontal: -4 },
