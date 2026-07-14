@@ -6,7 +6,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Svg, { Circle } from 'react-native-svg';
-import { Colors, Fs, Fw, Sp, R } from '../../constants/theme';
+import { Colors, Fs, Fw, Sp, R, Fonts } from '../../constants/theme';
 
 // Durées de repos proposées (en secondes)
 const DURATIONS = [30, 60, 90, 120, 180] as const;
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   ringWrapper: { position: 'relative', marginBottom: Sp.lg },
   ringCenter: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ringIdle: { fontSize: Fs.xl, color: Colors.textMuted, fontWeight: Fw.medium },
-  ringValue: { fontSize: Fs.xxxl, fontWeight: Fw.heavy, letterSpacing: -2 },
+  ringValue: { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, letterSpacing: -1 },
   ringSub: { fontSize: Fs.xs, color: Colors.textMuted },
   btnRow: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
   startBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, alignItems: 'center' },

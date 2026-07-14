@@ -64,6 +64,20 @@ export const Fw = {
   heavy: '800' as const,
 };
 
+// Familles Barlow (chargées dans app/_layout.tsx). Sur Android, la graisse fait
+// partie de la famille : utiliser CES tokens (fontFamily) plutôt que fontWeight
+// quand on veut du Barlow. `condensed*` = gros chiffres sportifs.
+export const Fonts = {
+  regular:        'Barlow_400Regular',
+  medium:         'Barlow_500Medium',
+  semibold:       'Barlow_600SemiBold',
+  bold:           'Barlow_700Bold',
+  heavy:          'Barlow_800ExtraBold',
+  condensed:      'BarlowCondensed_600SemiBold',
+  condensedBold:  'BarlowCondensed_700Bold',
+  condensedHeavy: 'BarlowCondensed_800ExtraBold',
+};
+
 // Ombre utilisée sur les cartes
 export const shadow = {
   shadowColor: '#000',

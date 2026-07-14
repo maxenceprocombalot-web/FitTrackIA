@@ -12,7 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, Recipe, FastingConfig } from '../../types';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
 import { today, localISO } from '../../services/date';
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   copyBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold, flex: 1 },
   // Résumé
   summaryTop:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Sp.md },
-  bigCal:      { fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.caloriesColor },
+  bigCal:      { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.caloriesColor },
   bigCalLabel: { fontSize: Fs.xs, color: Colors.textSecondary },
   remaining:   { alignItems: 'flex-end' },
   remValue:    { fontSize: Fs.xl, fontWeight: Fw.bold },

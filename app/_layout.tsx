@@ -1,12 +1,35 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Colors } from '../constants/theme';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold,
+  Barlow_700Bold, Barlow_800ExtraBold,
+} from '@expo-google-fonts/barlow';
+import {
+  BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
+} from '@expo-google-fonts/barlow-condensed';
+import { Colors, Fonts } from '../constants/theme';
 import { requestNotificationPermissions, scheduleAllReminders } from '../services/notifications';
 import { loadApiKey, loadNotifPrefs } from '../services/storage';
 import { setRuntimeApiKey } from '../services/openai';
 
+// Garde le splash affiché tant que les polices ne sont pas prêtes
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
+  const [fontsLoaded, fontsError] = useFonts({
+    Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold,
+    Barlow_700Bold, Barlow_800ExtraBold,
+    BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
+  });
+
+  useEffect(() => {
+    // fontsError : on démarre quand même (polices système en secours)
+    if (fontsLoaded || fontsError) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, fontsError]);
+
   useEffect(() => {
     (async () => {
       // Charger la clé API stockée (paramètres utilisateur)
@@ -22,6 +45,8 @@ export default function RootLayout() {
     })();
   }, []);
 
+  if (!fontsLoaded && !fontsError) return null;
+
   return (
     <>
       <StatusBar style="light" />
@@ -29,7 +54,7 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: Colors.bg },
           headerTintColor: Colors.text,
-          headerTitleStyle: { fontWeight: '700', color: Colors.text },
+          headerTitleStyle: { fontFamily: Fonts.bold, color: Colors.text },
           contentStyle: { backgroundColor: Colors.bg },
           headerShadowVisible: false,
           headerBackTitle: 'Retour',

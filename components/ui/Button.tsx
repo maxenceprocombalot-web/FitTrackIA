@@ -4,8 +4,9 @@ import {
   StyleProp, ViewStyle, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fonts } from '../../constants/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'md' | 'lg';
@@ -58,6 +59,16 @@ export default function Button({
         style,
       ]}
     >
+      {/* Dégradé or subtil sur le CTA principal (charte or & noir) */}
+      {variant === 'primary' && (
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      )}
       {loading ? (
         <ActivityIndicator color={v.fg} size="small" />
       ) : (
@@ -78,12 +89,13 @@ const VARIANTS: Record<Variant, { bg: string; fg: string; border: string }> = {
 };
 
 const styles = StyleSheet.create({
-  base:      { borderRadius: R, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  // overflow hidden : le dégradé (absoluteFill) doit suivre le borderRadius
+  base:      { borderRadius: R, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   md:        { paddingVertical: Sp.sm + 4, paddingHorizontal: Sp.md },
   lg:        { paddingVertical: Sp.md, paddingHorizontal: Sp.lg },
   fullWidth: { alignSelf: 'stretch' },
   row:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  label:     { fontSize: Fs.md, fontWeight: Fw.bold },
+  label:     { fontSize: Fs.md, fontFamily: Fonts.bold },
   labelLg:   { fontSize: Fs.lg },
   pressed:   { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled:  { opacity: 0.45 },

@@ -16,7 +16,7 @@ import {
   CALORIES_PER_MIN,
 } from '../../constants/exercises';
 import { PROGRAMS } from '../../constants/programs';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
 import Button from '../../components/ui/Button';
@@ -828,13 +828,13 @@ const focusStyles = StyleSheet.create({
   bg:          { flex: 1, backgroundColor: '#050508', paddingHorizontal: Sp.lg },
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 60, paddingBottom: Sp.lg },
   progress:    { fontSize: Fs.sm, color: 'rgba(255,255,255,0.4)', fontWeight: Fw.medium },
-  exName:      { fontSize: 36, fontWeight: Fw.heavy, color: '#fff', textAlign: 'center', lineHeight: 44 },
+  exName:      { fontSize: 36, fontFamily: Fonts.condensedBold, color: '#fff', textAlign: 'center', lineHeight: 44 },
   setInfo:     { fontSize: Fs.xl, color: Colors.primary, marginTop: Sp.md, fontWeight: Fw.semibold },
   setDetail:   { flexDirection: 'row', gap: Sp.xl, marginTop: Sp.lg },
-  setVal:      { fontSize: 52, fontWeight: Fw.heavy, color: Colors.orange },
+  setVal:      { fontSize: 52, fontFamily: Fonts.condensedHeavy, color: Colors.orange },
   restBox:     { alignItems: 'center', paddingBottom: 40 },
   restTitle:   { fontSize: Fs.md, color: 'rgba(255,255,255,0.5)', marginBottom: 4 },
-  restTimer:   { fontSize: 72, fontWeight: Fw.heavy, color: Colors.primary },
+  restTimer:   { fontSize: 72, fontFamily: Fonts.condensedHeavy, color: Colors.primary },
   skipRestBtn: { marginTop: Sp.md, paddingHorizontal: Sp.lg, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
   skipRestText:{ color: Colors.primary, fontWeight: Fw.semibold },
   doneBtn:     { marginBottom: 50, backgroundColor: Colors.green, borderRadius: 24, paddingVertical: 24, marginHorizontal: Sp.md, alignItems: 'center', shadowColor: Colors.green, shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 0 }, elevation: 10 },

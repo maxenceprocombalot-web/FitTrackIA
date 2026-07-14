@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { User, Gender, Goal, ActivityLevel } from '../../types';
 import { computeTDEE, computeTargetCalories, computeMacros } from '../../services/openai';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 
 const TOTAL_STEPS = 6;
 const SCREEN_W    = Dimensions.get('window').width;
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   welcomeContainer: { flex: 1, justifyContent: 'space-between', minHeight: 500, paddingTop: Sp.xxl },
   welcomeContent: { alignItems: 'center', gap: Sp.lg },
   welcomeEmoji: { fontSize: 80 },
-  welcomeTitle: { fontSize: 36, fontWeight: Fw.heavy, color: Colors.text, textAlign: 'center', lineHeight: 44 },
+  welcomeTitle: { fontSize: 36, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', lineHeight: 44 },
   welcomeTagline: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   welcomeActions: { gap: Sp.md, alignItems: 'center', paddingBottom: Sp.lg },
   startBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 16, paddingHorizontal: 48, alignSelf: 'center' },

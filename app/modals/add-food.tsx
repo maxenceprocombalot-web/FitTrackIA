@@ -12,7 +12,7 @@ import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
 import { COMMON_FOODS } from '../../constants/foods';
 import { CIQUAL_FOODS } from '../../constants/ciqual';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
 type Tab = 'recent' | 'favorites' | 'common' | 'search' | 'scan' | 'manual';
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   confirmTitle: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
   confirmBrand: { fontSize: Fs.sm, color: Colors.textSecondary, marginTop: -Sp.xs },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Sp.md },
-  qtyInput: { flex: 1, paddingVertical: 16, fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.text, textAlign: 'center' },
+  qtyInput: { flex: 1, paddingVertical: 16, fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.text, textAlign: 'center' },
   qtyUnit: { fontSize: Fs.md, color: Colors.textMuted },
   macroPreview: { flexDirection: 'row', gap: Sp.xs },
   confirmBtns: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.md },

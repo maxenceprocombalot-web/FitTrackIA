@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 
 // Disques standard (kg) + couleurs code IPF.
 const PLATES: { kg: number; color: string; text: string }[] = [
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   stepBtn:    { width: 56, height: 56, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
   weightBox:  { flex: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: R, paddingVertical: Sp.sm },
-  weightValue:{ fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.text },
+  weightValue:{ fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.text },
   weightUnit: { fontSize: Fs.lg, fontWeight: Fw.semibold, color: Colors.textSecondary },
   fineRow:    { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.sm },
   fineBtn:    { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },

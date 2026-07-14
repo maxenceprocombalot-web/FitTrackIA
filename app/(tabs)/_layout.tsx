@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, Fs } from '../../constants/theme';
+import { Colors, Fs, Fonts } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
 import TutorialOverlay from '../../components/ui/TutorialOverlay';
 
@@ -35,10 +35,10 @@ export default function TabsLayout() {
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textMuted,
-          tabBarLabelStyle: { fontSize: 9, fontWeight: '500' },
+          tabBarLabelStyle: { fontSize: 9, fontFamily: Fonts.medium },
           headerStyle: { backgroundColor: Colors.bg },
           headerTintColor: Colors.text,
-          headerTitleStyle: { fontWeight: '700', fontSize: Fs.lg },
+          headerTitleStyle: { fontFamily: Fonts.bold, fontSize: Fs.lg },
           headerShadowVisible: false,
         }}
       >

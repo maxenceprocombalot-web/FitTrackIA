@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
 import { FoodItem, Meal, MealType } from '../../types';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   // Card résumé
   card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   calRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bigCal: { fontSize: Fs.xxxl, fontWeight: Fw.heavy, color: Colors.caloriesColor },
+  bigCal: { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.caloriesColor },
   bigCalLabel: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
   diffLabel: { fontSize: Fs.sm, fontWeight: Fw.semibold, marginTop: 4 },
   // Sections repas
