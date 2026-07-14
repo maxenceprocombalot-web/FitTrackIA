@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { generateCustomProgram } from '../../services/openai';
 import { SavedPlan } from '../../types';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 
@@ -86,13 +86,13 @@ export default function AIProgramModal() {
           <TouchableOpacity style={styles.newBtn} onPress={() => { setResult(null); setSaved(false); }}>
             <Text style={styles.newBtnText}>Nouveau</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveBtn, saved && { backgroundColor: Colors.green }]}
+          <Button
+            title={saved ? '✓ Sauvegardé' : '💾 Sauvegarder'}
+            icon={saved ? 'checkmark-circle' : 'save-outline'}
             onPress={saved ? () => router.back() : handleSave}
-          >
-            <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={16} color={Colors.onPrimary} />
-            <Text style={styles.saveBtnText}>{saved ? '✓ Sauvegardé' : '💾 Sauvegarder'}</Text>
-          </TouchableOpacity>
+            fullWidth={false}
+            style={{ flex: 1 }}
+          />
         </View>
       </View>
     );
@@ -187,7 +187,7 @@ function OptionBtn({ label, active, onPress, color }: {
       style={[styles.optBtn, active && { borderColor: color, backgroundColor: color + '18' }]}
       onPress={onPress}
     >
-      <Text style={[styles.optBtnText, active && { color, fontWeight: Fw.bold }]}>{label}</Text>
+      <Text style={[styles.optBtnText, active && { color, fontFamily: Fonts.bold }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -196,33 +196,33 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, gap: Sp.lg, paddingBottom: Sp.xxl },
   hero: { alignItems: 'center', paddingVertical: Sp.lg, gap: 8 },
-  heroEmoji: { fontSize: 52 },
-  heroTitle: { fontSize: Fs.xl, fontWeight: Fw.heavy, color: Colors.text },
-  heroSub: { fontSize: Fs.sm, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md },
+  heroEmoji: { fontSize: 52, fontFamily: Fonts.regular },
+  heroTitle: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },
+  heroSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md },
   section: { gap: Sp.sm },
-  sectionLabel: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
   opts: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs },
   optBtn: { paddingHorizontal: Sp.md, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
-  optBtnText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  optBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   generateBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, marginTop: Sp.sm,
   },
-  generateBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: '#fff' },
+  generateBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: '#fff' },
   // Résultat
   resultHeader: { padding: Sp.lg, paddingBottom: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  resultTitle: { fontSize: Fs.xl, fontWeight: Fw.heavy, color: Colors.text },
-  resultSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 4 },
+  resultTitle: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },
+  resultSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 4 },
   scroll: { flex: 1 },
   scrollContent: { padding: Sp.lg },
-  resultText: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 22 },
+  resultText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 22 },
   resultActions: {
     flexDirection: 'row', gap: Sp.sm,
     padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border,
     backgroundColor: Colors.surface,
   },
   newBtn: { paddingHorizontal: Sp.lg, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
-  newBtnText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  newBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   saveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm },
-  saveBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.onPrimary },
+  saveBtnText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.onPrimary },
 });

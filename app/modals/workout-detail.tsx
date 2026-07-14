@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ViewShot from 'react-native-view-shot';
 import { useAppStore } from '../../store/useAppStore';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -213,7 +213,7 @@ function StatPill({ icon, value, color }: {
 }
 const pillStyles = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, paddingHorizontal: Sp.sm, paddingVertical: 5 },
-  text: { fontSize: Fs.xs, fontWeight: Fw.semibold },
+  text: { fontSize: Fs.xs, fontFamily: Fonts.semibold },
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -223,43 +223,43 @@ const styles = StyleSheet.create({
 
   header:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { padding: 4 },
-  headerTitle: { flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  headerTitle: { flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
 
   content: { padding: Sp.md, gap: Sp.sm, paddingBottom: 60 },
 
   infoCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, gap: Sp.xs },
-  workoutName: { fontSize: Fs.xl, fontWeight: Fw.heavy, color: Colors.text },
-  workoutDate: { fontSize: Fs.sm, color: Colors.textSecondary, textTransform: 'capitalize' },
-  workoutType: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  workoutName: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },
+  workoutDate: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textTransform: 'capitalize' },
+  workoutType: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
   statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs, marginTop: 4 },
 
   prsCard: { backgroundColor: Colors.yellow + '10', borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '30', padding: Sp.md, gap: Sp.xs },
   prRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 3 },
-  prName:  { fontSize: Fs.sm, color: Colors.text, flex: 1 },
-  prValue: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.yellow },
+  prName:  { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, flex: 1 },
+  prValue: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.yellow },
 
   exercisesCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   exSection:     { padding: Sp.md },
   exSectionBorder: { borderTopWidth: 1, borderTopColor: Colors.border },
   exHeader:      { flexDirection: 'row', alignItems: 'center', gap: Sp.xs, marginBottom: Sp.sm },
-  exName:        { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
-  prBadge:       { fontSize: Fs.xs, color: Colors.yellow, backgroundColor: Colors.yellow + '15', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
-  exSetCount:    { fontSize: Fs.xs, color: Colors.textMuted },
+  exName:        { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  prBadge:       { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.yellow, backgroundColor: Colors.yellow + '15', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
+  exSetCount:    { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   setRow:        { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, paddingVertical: 5, borderTopWidth: 1, borderTopColor: Colors.border },
-  setNum:        { fontSize: Fs.xs, color: Colors.textMuted, width: 22 },
-  setWeight:     { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text, width: 60 },
-  setReps:       { flex: 1, fontSize: Fs.sm, color: Colors.textSecondary },
-  emptyText:     { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: Sp.md },
+  setNum:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, width: 22 },
+  setWeight:     { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text, width: 60 },
+  setReps:       { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  emptyText:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingVertical: Sp.md },
 
   notesCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, gap: Sp.xs },
-  notesText: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  notesText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
 
-  sectionTitle: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.xs },
+  sectionTitle: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.xs },
 
   shareBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green, borderRadius: R, paddingVertical: 14 },
   repeatBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
-  repeatBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.md },
+  repeatBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.md },
 
   deleteBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '40', backgroundColor: Colors.red + '0A' },
-  deleteBtnText: { color: Colors.red, fontWeight: Fw.medium, fontSize: Fs.sm },
+  deleteBtnText: { color: Colors.red, fontFamily: Fonts.medium, fontSize: Fs.sm },
 });

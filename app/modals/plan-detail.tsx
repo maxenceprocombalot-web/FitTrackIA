@@ -5,7 +5,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 
 export default function PlanDetailModal() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
@@ -97,10 +98,13 @@ export default function PlanDetailModal() {
         )}
 
         {plan.programId && (
-          <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
-            <Ionicons name="rocket-outline" size={16} color={Colors.onPrimary} />
-            <Text style={styles.applyBtnText}>Appliquer ce programme</Text>
-          </TouchableOpacity>
+          <Button
+            title="Appliquer ce programme"
+            icon="rocket-outline"
+            onPress={handleApply}
+            fullWidth={false}
+            style={{ flex: 1 }}
+          />
         )}
       </View>
     </View>
@@ -110,7 +114,7 @@ export default function PlanDetailModal() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   empty: { flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyText: { fontSize: Fs.md, color: Colors.textSecondary },
+  emptyText: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textSecondary },
   header: {
     padding: Sp.lg, paddingBottom: Sp.md,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
@@ -120,18 +124,18 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start', borderRadius: 99,
     paddingHorizontal: Sp.md, paddingVertical: 4,
   },
-  typeText: { fontSize: Fs.xs, fontWeight: Fw.bold },
+  typeText: { fontSize: Fs.xs, fontFamily: Fonts.bold },
   predBadge: {
     alignSelf: 'flex-start', borderRadius: 99,
     paddingHorizontal: Sp.sm, paddingVertical: 2,
     backgroundColor: Colors.yellow + '20',
   },
-  predText: { fontSize: Fs.xs, color: Colors.yellow, fontWeight: Fw.medium },
-  title: { fontSize: Fs.xl, fontWeight: Fw.heavy, color: Colors.text },
-  date: { fontSize: Fs.xs, color: Colors.textMuted },
+  predText: { fontSize: Fs.xs, color: Colors.yellow, fontFamily: Fonts.medium },
+  title: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },
+  date: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   scroll: { flex: 1 },
   content: { padding: Sp.lg },
-  planText: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 22 },
+  planText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 22 },
   actions: {
     flexDirection: 'row', gap: Sp.sm,
     padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border,
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Sp.md, paddingVertical: Sp.sm,
     borderRadius: R, borderWidth: 1, borderColor: Colors.border,
   },
-  shareBtnText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  shareBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   deleteBtn: {
     padding: Sp.sm, borderRadius: R,
     borderWidth: 1, borderColor: Colors.red + '40',
@@ -153,5 +157,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center', gap: 8,
     backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm,
   },
-  applyBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.onPrimary },
+  applyBtnText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.onPrimary },
 });

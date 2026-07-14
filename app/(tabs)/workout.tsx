@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { WorkoutSession, WorkoutType } from '../../types';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -219,7 +219,7 @@ const swipeStyles = StyleSheet.create({
     width: 110, borderRadius: R, backgroundColor: Colors.red,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: Sp.sm,
   },
-  bgText: { color: '#fff', fontSize: Fs.sm, fontWeight: Fw.semibold },
+  bgText: { color: '#fff', fontSize: Fs.sm, fontFamily: Fonts.semibold },
   card: {
     backgroundColor: Colors.surface, borderRadius: R,
     borderWidth: 1, borderColor: Colors.border,
@@ -232,12 +232,12 @@ const swipeStyles = StyleSheet.create({
   iconBox: { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  name: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
+  name: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
   todayBadge: { backgroundColor: Colors.primary + '25', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
-  todayText: { fontSize: Fs.xs, color: Colors.primary },
-  meta: { fontSize: Fs.xs, color: Colors.textSecondary },
-  exCount: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 },
-  date: { fontSize: Fs.xs, color: Colors.textMuted },
+  todayText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary },
+  meta: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  exCount: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 },
+  date: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -253,8 +253,8 @@ function MiniStat({ icon, color, value, label }: { icon: React.ComponentProps<ty
 }
 const miniStyles = StyleSheet.create({
   card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center', gap: 3 },
-  value: { fontSize: Fs.xl, fontWeight: Fw.bold },
-  label: { fontSize: Fs.xs, color: Colors.textMuted },
+  value: { fontSize: Fs.xl, fontFamily: Fonts.bold },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });
 
 function FilterChip({ label, active, color = Colors.primary, onPress }: { label: string; active: boolean; color?: string; onPress: () => void }) {
@@ -272,10 +272,10 @@ function EmptyWorkout({ onAdd }: { onAdd: () => void }) {
   return (
     <View style={{ alignItems: 'center', paddingVertical: 60, gap: 12 }}>
       <Ionicons name="barbell-outline" size={56} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textSecondary, fontSize: Fs.lg, fontWeight: Fw.semibold }}>Aucune séance</Text>
-      <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, textAlign: 'center' }}>Commence à enregistrer tes entraînements</Text>
+      <Text style={{ color: Colors.textSecondary, fontSize: Fs.lg, fontFamily: Fonts.semibold }}>Aucune séance</Text>
+      <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular, textAlign: 'center' }}>Commence à enregistrer tes entraînements</Text>
       <TouchableOpacity style={{ backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 }} onPress={onAdd}>
-        <Text style={{ color: '#fff', fontWeight: Fw.semibold }}>Ajouter une séance</Text>
+        <Text style={{ color: '#fff', fontFamily: Fonts.semibold }}>Ajouter une séance</Text>
       </TouchableOpacity>
     </View>
   );
@@ -296,10 +296,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + '22',
     alignItems: 'center', justifyContent: 'center',
   },
-  programsEmoji: { fontSize: 22 },
+  programsEmoji: { fontSize: 22, fontFamily: Fonts.regular },
   programsText: { flex: 1 },
-  programsTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  programsSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  programsTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  programsSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   // Bouton reprendre dernière séance
   repeatBtn: {
     flexDirection: 'row', alignItems: 'center', gap: Sp.sm,
@@ -307,21 +307,21 @@ const styles = StyleSheet.create({
     borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '35',
     padding: Sp.md,
   },
-  repeatBtnTitle: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.text },
-  repeatBtnSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  repeatBtnTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.text },
+  repeatBtnSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   toolRow: {
     flexDirection: 'row', alignItems: 'center', gap: Sp.sm,
     backgroundColor: Colors.blue + '10',
     borderRadius: R, borderWidth: 1, borderColor: Colors.blue + '30',
     padding: Sp.md,
   },
-  toolTitle: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.text },
-  toolSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  toolTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.text },
+  toolSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: Sp.sm },
   filterScroll: { marginHorizontal: -Sp.md },
   filterContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
   chip: { borderRadius: 99, paddingHorizontal: Sp.md, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
-  chipText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  chipText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   fab: {
     position: 'absolute', bottom: 30, right: Sp.lg,
     width: 56, height: 56, borderRadius: 28,

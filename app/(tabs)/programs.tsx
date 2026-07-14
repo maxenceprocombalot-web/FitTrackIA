@@ -10,7 +10,7 @@ import {
   PROGRAMS, ProgramTemplate, ProgramCategory, ProgramLevel, ProgramGoal,
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 
 // ─── Filtres disponibles ──────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ export default function ProgramsScreen() {
         onPress={() => router.push('/modals/ai-program')}
       >
         <View style={styles.aiProgramIcon}>
-          <Text style={{ fontSize: 22 }}>🧠</Text>
+          <Text style={{ fontSize: 22, fontFamily: Fonts.regular }}>🧠</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.aiProgramTitle}>Créer mon programme IA</Text>
@@ -188,13 +188,13 @@ function Chip({ label, active, color = Colors.primary, onPress }: {
       style={[chipStyles.chip, active && { borderColor: color, backgroundColor: color + '18' }]}
       onPress={onPress}
     >
-      <Text style={[chipStyles.text, active && { color, fontWeight: Fw.semibold }]}>{label}</Text>
+      <Text style={[chipStyles.text, active && { color, fontFamily: Fonts.semibold }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 const chipStyles = StyleSheet.create({
   chip: { paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, marginRight: 6 },
-  text: { fontSize: Fs.xs, color: Colors.textSecondary },
+  text: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
 });
 
 function Tag({ icon, label, color }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; color: string }) {
@@ -207,7 +207,7 @@ function Tag({ icon, label, color }: { icon: React.ComponentProps<typeof Ionicon
 }
 const tagStyles = StyleSheet.create({
   tag: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: Colors.surfaceElevated, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3 },
-  text: { fontSize: 10, fontWeight: Fw.medium },
+  text: { fontSize: 10, fontFamily: Fonts.medium },
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + '20',
     alignItems: 'center', justifyContent: 'center',
   },
-  aiProgramTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  aiProgramSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
+  aiProgramTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  aiProgramSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2, lineHeight: 16 },
   // Banner programme actif
   activeBanner: {
     backgroundColor: Colors.primary + '18',
@@ -237,19 +237,19 @@ const styles = StyleSheet.create({
   },
   activeBannerTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green },
-  activeLabel: { flex: 1, fontSize: Fs.xs, color: Colors.textSecondary, fontWeight: Fw.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  activeLabel: { flex: 1, fontSize: Fs.xs, color: Colors.textSecondary, fontFamily: Fonts.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
   stopBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, borderWidth: 1, borderColor: Colors.red + '60' },
-  stopBtnText: { fontSize: Fs.xs, color: Colors.red },
-  activeName: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
-  activeWeek: { fontSize: Fs.sm, color: Colors.primary },
+  stopBtnText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.red },
+  activeName: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  activeWeek: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.primary },
   activeCta: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm, justifyContent: 'center', marginTop: 4 },
-  activeCtaText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.bg },
+  activeCtaText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.bg },
   // Filtres
-  filterLabel: { fontSize: Fs.xs, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },
+  filterLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },
   filterScroll: { marginHorizontal: -Sp.md },
   filterRow: { paddingHorizontal: Sp.md, paddingVertical: 6 },
   // Résultats
-  resultCount: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 4 },
+  resultCount: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4 },
   // Carte
   card: {
     backgroundColor: Colors.surface, borderRadius: R,
@@ -257,12 +257,12 @@ const styles = StyleSheet.create({
   },
   cardActive: { borderColor: Colors.primary + '60', backgroundColor: Colors.primary + '08' },
   activePill: { alignSelf: 'flex-start', backgroundColor: Colors.green + '20', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
-  activePillText: { fontSize: 10, color: Colors.green, fontWeight: Fw.bold },
+  activePillText: { fontSize: 10, color: Colors.green, fontFamily: Fonts.bold },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  cardEmoji: { fontSize: 32 },
-  cardName: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginBottom: 4 },
+  cardEmoji: { fontSize: 32, fontFamily: Fonts.regular },
+  cardName: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginBottom: 4 },
   catBadge: { alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
-  catBadgeText: { fontSize: Fs.xs, fontWeight: Fw.semibold },
-  cardDesc: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 18 },
+  catBadgeText: { fontSize: Fs.xs, fontFamily: Fonts.semibold },
+  cardDesc: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
 });

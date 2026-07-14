@@ -264,7 +264,7 @@ export default function NutritionScreen() {
       </View>
       {fastTimerText !== '' && (
         <View style={[styles.fastTimer, { borderColor: fastTimerText.startsWith('🔒') ? Colors.orange + '50' : Colors.green + '50', backgroundColor: fastTimerText.startsWith('🔒') ? Colors.orange + '10' : Colors.green + '10' }]}>
-          <Text style={{ fontSize: Fs.sm, color: fastTimerText.startsWith('🔒') ? Colors.orange : Colors.green, fontWeight: Fw.semibold }}>{fastTimerText}</Text>
+          <Text style={{ fontSize: Fs.sm, color: fastTimerText.startsWith('🔒') ? Colors.orange : Colors.green, fontFamily: Fonts.semibold }}>{fastTimerText}</Text>
         </View>
       )}
 
@@ -501,14 +501,14 @@ function MacroPill({ value, unit, color }: { value: string; unit: string; color:
 const foodStyles = StyleSheet.create({
   swipeWrap: { position: 'relative', borderTopWidth: 1, borderTopColor: Colors.border, overflow: 'hidden' },
   swipeBg:   { position: 'absolute', right: 0, top: 0, bottom: 0, width: DELETE_W, backgroundColor: Colors.red, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  swipeBgText: { color: '#fff', fontSize: Fs.xs, fontWeight: Fw.semibold },
+  swipeBgText: { color: '#fff', fontSize: Fs.xs, fontFamily: Fonts.semibold },
   row:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, gap: 6, backgroundColor: Colors.surface },
   info:     { flex: 1 },
-  name:     { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
-  portion:  { fontSize: Fs.xs, color: Colors.textMuted },
+  name:     { fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
+  portion:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   macros:   { flexDirection: 'row', flexWrap: 'wrap', gap: 3, flex: 1, justifyContent: 'flex-end' },
   pill:     { borderRadius: 99, paddingHorizontal: 5, paddingVertical: 2 },
-  pillText: { fontSize: 10, fontWeight: Fw.medium },
+  pillText: { fontSize: 10, fontFamily: Fonts.medium },
 });
 
 const styles = StyleSheet.create({
@@ -525,10 +525,10 @@ const styles = StyleSheet.create({
   dateArrow:         { paddingHorizontal: Sp.md, paddingVertical: 4 },
   dateArrowDisabled: { opacity: 0.25 },
   dateLabelWrap:     { flex: 1, alignItems: 'center', gap: 2 },
-  dateLabel:         { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  dateLabelHint:     { fontSize: Fs.xs, color: Colors.primary },
+  dateLabel:         { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  dateLabelHint:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary },
   todayLink:         { marginTop: 1 },
-  todayLinkText:     { fontSize: Fs.xs, color: Colors.primary },
+  todayLinkText:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary },
   // Bouton copier
   copyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -536,29 +536,29 @@ const styles = StyleSheet.create({
     borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30',
     paddingVertical: 8, paddingHorizontal: Sp.md,
   },
-  copyBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold, flex: 1 },
+  copyBtnText: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold, flex: 1 },
   // Résumé
   summaryTop:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Sp.md },
   bigCal:      { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.caloriesColor },
-  bigCalLabel: { fontSize: Fs.xs, color: Colors.textSecondary },
+  bigCalLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
   remaining:   { alignItems: 'flex-end' },
-  remValue:    { fontSize: Fs.xl, fontWeight: Fw.bold },
-  remLabel:    { fontSize: Fs.xs, color: Colors.textMuted },
+  remValue:    { fontSize: Fs.xl, fontFamily: Fonts.bold },
+  remLabel:    { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   // Section repas
   mealSection: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   mealHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.md },
   mealIcon:    { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  mealLabel:   { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
-  mealCal:     { fontSize: Fs.sm, color: Colors.textSecondary },
+  mealLabel:   { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  mealCal:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   favBtn:      { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.yellow + '15' },
   addBtn:      { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  emptyMeal:   { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
+  emptyMeal:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
   // Recettes
   recipesBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30', paddingVertical: 8, paddingHorizontal: Sp.sm, flex: 1, justifyContent: 'center' },
-  recipesBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold },
+  recipesBtnText: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold },
   // Jeûne
   fastBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.yellow + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '35', paddingVertical: 8, paddingHorizontal: Sp.sm, flex: 1, justifyContent: 'center' },
-  fastBtnText: { fontSize: Fs.xs, color: Colors.yellow, fontWeight: Fw.semibold },
+  fastBtnText: { fontSize: Fs.xs, color: Colors.yellow, fontFamily: Fonts.semibold },
   fastTimer: { borderRadius: R, borderWidth: 1, padding: Sp.sm, alignItems: 'center' },
 });
 
@@ -621,17 +621,17 @@ function RecipesModal({ onClose, onAddRecipe }: {
 
 const recipeStyles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
-  title:     { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  title:     { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
   card:      { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   row:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  emoji:     { fontSize: 32 },
-  name:      { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text, marginBottom: 3 },
+  emoji:     { fontSize: 32, fontFamily: Fonts.regular },
+  name:      { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 3 },
   macroRow:  { flexDirection: 'row', gap: Sp.sm, alignItems: 'center', marginBottom: 2 },
-  calText:   { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.caloriesColor },
-  macroText: { fontSize: Fs.xs, color: Colors.textSecondary },
-  servings:  { fontSize: Fs.xs, color: Colors.textMuted },
+  calText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.caloriesColor },
+  macroText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  servings:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   addBtn:    { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6 },
-  addBtnText:{ fontSize: Fs.xs, color: Colors.onPrimary, fontWeight: Fw.bold },
+  addBtnText:{ fontSize: Fs.xs, color: Colors.onPrimary, fontFamily: Fonts.bold },
 });
 
 // ─── Modal Jeûne intermittent ─────────────────────────────────────────────────
@@ -650,38 +650,38 @@ function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, on
     <View style={fmStyles.overlay}>
       <View style={fmStyles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
-          <Text style={{ fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>⏱ Jeûne intermittent</Text>
+          <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>⏱ Jeûne intermittent</Text>
           <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
         </View>
 
-        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.sm }}>Protocole</Text>
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.sm }}>Protocole</Text>
         <View style={{ flexDirection: 'row', gap: Sp.xs, marginBottom: Sp.md }}>
           {([16,18,20,24] as const).map(p => (
             <TouchableOpacity key={p} style={{ flex: 1, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: protocol === p ? Colors.yellow : Colors.border, backgroundColor: protocol === p ? Colors.yellow + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onProtocol(p)}>
-              <Text style={{ fontSize: Fs.sm, color: protocol === p ? Colors.yellow : Colors.textSecondary, fontWeight: Fw.semibold }}>{p}h/{24-p}h</Text>
+              <Text style={{ fontSize: Fs.sm, color: protocol === p ? Colors.yellow : Colors.textSecondary, fontFamily: Fonts.semibold }}>{p}h/{24-p}h</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.xs }}>Début du jeûne</Text>
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Début du jeûne</Text>
         <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.lg }}>
           {['18:00','19:00','20:00','21:00','22:00'].map(t => (
             <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: startTime === t ? Colors.primary : Colors.border, backgroundColor: startTime === t ? Colors.primary + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onStartTime(t)}>
-              <Text style={{ fontSize: Fs.xs, color: startTime === t ? Colors.primary : Colors.textMuted }}>{t}</Text>
+              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: startTime === t ? Colors.primary : Colors.textMuted }}>{t}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.md }}>
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.md }}>
           Fenêtre alimentaire : {startTime} + {protocol}h = {`${(parseInt(startTime.split(':')[0]) + protocol) % 24}:${startTime.split(':')[1]}`} → {`${(parseInt(startTime.split(':')[0]) + protocol + (24 - protocol)) % 24}:00`}
         </Text>
 
         <TouchableOpacity style={{ backgroundColor: Colors.yellow, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm }} onPress={onSave}>
-          <Text style={{ color: '#000', fontWeight: Fw.bold }}>Démarrer le jeûne</Text>
+          <Text style={{ color: '#000', fontFamily: Fonts.bold }}>Démarrer le jeûne</Text>
         </TouchableOpacity>
         {config?.active && (
           <TouchableOpacity style={{ borderRadius: R, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.red + '50' }} onPress={onStop}>
-            <Text style={{ color: Colors.red, fontWeight: Fw.medium }}>Arrêter le jeûne</Text>
+            <Text style={{ color: Colors.red, fontFamily: Fonts.medium }}>Arrêter le jeûne</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -719,13 +719,13 @@ function RestaurantModal({ onClose, onAdd }: {
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', zIndex: 999 }}>
       <View style={{ backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
-          <Text style={{ fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>🍽️ Mode Restaurant</Text>
+          <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>🍽️ Mode Restaurant</Text>
           <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
         </View>
-        <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton plat</Text>
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton plat</Text>
         <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md }}>
           <TextInput
-            style={{ flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border }}
+            style={{ flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border }}
             value={dish}
             onChangeText={setDish}
             placeholder="Steak frites, Pizza margherita..."
@@ -739,7 +739,7 @@ function RestaurantModal({ onClose, onAdd }: {
         {result && (
           <>
             <View style={{ backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, marginBottom: Sp.sm, gap: Sp.xs }}>
-              <Text style={{ fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginBottom: 4 }}>{result.name}</Text>
+              <Text style={{ fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginBottom: 4 }}>{result.name}</Text>
               <View style={{ flexDirection: 'row', gap: Sp.sm }}>
                 {[
                   { label: 'kcal', value: cal, color: Colors.caloriesColor },
@@ -748,23 +748,23 @@ function RestaurantModal({ onClose, onAdd }: {
                   { label: 'L', value: `${Math.round(result.fatPer100g * qty / 100)}g`, color: Colors.fatColor },
                 ].map(m => (
                   <View key={m.label} style={{ flex: 1, alignItems: 'center', backgroundColor: m.color + '15', borderRadius: R, paddingVertical: 8 }}>
-                    <Text style={{ fontSize: Fs.md, fontWeight: Fw.bold, color: m.color }}>{m.value}</Text>
-                    <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{m.label}</Text>
+                    <Text style={{ fontSize: Fs.md, fontFamily: Fonts.bold, color: m.color }}>{m.value}</Text>
+                    <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{m.label}</Text>
                   </View>
                 ))}
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginTop: 4 }}>
-                <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary }}>Portion :</Text>
-                <TextInput style={{ backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6, fontSize: Fs.sm, color: Colors.text, borderWidth: 1, borderColor: Colors.border, width: 70, textAlign: 'center' }} value={portion} onChangeText={setPortion} keyboardType="number-pad" />
-                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>g</Text>
+                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary }}>Portion :</Text>
+                <TextInput style={{ backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border, width: 70, textAlign: 'center' }} value={portion} onChangeText={setPortion} keyboardType="number-pad" />
+                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>g</Text>
               </View>
-              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4 }}>⚠️ Estimation IA — peut varier selon la portion réelle</Text>
+              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4 }}>⚠️ Estimation IA — peut varier selon la portion réelle</Text>
             </View>
             <TouchableOpacity style={{ backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center' }} onPress={() => {
               const item: FoodItem = { id: `rest_${Date.now()}`, name: `🍽️ ${result.name}`, quantity: qty, caloriesPer100g: result.caloriesPer100g, proteinPer100g: result.proteinPer100g, carbsPer100g: result.carbsPer100g, fatPer100g: result.fatPer100g };
               onAdd(item);
             }}>
-              <Text style={{ color: '#fff', fontWeight: Fw.bold }}>Ajouter à mon repas</Text>
+              <Text style={{ color: '#fff', fontFamily: Fonts.bold }}>Ajouter à mon repas</Text>
             </TouchableOpacity>
           </>
         )}
@@ -790,30 +790,30 @@ function MealPrepModal({ user, onClose }: { user: any; onClose: () => void }) {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
-        <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>📋 Meal Prep 7 jours</Text>
+        <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>📋 Meal Prep 7 jours</Text>
         <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
       </View>
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md }}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={{ color: Colors.textSecondary, fontSize: Fs.sm }}>Génération du plan en cours…</Text>
+          <Text style={{ color: Colors.textSecondary, fontSize: Fs.sm, fontFamily: Fonts.regular }}>Génération du plan en cours…</Text>
         </View>
       ) : (
         <>
           <View style={{ flexDirection: 'row', padding: Sp.sm, gap: Sp.xs }}>
             {(['plan', 'shopping'] as const).map(t => (
               <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: tab === t ? Colors.primary : Colors.border, backgroundColor: tab === t ? Colors.primary + '18' : Colors.surface, alignItems: 'center' }} onPress={() => setTab(t)}>
-                <Text style={{ fontSize: Fs.sm, color: tab === t ? Colors.primary : Colors.textSecondary, fontWeight: Fw.semibold }}>{t === 'plan' ? '📅 Plan repas' : '🛒 Courses'}</Text>
+                <Text style={{ fontSize: Fs.sm, color: tab === t ? Colors.primary : Colors.textSecondary, fontFamily: Fonts.semibold }}>{t === 'plan' ? '📅 Plan repas' : '🛒 Courses'}</Text>
               </TouchableOpacity>
             ))}
           </View>
           <ScrollView contentContainerStyle={{ padding: Sp.md, paddingBottom: 100 }}>
-            <Text style={{ fontSize: Fs.sm, color: Colors.text, lineHeight: 22 }}>{tab === 'plan' ? plan : shopping}</Text>
+            <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 22 }}>{tab === 'plan' ? plan : shopping}</Text>
           </ScrollView>
           <View style={{ flexDirection: 'row', gap: Sp.sm, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border }}>
             <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 12 }} onPress={() => Share.share({ message: `${plan}\n\n${shopping}`, title: 'Mon Meal Prep' })}>
               <Ionicons name="share-outline" size={16} color="#fff" />
-              <Text style={{ color: '#fff', fontWeight: Fw.semibold, fontSize: Fs.sm }}>Exporter</Text>
+              <Text style={{ color: '#fff', fontFamily: Fonts.semibold, fontSize: Fs.sm }}>Exporter</Text>
             </TouchableOpacity>
           </View>
         </>

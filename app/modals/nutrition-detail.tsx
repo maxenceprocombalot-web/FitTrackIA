@@ -77,7 +77,7 @@ function PieChart({ prot, carb, fat }: { prot: number; carb: number; fat: number
         ].map(({ label, color }) => (
           <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
-            <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary }}>{label}</Text>
+            <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary }}>{label}</Text>
           </View>
         ))}
       </View>
@@ -231,7 +231,7 @@ function MacroPill({ value, unit, color }: { value: string; unit: string; color:
 
 const pillStyles = StyleSheet.create({
   pill: { borderRadius: 99, paddingHorizontal: 5, paddingVertical: 2 },
-  text: { fontSize: 10, fontWeight: Fw.medium },
+  text: { fontSize: 10, fontFamily: Fonts.medium },
 });
 
 const styles = StyleSheet.create({
@@ -243,22 +243,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceElevated },
-  title: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, textTransform: 'capitalize' },
+  title: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, textTransform: 'capitalize' },
   scroll: { flex: 1 },
   content: { padding: Sp.md, gap: Sp.sm },
   // Card résumé
   card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   calRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bigCal: { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.caloriesColor },
-  bigCalLabel: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
-  diffLabel: { fontSize: Fs.sm, fontWeight: Fw.semibold, marginTop: 4 },
+  bigCalLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
+  diffLabel: { fontSize: Fs.sm, fontFamily: Fonts.semibold, marginTop: 4 },
   // Sections repas
   mealSection: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   mealHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.md },
   mealIcon:    { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  mealLabel:   { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
-  mealCal:     { fontSize: Fs.sm, color: Colors.textSecondary },
-  emptyMeal:   { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10, paddingBottom: 12 },
+  mealLabel:   { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  mealCal:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  emptyMeal:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10, paddingBottom: 12 },
   // Aliments
   foodRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -267,8 +267,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   foodInfo:    { flex: 1 },
-  foodName:    { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
-  foodPortion: { fontSize: Fs.xs, color: Colors.textMuted },
+  foodName:    { fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
+  foodPortion: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   foodMacros:  { flexDirection: 'row', flexWrap: 'wrap', gap: 3, flex: 1, justifyContent: 'flex-end' },
   // Bouton copier
   copyBtn: {
@@ -277,5 +277,5 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.primary + '40',
     paddingVertical: Sp.md, marginTop: Sp.sm,
   },
-  copyBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.semibold },
+  copyBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
 });

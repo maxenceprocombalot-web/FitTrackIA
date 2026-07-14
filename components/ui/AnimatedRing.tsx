@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { Colors, Fs, Fw } from '../../constants/theme';
+import { Colors, Fs, Fw, Fonts } from '../../constants/theme';
 
 interface Props {
   consumed: number;
@@ -108,7 +108,7 @@ export default function AnimatedRing({ consumed, burned, goal, size = 160, strok
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center' },
   center: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  mainValue: { fontSize: Fs.xxl, fontWeight: Fw.heavy, letterSpacing: -1 },
-  label: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: -2 },
-  remaining: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 4 },
+  mainValue: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, letterSpacing: -1 },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: -2 },
+  remaining: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 4 },
 });

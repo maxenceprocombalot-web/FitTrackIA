@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { Colors, Fs, Fw, Sp } from '../../constants/theme';
+import { Colors, Fs, Fw, Sp, Fonts } from '../../constants/theme';
 
 interface Props {
   label: string;
@@ -32,7 +32,7 @@ export default function MacroBar({ label, current, goal, color, unit = 'g' }: Pr
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.value}>
-          <Text style={{ color, fontWeight: Fw.semibold }}>{Math.round(current)}</Text>
+          <Text style={{ color, fontFamily: Fonts.semibold }}>{Math.round(current)}</Text>
           <Text style={styles.goal}>/{goal}{unit}</Text>
         </Text>
       </View>
@@ -46,8 +46,8 @@ export default function MacroBar({ label, current, goal, color, unit = 'g' }: Pr
 const styles = StyleSheet.create({
   container: { marginBottom: 10 },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  label: { fontSize: Fs.sm, color: Colors.textSecondary },
-  value: { fontSize: Fs.sm },
+  label: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  value: { fontSize: Fs.sm, fontFamily: Fonts.regular },
   goal: { color: Colors.textMuted },
   track: {
     height: 5,

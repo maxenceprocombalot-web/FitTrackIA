@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Svg, { Circle } from 'react-native-svg';
 import { Colors, Fs, Fw, Sp, R, Fonts } from '../../constants/theme';
+import Button from './Button';
 
 // Durées de repos proposées (en secondes)
 const DURATIONS = [30, 60, 90, 120, 180] as const;
@@ -161,11 +162,12 @@ export default function RestTimer({ visible, onClose }: Props) {
           {/* Boutons */}
           <View style={styles.btnRow}>
             {!running ? (
-              <TouchableOpacity style={styles.startBtn} onPress={() => startTimer(selected)}>
-                <Text style={styles.startBtnText}>
-                  {remaining === 0 ? 'Recommencer' : 'Démarrer'}
-                </Text>
-              </TouchableOpacity>
+              <Button
+                title={remaining === 0 ? 'Recommencer' : 'Démarrer'}
+                onPress={() => startTimer(selected)}
+                fullWidth={false}
+                style={{ flex: 1 }}
+              />
             ) : (
               <TouchableOpacity style={styles.stopBtn} onPress={stopTimer}>
                 <Text style={styles.stopBtnText}>Arrêter</Text>
@@ -184,22 +186,22 @@ export default function RestTimer({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Sp.lg, alignItems: 'center', paddingBottom: 40 },
-  title: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text, marginBottom: Sp.md },
+  title: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text, marginBottom: Sp.md },
   durationRow: { flexDirection: 'row', gap: Sp.xs, marginBottom: Sp.lg },
   durBtn: { paddingHorizontal: Sp.md, paddingVertical: 8, borderRadius: 99, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated },
   durBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '20' },
-  durText: { fontSize: Fs.sm, color: Colors.textSecondary },
-  durTextActive: { color: Colors.primary, fontWeight: Fw.semibold },
+  durText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  durTextActive: { color: Colors.primary, fontFamily: Fonts.semibold },
   ringWrapper: { position: 'relative', marginBottom: Sp.lg },
   ringCenter: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  ringIdle: { fontSize: Fs.xl, color: Colors.textMuted, fontWeight: Fw.medium },
+  ringIdle: { fontSize: Fs.xl, color: Colors.textMuted, fontFamily: Fonts.medium },
   ringValue: { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, letterSpacing: -1 },
-  ringSub: { fontSize: Fs.xs, color: Colors.textMuted },
+  ringSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   btnRow: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
   startBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, alignItems: 'center' },
-  startBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold, fontSize: Fs.md },
+  startBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.md },
   stopBtn: { flex: 1, backgroundColor: Colors.red + '20', borderRadius: R, padding: Sp.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.red },
-  stopBtnText: { color: Colors.red, fontWeight: Fw.bold, fontSize: Fs.md },
+  stopBtnText: { color: Colors.red, fontFamily: Fonts.bold, fontSize: Fs.md },
   closeBtn: { borderRadius: R, padding: Sp.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Sp.lg },
-  closeBtnText: { color: Colors.textSecondary, fontWeight: Fw.medium },
+  closeBtnText: { color: Colors.textSecondary, fontFamily: Fonts.medium },
 });

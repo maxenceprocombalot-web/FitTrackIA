@@ -5,7 +5,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 
 export default function MonthlySummaryModal() {
   const { month } = useLocalSearchParams<{ month: string }>();
@@ -122,10 +123,7 @@ export default function MonthlySummaryModal() {
       </View>
 
       {/* ── Bouton partager ──────────────────────────────────────────────── */}
-      <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-        <Ionicons name="share-social-outline" size={20} color={Colors.onPrimary} />
-        <Text style={styles.shareBtnText}>Partager mon bilan</Text>
-      </TouchableOpacity>
+      <Button title="Partager mon bilan" icon="share-social-outline" onPress={handleShare} />
 
       <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
         <Text style={styles.closeBtnText}>Fermer</Text>
@@ -159,8 +157,8 @@ const scStyles = StyleSheet.create({
     borderWidth: 1, padding: Sp.md,
     alignItems: 'center', gap: 4,
   },
-  value: { fontSize: Fs.xxl, fontWeight: Fw.heavy },
-  label: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center' },
+  value: { fontSize: Fs.xxl, fontFamily: Fonts.heavy },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center' },
 });
 
 const styles = StyleSheet.create({
@@ -168,14 +166,14 @@ const styles = StyleSheet.create({
   content: { padding: Sp.md, gap: Sp.md },
   // État vide
   empty: { flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center', gap: 8, padding: Sp.xl },
-  emptyTitle: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
-  emptySub: { fontSize: Fs.sm, color: Colors.textSecondary },
+  emptyTitle: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  emptySub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   closeLink: { marginTop: Sp.md },
   // Hero
   hero: { alignItems: 'center', paddingVertical: Sp.xl, gap: 6 },
-  heroEmoji: { fontSize: 56 },
-  heroTitle: { fontSize: Fs.xxl, fontWeight: Fw.heavy, color: Colors.text, textTransform: 'capitalize' },
-  heroSub: { fontSize: Fs.sm, color: Colors.textSecondary },
+  heroEmoji: { fontSize: 56, fontFamily: Fonts.regular },
+  heroTitle: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text, textTransform: 'capitalize' },
+  heroSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   // PR
@@ -185,22 +183,22 @@ const styles = StyleSheet.create({
     borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '30',
     padding: Sp.md,
   },
-  prEmoji: { fontSize: 32 },
-  prLabel: { fontSize: Fs.xs, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  prExercise: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text, marginTop: 2 },
-  prValue: { fontSize: Fs.sm, color: Colors.yellow, fontWeight: Fw.semibold, marginTop: 2 },
+  prEmoji: { fontSize: 32, fontFamily: Fonts.regular },
+  prLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  prExercise: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text, marginTop: 2 },
+  prValue: { fontSize: Fs.sm, color: Colors.yellow, fontFamily: Fonts.semibold, marginTop: 2 },
   // Coach
   coachCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   coachHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   coachDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green },
-  coachLabel: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.primary },
-  coachMsg: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  coachLabel: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
+  coachMsg: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
   // Actions
   shareBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md,
   },
-  shareBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.onPrimary },
+  shareBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
   closeBtn: { alignItems: 'center', padding: Sp.sm },
-  closeBtnText: { fontSize: Fs.sm, color: Colors.textMuted },
+  closeBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted },
 });

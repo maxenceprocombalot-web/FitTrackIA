@@ -11,9 +11,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { WeightEntry, SavedPlan, BodyMeasurement, WeeklyChallenge } from '../../types';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+// API legacy : documentDirectory/copyAsync (SDK 54 a déplacé l'API moderne vers Paths)
+import * as FileSystem from 'expo-file-system/legacy';
 import {
   loadProgressPhotos, saveProgressPhoto, deleteProgressPhoto,
   loadMeasurements, saveMeasurement,
@@ -55,7 +57,7 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
   if (entries.length < 2) return (
     <View style={{ alignItems: 'center', paddingVertical: 30 }}>
       <Ionicons name="analytics-outline" size={36} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm }}>Enregistre au moins 2 pesées</Text>
+      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm, fontFamily: Fonts.regular }}>Enregistre au moins 2 pesées</Text>
     </View>
   );
 
@@ -114,7 +116,7 @@ function CaloriesChart({ entries, target }: {
   if (entries.length < 2) return (
     <View style={{ alignItems: 'center', paddingVertical: 30 }}>
       <Ionicons name="analytics-outline" size={36} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm }}>
+      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm, fontFamily: Fonts.regular }}>
         Enregistre au moins 2 jours de repas
       </Text>
     </View>
@@ -513,15 +515,15 @@ export default function ProgressScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
             <Text style={styles.sectionLabel}>Score de forme</Text>
-            <Text style={{ fontSize: 56, fontWeight: Fw.heavy, color: scoreColor, lineHeight: 64 }}>{displayScore}</Text>
-            <Text style={{ fontSize: Fs.sm, color: scoreColor, fontWeight: Fw.semibold }}>{scoreLabel}</Text>
+            <Text style={{ fontSize: 56, fontFamily: Fonts.heavy, color: scoreColor, lineHeight: 64 }}>{displayScore}</Text>
+            <Text style={{ fontSize: Fs.sm, color: scoreColor, fontFamily: Fonts.semibold }}>{scoreLabel}</Text>
           </View>
           <View style={{ alignItems: 'flex-end', gap: Sp.xs }}>
-            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>/100</Text>
+            <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>/100</Text>
             {scoreDiff !== 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: (scoreDiff > 0 ? Colors.green : Colors.red) + '18', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 }}>
                 <Ionicons name={scoreDiff > 0 ? 'trending-up' : 'trending-down'} size={12} color={scoreDiff > 0 ? Colors.green : Colors.red} />
-                <Text style={{ fontSize: Fs.xs, color: scoreDiff > 0 ? Colors.green : Colors.red, fontWeight: Fw.semibold }}>{scoreDiff > 0 ? '+' : ''}{scoreDiff} vs sem. préc.</Text>
+                <Text style={{ fontSize: Fs.xs, color: scoreDiff > 0 ? Colors.green : Colors.red, fontFamily: Fonts.semibold }}>{scoreDiff > 0 ? '+' : ''}{scoreDiff} vs sem. préc.</Text>
               </View>
             )}
             <View style={{ gap: 4 }}>
@@ -564,9 +566,7 @@ export default function ProgressScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleSaveWeight}
               />
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSaveWeight}>
-                <Text style={styles.saveBtnText}>Enregistrer</Text>
-              </TouchableOpacity>
+              <Button title="Enregistrer" onPress={handleSaveWeight} fullWidth={false} />
             </View>
             <View style={styles.weightSummary}>
               <WBadge label="Actuel"    value={latest ? `${latest.weight} kg` : '—'} color={Colors.text} />
@@ -604,14 +604,14 @@ export default function ProgressScreen() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={styles.projText}>
-                  Tendance : <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>
+                  Tendance : <Text style={{ color: Colors.primary, fontFamily: Fonts.bold }}>
                     {weightProj.slopePerWeek > 0 ? '+' : ''}{weightProj.slopePerWeek} kg/semaine
                   </Text>
                 </Text>
                 {weightProj.etaDate ? (
                   <Text style={styles.projSub}>
                     🎯 Objectif {weightProj.target} kg atteint vers le{' '}
-                    <Text style={{ color: Colors.text, fontWeight: Fw.semibold }}>
+                    <Text style={{ color: Colors.text, fontFamily: Fonts.semibold }}>
                       {new Date(weightProj.etaDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </Text>.
                   </Text>
@@ -753,10 +753,10 @@ export default function ProgressScreen() {
           {calBestDay && (
             <Card>
               <Text style={styles.sectionLabel}>Meilleur jour</Text>
-              <Text style={{ color: Colors.text, fontSize: Fs.md, fontWeight: Fw.semibold }}>
+              <Text style={{ color: Colors.text, fontSize: Fs.md, fontFamily: Fonts.semibold }}>
                 {new Date(calBestDay.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
               </Text>
-              <Text style={{ color: Colors.textSecondary, fontSize: Fs.xs, marginTop: 2 }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: Fs.xs, fontFamily: Fonts.regular, marginTop: 2 }}>
                 {calBestDay.calories} kcal — plus proche de l'objectif
               </Text>
             </Card>
@@ -787,7 +787,7 @@ export default function ProgressScreen() {
         <>
           <Card>
             <Text style={styles.sectionLabel}>Volume musculaire – 7 derniers jours</Text>
-            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.md }}>
+            <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.md }}>
               Volume recommandé : 10–20 séries/semaine par muscle
             </Text>
             {['Pectoraux','Dos','Épaules','Bras','Jambes','Abdos'].map(muscle => {
@@ -798,8 +798,8 @@ export default function ProgressScreen() {
               return (
                 <View key={muscle} style={{ marginBottom: Sp.sm }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Text style={{ fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium }}>{muscle}</Text>
-                    <Text style={{ fontSize: Fs.xs, color, fontWeight: Fw.semibold }}>{sets} séries · {label}</Text>
+                    <Text style={{ fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium }}>{muscle}</Text>
+                    <Text style={{ fontSize: Fs.xs, color, fontFamily: Fonts.semibold }}>{sets} séries · {label}</Text>
                   </View>
                   <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
                     <View style={{ height: '100%', width: `${barWidth}%`, backgroundColor: color, borderRadius: 4 }} />
@@ -811,7 +811,7 @@ export default function ProgressScreen() {
           {Object.keys(muscleVolume).length === 0 && (
             <View style={{ alignItems: 'center', paddingVertical: 50 }}>
               <Ionicons name="barbell-outline" size={48} color={Colors.textMuted} />
-              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md }}>Aucune séance cette semaine</Text>
+              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md, fontFamily: Fonts.regular }}>Aucune séance cette semaine</Text>
             </View>
           )}
         </>
@@ -830,10 +830,10 @@ export default function ProgressScreen() {
               <Card>
                 <Text style={styles.sectionLabel}>IMC</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 40, fontWeight: Fw.heavy, color }}>{imc.toFixed(1)}</Text>
-                  <Text style={{ fontSize: Fs.md, color, fontWeight: Fw.semibold }}>{cat}</Text>
+                  <Text style={{ fontSize: 40, fontFamily: Fonts.heavy, color }}>{imc.toFixed(1)}</Text>
+                  <Text style={{ fontSize: Fs.md, color, fontFamily: Fonts.semibold }}>{cat}</Text>
                 </View>
-                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 4 }}>{w} kg · {store.user.height} cm</Text>
+                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4 }}>{w} kg · {store.user.height} cm</Text>
               </Card>
             );
           })()}
@@ -848,7 +848,7 @@ export default function ProgressScreen() {
                 { label: 'Poitrine (cm)', value: measChest, setter: setMeasChest },
               ].map(field => (
                 <View key={field.label} style={{ width: '48%' }}>
-                  <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: 3 }}>{field.label}</Text>
+                  <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: 3 }}>{field.label}</Text>
                   <TextInput
                     style={styles.weightInput}
                     value={field.value}
@@ -860,8 +860,9 @@ export default function ProgressScreen() {
                 </View>
               ))}
             </View>
-            <TouchableOpacity
-              style={[styles.saveBtn, { marginTop: Sp.sm }]}
+            <Button
+              title="Enregistrer"
+              style={{ marginTop: Sp.sm }}
               onPress={async () => {
                 const m: BodyMeasurement = {
                   date:  today(),
@@ -877,9 +878,7 @@ export default function ProgressScreen() {
                 });
                 setMeasWaist(''); setMeasArm(''); setMeasThigh(''); setMeasChest('');
               }}
-            >
-              <Text style={styles.saveBtnText}>Enregistrer</Text>
-            </TouchableOpacity>
+            />
           </Card>
 
           {measurements.length > 0 && (
@@ -887,14 +886,14 @@ export default function ProgressScreen() {
               <Text style={styles.sectionLabel}>Historique</Text>
               <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.border, paddingBottom: 6, marginBottom: 6 }}>
                 {['Date','Taille','Bras','Cuisse','Poitrine'].map(h => (
-                  <Text key={h} style={{ flex: 1, fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center' }}>{h}</Text>
+                  <Text key={h} style={{ flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center' }}>{h}</Text>
                 ))}
               </View>
               {[...measurements].reverse().slice(0, 10).map(m => (
                 <View key={m.date} style={{ flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
-                  <Text style={{ flex: 1, fontSize: Fs.xs, color: Colors.textSecondary, textAlign: 'center' }}>{m.date.slice(5).replace('-', '/')}</Text>
+                  <Text style={{ flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' }}>{m.date.slice(5).replace('-', '/')}</Text>
                   {[m.waist, m.arm, m.thigh, m.chest].map((v, i) => (
-                    <Text key={i} style={{ flex: 1, fontSize: Fs.xs, color: v ? Colors.text : Colors.textMuted, fontWeight: v ? Fw.semibold : Fw.regular, textAlign: 'center' }}>
+                    <Text key={i} style={{ flex: 1, fontSize: Fs.xs, fontFamily: v ? Fonts.semibold : Fonts.regular, color: v ? Colors.text : Colors.textMuted, textAlign: 'center' }}>
                       {v ? `${v}` : '—'}
                     </Text>
                   ))}
@@ -1001,9 +1000,9 @@ export default function ProgressScreen() {
 
           {photos.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 50 }}>
-              <Text style={{ fontSize: 48 }}>📸</Text>
-              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md }}>Aucune photo</Text>
-              <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, textAlign: 'center', marginTop: 6 }}>
+              <Text style={{ fontSize: 48, fontFamily: Fonts.regular }}>📸</Text>
+              <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md, fontFamily: Fonts.regular }}>Aucune photo</Text>
+              <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular, textAlign: 'center', marginTop: 6 }}>
                 Ajoute des photos pour suivre ta transformation
               </Text>
             </View>
@@ -1057,11 +1056,11 @@ export default function ProgressScreen() {
                   </TouchableOpacity>
                   <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}>
                     <View style={{ flex: 1, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '700', marginBottom: 4 }}>Avant · {p1.date.slice(5).replace('-', '/')}</Text>
+                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Avant · {p1.date.slice(5).replace('-', '/')}</Text>
                       <Image source={{ uri: p1.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
                     </View>
                     <View style={{ flex: 1, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontWeight: '700', marginBottom: 4 }}>Après · {p2.date.slice(5).replace('-', '/')}</Text>
+                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Après · {p2.date.slice(5).replace('-', '/')}</Text>
                       <Image source={{ uri: p2.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
                     </View>
                   </View>
@@ -1069,7 +1068,7 @@ export default function ProgressScreen() {
                     style={{ margin: 20, backgroundColor: Colors.primary, borderRadius: R, padding: 14, alignItems: 'center' }}
                     onPress={() => Share.share({ message: `Ma transformation FitTrack IA : de ${p1.date} à ${p2.date} 💪` })}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700' }}>Partager</Text>
+                    <Text style={{ color: '#fff', fontFamily: Fonts.bold }}>Partager</Text>
                   </TouchableOpacity>
                 </View>
               </Modal>
@@ -1083,7 +1082,7 @@ export default function ProgressScreen() {
         <>
           <Card>
             <Text style={styles.sectionLabel}>Défis de la semaine</Text>
-            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm }}>
+            <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm }}>
               {new Date(currentWeekKey).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} → {new Date(new Date(currentWeekKey).getTime() + 6*86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
             </Text>
             {challenges.map(ch => {
@@ -1093,17 +1092,17 @@ export default function ProgressScreen() {
               return (
                 <View key={ch.id} style={{ marginBottom: Sp.md, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: done ? Colors.green + '50' : Colors.border, padding: Sp.md }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginBottom: Sp.sm }}>
-                    <Text style={{ fontSize: 24 }}>{ch.emoji}</Text>
+                    <Text style={{ fontSize: 24, fontFamily: Fonts.regular }}>{ch.emoji}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: Fs.md, fontWeight: Fw.semibold, color: done ? Colors.green : Colors.text }}>{ch.title}</Text>
-                      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 }}>{ch.description}</Text>
+                      <Text style={{ fontSize: Fs.md, fontFamily: Fonts.semibold, color: done ? Colors.green : Colors.text }}>{ch.title}</Text>
+                      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 }}>{ch.description}</Text>
                     </View>
                     {done && <Ionicons name="checkmark-circle" size={22} color={Colors.green} />}
                   </View>
                   <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
                     <View style={{ height: '100%', width: `${pct * 100}%`, backgroundColor: done ? Colors.green : Colors.primary, borderRadius: 3 }} />
                   </View>
-                  <Text style={{ fontSize: Fs.xs, color: done ? Colors.green : Colors.textSecondary, marginTop: 4, fontWeight: done ? Fw.semibold : Fw.regular }}>
+                  <Text style={{ fontSize: Fs.xs, fontFamily: done ? Fonts.semibold : Fonts.regular, color: done ? Colors.green : Colors.textSecondary, marginTop: 4 }}>
                     {progress} / {ch.target} {done ? '— Défi relevé ! 🎉' : ''}
                   </Text>
                 </View>
@@ -1174,7 +1173,7 @@ function ExerciseChart({ data }: { data: { date: string; maxWeight: number }[] }
   if (data.length < 2) {
     return (
       <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-        <Text style={{ color: Colors.textMuted, fontSize: Fs.sm }}>
+        <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular }}>
           {data.length === 0 ? 'Aucune donnée sur 30 jours' : 'Enregistre au moins 2 séances pour voir la courbe'}
         </Text>
       </View>
@@ -1224,8 +1223,8 @@ function ExoStat({ label, value, color }: { label: string; value: string; color:
 }
 const exoStyles = StyleSheet.create({
   stat:  { flex: 1, alignItems: 'center', paddingVertical: 6, backgroundColor: Colors.surfaceElevated, borderRadius: R },
-  value: { fontSize: Fs.lg, fontWeight: Fw.bold },
-  label: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 1 },
+  value: { fontSize: Fs.lg, fontFamily: Fonts.bold },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
 });
 
 // ─── Carte plan ───────────────────────────────────────────────────────────────
@@ -1263,13 +1262,13 @@ const pcStyles = StyleSheet.create({
   card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, marginBottom: Sp.xs },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm },
   typeIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  typeEmoji: { fontSize: 20 },
+  typeEmoji: { fontSize: 20, fontFamily: Fonts.regular },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
-  title: { flex: 1, fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
+  title: { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
   predBadge: { backgroundColor: Colors.yellow + '20', borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1 },
-  predText: { fontSize: 10, color: Colors.yellow },
-  preview: { fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17, marginBottom: 4 },
-  date: { fontSize: Fs.xs, color: Colors.textMuted },
+  predText: { fontSize: 10, fontFamily: Fonts.regular, color: Colors.yellow },
+  preview: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17, marginBottom: 4 },
+  date: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -1277,11 +1276,11 @@ const pcStyles = StyleSheet.create({
 function ScoreRow({ label, pts, max, color }: { label: string; pts: number; max: number; color: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, width: 52 }}>{label}</Text>
+      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, width: 52 }}>{label}</Text>
       <View style={{ width: 60, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
         <View style={{ height: '100%', width: `${(pts/max)*100}%`, backgroundColor: color, borderRadius: 2 }} />
       </View>
-      <Text style={{ fontSize: Fs.xs, color, fontWeight: Fw.semibold }}>{pts}/{max}</Text>
+      <Text style={{ fontSize: Fs.xs, color, fontFamily: Fonts.semibold }}>{pts}/{max}</Text>
     </View>
   );
 }
@@ -1289,8 +1288,8 @@ function ScoreRow({ label, pts, max, color }: { label: string; pts: number; max:
 function WBadge({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
-      <Text style={[{ fontSize: Fs.lg, fontWeight: Fw.bold, color }]}>{value}</Text>
-      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{label}</Text>
+      <Text style={[{ fontSize: Fs.lg, fontFamily: Fonts.bold, color }]}>{value}</Text>
+      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{label}</Text>
     </View>
   );
 }
@@ -1320,8 +1319,8 @@ function BigStat({ value, label, color }: { value: string; label: string; color:
 }
 const bsStyles = StyleSheet.create({
   card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center' },
-  value: { fontSize: Fs.xxl, fontWeight: Fw.heavy },
-  label: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center', marginTop: 2 },
+  value: { fontSize: Fs.xxl, fontFamily: Fonts.heavy },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: 2 },
 });
 
 const styles = StyleSheet.create({
@@ -1331,89 +1330,89 @@ const styles = StyleSheet.create({
   tabsContent: { padding: 4, gap: 3 },
   tab: { paddingVertical: 8, paddingHorizontal: Sp.sm, borderRadius: R - 2, alignItems: 'center', minWidth: 70 },
   tabActive: { backgroundColor: Colors.primary },
-  tabText: { fontSize: Fs.xs, color: Colors.textSecondary, fontWeight: Fw.medium },
-  tabTextActive: { color: '#fff', fontWeight: Fw.semibold },
+  tabText: { fontSize: Fs.xs, color: Colors.textSecondary, fontFamily: Fonts.medium },
+  tabTextActive: { color: '#fff', fontFamily: Fonts.semibold },
   // Légende calories
   calLegend:     { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm, marginBottom: Sp.sm },
   calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   calLegendDot:  { width: 8, height: 8, borderRadius: 4 },
   calLegendDash: { width: 16, height: 0, borderTopWidth: 2, borderStyle: 'dashed' },
-  calLegendText: { fontSize: Fs.xs, color: Colors.textSecondary },
-  sectionLabel: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.sm },
+  calLegendText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  sectionLabel: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.sm },
   weightInputRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md },
-  weightInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
+  weightInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
   saveBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', paddingVertical: 10 },
-  saveBtnText: { color: '#fff', fontWeight: Fw.semibold },
+  saveBtnText: { color: '#fff', fontFamily: Fonts.semibold },
   weightSummary: { flexDirection: 'row' },
   periodRow: { flexDirection: 'row', gap: Sp.xs },
   periodBtn: { flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, alignItems: 'center' },
   periodBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  periodText: { fontSize: Fs.sm, color: Colors.textSecondary },
-  periodTextActive: { color: Colors.primary, fontWeight: Fw.semibold },
+  periodText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  periodTextActive: { color: Colors.primary, fontFamily: Fonts.semibold },
   chartCard: { overflow: 'hidden' },
   projCard: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  projText: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 19 },
-  projSub: { fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17, marginTop: 3 },
+  projText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 19 },
+  projSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17, marginTop: 3 },
   histRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: Colors.border },
-  histDate: { fontSize: Fs.sm, color: Colors.textSecondary },
-  histVal: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text },
+  histDate: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  histVal: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
   statGrid: { flexDirection: 'row', gap: Sp.sm },
-  bigExercise: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
-  bigExerciseSub: { fontSize: Fs.sm, color: Colors.textMuted, marginTop: 2 },
+  bigExercise: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
+  bigExerciseSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 },
   prHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Sp.sm },
-  prCount: { fontSize: Fs.xs, color: Colors.textMuted },
+  prCount: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   prRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border, gap: 8 },
-  prName: { fontSize: Fs.sm, fontWeight: Fw.medium, color: Colors.text },
+  prName: { fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.text },
   prRight: { alignItems: 'flex-end', gap: 2 },
-  prWeight: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.yellow },
-  prGain: { fontSize: Fs.xs, color: Colors.green, fontWeight: Fw.semibold },
-  prDate: { fontSize: Fs.xs, color: Colors.textMuted },
-  emptyText: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingVertical: Sp.md },
+  prWeight: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.yellow },
+  prGain: { fontSize: Fs.xs, color: Colors.green, fontFamily: Fonts.semibold },
+  prDate: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  emptyText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingVertical: Sp.md },
   inRangeBar: { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 },
   inRangeFill: { height: '100%', backgroundColor: Colors.green, borderRadius: 99 },
-  inRangeText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  inRangeText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   streakCard: { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  streakEmoji: { fontSize: 28 },
-  streakTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  streakSub: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  streakEmoji: { fontSize: 28, fontFamily: Fonts.regular },
+  streakTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  streakSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   exoScroll:        { marginHorizontal: -Sp.md },
   exoScrollContent: { paddingHorizontal: Sp.md, paddingVertical: 6, gap: 6 },
   exoChip:          { paddingHorizontal: Sp.sm, paddingVertical: 5, borderRadius: 99, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, maxWidth: 150 },
   exoChipActive:    { borderColor: Colors.yellow, backgroundColor: Colors.yellow + '18' },
-  exoChipText:      { fontSize: Fs.xs, color: Colors.textSecondary },
-  exoChipTextActive:{ color: Colors.yellow, fontWeight: Fw.semibold },
+  exoChipText:      { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  exoChipTextActive:{ color: Colors.yellow, fontFamily: Fonts.semibold },
   exoStats:         { flexDirection: 'row', gap: Sp.xs, marginBottom: 4 },
   plansFilterRow: { flexDirection: 'row', gap: Sp.xs },
   plansFilterBtn: { flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, alignItems: 'center' },
   plansFilterBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  plansFilterText: { fontSize: Fs.xs, color: Colors.textSecondary },
-  plansFilterTextActive: { color: Colors.primary, fontWeight: Fw.semibold },
-  plansCount: { fontSize: Fs.xs, color: Colors.textMuted },
+  plansFilterText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  plansFilterTextActive: { color: Colors.primary, fontFamily: Fonts.semibold },
+  plansCount: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   plansEmpty: { alignItems: 'center', paddingVertical: 50, gap: 8 },
-  plansEmptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontWeight: Fw.semibold },
-  plansEmptySub: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
+  plansEmptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontFamily: Fonts.semibold },
+  plansEmptySub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
   // Badges
   badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   badgeCard: { width: '30%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '40', padding: Sp.sm, alignItems: 'center', gap: 3 },
   badgeCardLocked: { borderColor: Colors.border, opacity: 0.5 },
-  badgeEmoji: { fontSize: 28 },
+  badgeEmoji: { fontSize: 28, fontFamily: Fonts.regular },
   badgeEmojiLocked: { opacity: 0.4 },
-  badgeTitle: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.text, textAlign: 'center' },
+  badgeTitle: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.text, textAlign: 'center' },
   badgeTitleLocked: { color: Colors.textMuted },
-  badgeDesc: { fontSize: 9, color: Colors.textMuted, textAlign: 'center', lineHeight: 12 },
+  badgeDesc: { fontSize: 9, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', lineHeight: 12 },
   // Photos
   addPhotoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary + '18', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', paddingVertical: 14, marginBottom: Sp.sm },
-  addPhotoBtnText: { fontSize: Fs.md, color: Colors.primary, fontWeight: Fw.semibold },
+  addPhotoBtnText: { fontSize: Fs.md, color: Colors.primary, fontFamily: Fonts.semibold },
   beforeAfterBtn: { backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm },
-  beforeAfterBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.sm },
+  beforeAfterBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.sm },
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs },
   photoThumb: { width: '31.5%', aspectRatio: 1, borderRadius: R, overflow: 'hidden', position: 'relative' },
   photoThumbSelected: { borderWidth: 2, borderColor: Colors.primary },
   photoImg: { width: '100%', height: '100%' },
   photoCheckOverlay: { position: 'absolute', top: 4, right: 4 },
-  photoDate: { position: 'absolute', bottom: 4, left: 4, color: '#fff', fontSize: Fs.xs, fontWeight: Fw.semibold, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
+  photoDate: { position: 'absolute', bottom: 4, left: 4, color: '#fff', fontSize: Fs.xs, fontFamily: Fonts.semibold, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
   // Rapport mensuel
   reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '35', paddingVertical: 14, marginTop: Sp.sm },
-  reportBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.semibold },
+  reportBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
 });

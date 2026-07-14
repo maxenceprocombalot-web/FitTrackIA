@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   fullWidth: { alignSelf: 'stretch' },
   row:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   label:     { fontSize: Fs.md, fontFamily: Fonts.bold },
-  labelLg:   { fontSize: Fs.lg },
+  labelLg:   { fontSize: Fs.lg, fontFamily: Fonts.regular },
   pressed:   { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled:  { opacity: 0.45 },
 });

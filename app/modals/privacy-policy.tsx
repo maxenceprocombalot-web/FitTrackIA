@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 
 const SECTIONS = [
   {
@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn: { padding: 4 },
-  title: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text, flex: 1 },
+  title: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text, flex: 1 },
   content: { padding: Sp.md, paddingBottom: 60 },
-  updated: { fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm },
-  intro: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20, marginBottom: Sp.lg },
+  updated: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm },
+  intro: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20, marginBottom: Sp.lg },
   section: { marginBottom: Sp.lg },
-  sectionTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginBottom: Sp.xs },
-  sectionBody: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 21 },
+  sectionTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginBottom: Sp.xs },
+  sectionBody: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 21 },
   footer: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: Colors.green + '12', borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.green + '30', marginTop: Sp.md },
-  footerText: { flex: 1, fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  footerText: { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
 });

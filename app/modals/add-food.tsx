@@ -13,6 +13,7 @@ import { COMMON_FOODS } from '../../constants/foods';
 import { CIQUAL_FOODS } from '../../constants/ciqual';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 
 type Tab = 'recent' | 'favorites' | 'common' | 'search' | 'scan' | 'manual';
@@ -482,9 +483,7 @@ export default function AddFoodModal() {
             <View style={styles.permContainer}>
               <Ionicons name="camera-outline" size={48} color={Colors.textMuted} />
               <Text style={styles.permText}>Autorise la caméra pour scanner les codes-barres</Text>
-              <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-                <Text style={styles.permBtnText}>Autoriser</Text>
-              </TouchableOpacity>
+              <Button title="Autoriser" onPress={requestPermission} fullWidth={false} />
             </View>
           ) : (
             <>
@@ -498,9 +497,12 @@ export default function AddFoodModal() {
                 <Text style={styles.scanHint}>Place le code-barres dans le cadre</Text>
               </View>
               {scanned && (
-                <TouchableOpacity style={styles.rescanBtn} onPress={() => setScanned(false)}>
-                  <Text style={styles.rescanBtnText}>Scanner à nouveau</Text>
-                </TouchableOpacity>
+                <Button
+                  title="Scanner à nouveau"
+                  onPress={() => setScanned(false)}
+                  fullWidth={false}
+                  style={{ position: 'absolute', bottom: 40, alignSelf: 'center' }}
+                />
               )}
             </>
           )}
@@ -541,8 +543,8 @@ function MacroPill({ label, value, color }: { label: string; value: string | num
 }
 const mpStyles = StyleSheet.create({
   pill: { flex: 1, alignItems: 'center', borderRadius: R, paddingVertical: 8 },
-  value: { fontSize: Fs.md, fontWeight: Fw.bold },
-  label: { fontSize: Fs.xs, color: Colors.textMuted },
+  value: { fontSize: Fs.md, fontFamily: Fonts.bold },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });
 
 function ManualField({ label, value, onChange, placeholder, numeric, decimal }: {
@@ -565,77 +567,77 @@ function ManualField({ label, value, onChange, placeholder, numeric, decimal }: 
 }
 const mfStyles = StyleSheet.create({
   container: { padding: 4 },
-  label: { fontSize: Fs.xs, color: Colors.textSecondary, marginBottom: 3 },
-  input: { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 9, fontSize: Fs.sm, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: 3 },
+  input: { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 9, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
 });
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  mealTypeLabel: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.textSecondary, paddingHorizontal: Sp.md, paddingTop: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
+  mealTypeLabel: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.textSecondary, paddingHorizontal: Sp.md, paddingTop: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Onglets
   tabsScroll: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabsContent: { paddingHorizontal: Sp.md, paddingVertical: 8, gap: 6 },
   tabBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Sp.sm, paddingVertical: 7, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
   tabBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  tabBtnText: { fontSize: Fs.xs, color: Colors.textSecondary },
-  tabBtnTextActive: { color: Colors.primary, fontWeight: Fw.semibold },
+  tabBtnText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  tabBtnTextActive: { color: Colors.primary, fontFamily: Fonts.semibold },
   // Listes
   listContent: { padding: Sp.md, paddingBottom: 60 },
   foodRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10 },
-  foodEmoji: { fontSize: 22 },
+  foodEmoji: { fontSize: 22, fontFamily: Fonts.regular },
   foodInfo: { flex: 1 },
-  foodName: { fontSize: Fs.md, color: Colors.text, fontWeight: Fw.medium },
-  foodBrand: { fontSize: Fs.xs, color: Colors.primary, marginTop: 1 },
-  foodMacros: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
-  foodDef: { fontSize: Fs.xs, color: Colors.textMuted },
+  foodName: { fontSize: Fs.md, color: Colors.text, fontFamily: Fonts.medium },
+  foodBrand: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary, marginTop: 1 },
+  foodMacros: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
+  foodDef: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   // Récents
   recentDot: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   // Favoris
   favRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10 },
   favIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.yellow + '18', alignItems: 'center', justifyContent: 'center' },
-  favItems: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 },
+  favItems: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 },
   favDeleteBtn: { padding: 4 },
   // État vide
   emptyState: { alignItems: 'center', paddingVertical: 50, gap: 8 },
-  emptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontWeight: Fw.medium },
-  emptySubText: { fontSize: Fs.sm, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
+  emptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontFamily: Fonts.medium },
+  emptySubText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
   // Recherche
   searchContainer: { flex: 1, padding: Sp.md },
   searchRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: 6 },
-  searchInput: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
+  searchInput: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
   searchBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, alignItems: 'center', justifyContent: 'center', width: 48 },
-  searchHint: { fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm },
-  searchHintFallback: { fontSize: Fs.xs, color: Colors.yellow, marginBottom: Sp.sm },
+  searchHint: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm },
+  searchHintFallback: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.yellow, marginBottom: Sp.sm },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: Sp.sm },
-  loadingText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  loadingText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Scan
   scanContainer: { flex: 1 },
   camera: { flex: 1 },
   scanOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   scanFrame: { width: 240, height: 140, borderWidth: 2, borderColor: Colors.primary, borderRadius: R },
-  scanHint: { marginTop: 20, color: Colors.text, fontSize: Fs.sm, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: R },
+  scanHint: { marginTop: 20, color: Colors.text, fontSize: Fs.sm, fontFamily: Fonts.regular, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: R },
   rescanBtn: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: 24, paddingVertical: 12 },
-  rescanBtnText: { color: Colors.onPrimary, fontWeight: Fw.semibold },
+  rescanBtnText: { color: Colors.onPrimary, fontFamily: Fonts.semibold },
   permContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md, padding: Sp.xl },
-  permText: { fontSize: Fs.sm, color: Colors.textSecondary, textAlign: 'center' },
+  permText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' },
   permBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.xl, paddingVertical: Sp.md },
-  permBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold },
+  permBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold },
   // Manuel
   manualContent: { padding: Sp.md, paddingBottom: 80 },
   manualRow: { flexDirection: 'row', marginHorizontal: -4 },
   manualBtn: { backgroundColor: Colors.green, borderRadius: R, padding: Sp.md, alignItems: 'center', marginTop: Sp.md },
-  manualBtnText: { color: '#fff', fontWeight: Fw.bold },
+  manualBtnText: { color: '#fff', fontFamily: Fonts.bold },
   // Confirmation quantité
   confirmCard: { flex: 1, padding: Sp.lg, justifyContent: 'center', gap: Sp.md },
-  confirmTitle: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
-  confirmBrand: { fontSize: Fs.sm, color: Colors.textSecondary, marginTop: -Sp.xs },
+  confirmTitle: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
+  confirmBrand: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: -Sp.xs },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: Sp.md },
   qtyInput: { flex: 1, paddingVertical: 16, fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.text, textAlign: 'center' },
-  qtyUnit: { fontSize: Fs.md, color: Colors.textMuted },
+  qtyUnit: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textMuted },
   macroPreview: { flexDirection: 'row', gap: Sp.xs },
   confirmBtns: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.md },
   cancelBtn: { paddingHorizontal: Sp.lg, paddingVertical: Sp.md, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
-  cancelText: { color: Colors.textSecondary, fontWeight: Fw.medium },
+  cancelText: { color: Colors.textSecondary, fontFamily: Fonts.medium },
   addBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.green, borderRadius: R, paddingVertical: Sp.md },
-  addBtnText: { color: '#fff', fontWeight: Fw.bold, fontSize: Fs.md },
+  addBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.md },
 });

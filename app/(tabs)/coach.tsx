@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
@@ -385,9 +385,9 @@ export default function CoachScreen() {
             <View key={alert.key} style={{ backgroundColor: Colors.orange + '15', borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '40', padding: Sp.sm, flexDirection: 'row', gap: Sp.sm, alignItems: 'flex-start' }}>
               <Ionicons name="warning-outline" size={16} color={Colors.orange} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: Fs.xs, color: Colors.orange, lineHeight: 18 }}>{alert.message}</Text>
+                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 18 }}>{alert.message}</Text>
                 <TouchableOpacity onPress={() => sendMessage(alert.message.replace('⚠️ ', '') + ' Que faire ?')} style={{ marginTop: 4 }}>
-                  <Text style={{ fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold }}>Demander au coach →</Text>
+                  <Text style={{ fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold }}>Demander au coach →</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -548,12 +548,12 @@ function ConversationHistoryModal({ onClose, onRestore }: {
       <View style={{ flex: 1, backgroundColor: Colors.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
           <TouchableOpacity onPress={() => setSelected(null)}><Ionicons name="arrow-back" size={20} color={Colors.text} /></TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }} numberOfLines={1}>{selected.title}</Text>
+          <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }} numberOfLines={1}>{selected.title}</Text>
         </View>
         <ScrollView contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}>
           {selected.messages.map(msg => (
             <View key={msg.id} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%', backgroundColor: msg.role === 'user' ? Colors.primary : Colors.surfaceElevated, borderRadius: 12, padding: Sp.sm }}>
-              <Text style={{ color: '#fff', fontSize: Fs.sm }}>{msg.content}</Text>
+              <Text style={{ color: '#fff', fontSize: Fs.sm, fontFamily: Fonts.regular }}>{msg.content}</Text>
             </View>
           ))}
         </ScrollView>
@@ -564,12 +564,12 @@ function ConversationHistoryModal({ onClose, onRestore }: {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
-        <Text style={{ flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text }}>Historique</Text>
+        <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>Historique</Text>
         <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
       </View>
       {conversations.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: Colors.textMuted, fontSize: Fs.md }}>Aucune conversation sauvegardée</Text>
+          <Text style={{ color: Colors.textMuted, fontSize: Fs.md, fontFamily: Fonts.regular }}>Aucune conversation sauvegardée</Text>
         </View>
       ) : (
         <FlatList
@@ -581,8 +581,8 @@ function ConversationHistoryModal({ onClose, onRestore }: {
               style={{ backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md }}
               onPress={() => setSelected(item)}
             >
-              <Text style={{ fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.text }} numberOfLines={2}>{item.title}</Text>
-              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginTop: 4 }}>{item.date} · {item.messages.length} messages</Text>
+              <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text }} numberOfLines={2}>{item.title}</Text>
+              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4 }}>{item.date} · {item.messages.length} messages</Text>
             </TouchableOpacity>
           )}
         />
@@ -598,47 +598,47 @@ const bStyles = StyleSheet.create({
   bubble:      { maxWidth: '78%', borderRadius: 16, padding: Sp.sm + 2 },
   userBubble:  { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
   botBubble:   { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.border, borderBottomLeftRadius: 4 },
-  text:        { fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
+  text:        { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 20 },
   userText:    { color: '#fff' },
-  time:        { fontSize: 10, color: Colors.textMuted, marginTop: 4, alignSelf: 'flex-end' },
+  time:        { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4, alignSelf: 'flex-end' },
 });
 
 const styles = StyleSheet.create({
   container:       { flex: 1, backgroundColor: Colors.bg },
   coachBar:        { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
   coachAvatar:     { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
-  coachName:       { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
-  coachSub:        { fontSize: Fs.xs, color: Colors.textSecondary },
+  coachName:       { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  coachSub:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
   clearBtn:        { marginLeft: 'auto', padding: 6 },
   messages:        { flex: 1 },
   messagesContent: { padding: Sp.md, paddingBottom: Sp.lg },
   welcome:         { alignItems: 'center', paddingVertical: Sp.xl },
-  welcomeEmoji:    { fontSize: 48, marginBottom: Sp.md },
-  welcomeTitle:    { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text, marginBottom: Sp.xs },
-  welcomeText:     { fontSize: Fs.sm, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md, marginBottom: Sp.lg },
+  welcomeEmoji:    { fontSize: 48, fontFamily: Fonts.regular, marginBottom: Sp.md },
+  welcomeTitle:    { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text, marginBottom: Sp.xs },
+  welcomeText:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md, marginBottom: Sp.lg },
   demoWarning:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '15', borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: Sp.xs, marginBottom: Sp.md },
-  demoText:        { fontSize: Fs.xs, color: Colors.orange, flex: 1 },
+  demoText:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, flex: 1 },
   weeklyBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8 },
-  weeklyBtnText:   { fontSize: Fs.sm, fontWeight: Fw.bold, color: '#fff' },
+  weeklyBtnText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: '#fff' },
   mealPlanBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8, borderWidth: 1, borderColor: Colors.green + '40' },
-  mealPlanBtnText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.green },
+  mealPlanBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.green },
   nutritionAnalysisBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.yellow + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 12, borderWidth: 1, borderColor: Colors.yellow + '40' },
-  nutritionAnalysisBtnText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.yellow },
+  nutritionAnalysisBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.yellow },
   quickBtns:       { gap: 8, width: '100%' },
   quickBtn:        { backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, borderWidth: 1, borderColor: Colors.border },
-  quickBtnText:    { fontSize: Fs.sm, color: Colors.primary, textAlign: 'center' },
+  quickBtnText:    { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.primary, textAlign: 'center' },
   // Boutons d'action sous les messages
   msgActions: { marginLeft: 34, marginTop: -Sp.xs, marginBottom: Sp.sm, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   savePlanBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.primary + '15', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
-  savePlanBtnText: { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.medium },
+  savePlanBtnText: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.medium },
   applyPlanBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.green + '15', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
-  applyPlanBtnText: { fontSize: Fs.xs, color: Colors.green, fontWeight: Fw.medium },
+  applyPlanBtnText: { fontSize: Fs.xs, color: Colors.green, fontFamily: Fonts.medium },
   // Indicateur de frappe
   typing:      { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.sm },
-  typingText:  { fontSize: Fs.xs, color: Colors.textSecondary },
+  typingText:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Saisie
   inputBar:    { flexDirection: 'row', alignItems: 'flex-end', gap: Sp.sm, padding: Sp.sm, paddingBottom: Platform.OS === 'ios' ? Sp.md : Sp.sm, borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.surface },
-  input:       { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: 20, paddingHorizontal: Sp.md, paddingVertical: Sp.sm, fontSize: Fs.sm, color: Colors.text, maxHeight: 100, borderWidth: 1, borderColor: Colors.border },
+  input:       { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: 20, paddingHorizontal: Sp.md, paddingVertical: Sp.sm, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, maxHeight: 100, borderWidth: 1, borderColor: Colors.border },
   sendBtn:        { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: { opacity: 0.4 },
 });

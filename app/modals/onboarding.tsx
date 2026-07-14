@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, Animated, Dimensions, Alert, TextStyle,
+  StyleSheet, Animated, Dimensions, Alert, TextStyle, StyleProp,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { User, Gender, Goal, ActivityLevel } from '../../types';
 import { computeTDEE, computeTargetCalories, computeMacros } from '../../services/openai';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 
 const TOTAL_STEPS = 6;
 const SCREEN_W    = Dimensions.get('window').width;
@@ -31,7 +32,7 @@ const ACTIVITIES: { value: ActivityLevel; emoji: string; label: string; desc: st
 
 // ─── CountUp component ────────────────────────────────────────────────────────
 
-function CountUpText({ to, style }: { to: number; style?: TextStyle }) {
+function CountUpText({ to, style }: { to: number; style?: StyleProp<TextStyle> }) {
   const [val, setVal] = useState(0);
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -87,15 +88,15 @@ function SliderInput({ label, value, onChange, min, max, unit, step = 1 }: {
 const slS = StyleSheet.create({
   container: { marginBottom: Sp.lg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: Sp.sm },
-  label: { fontSize: Fs.sm, color: Colors.textSecondary, fontWeight: Fw.medium },
-  bigVal: { fontSize: 32, fontWeight: Fw.heavy, color: Colors.text },
-  unit: { fontSize: Fs.md, color: Colors.textMuted, fontWeight: Fw.regular },
+  label: { fontSize: Fs.sm, color: Colors.textSecondary, fontFamily: Fonts.medium },
+  bigVal: { fontSize: 32, fontFamily: Fonts.heavy, color: Colors.text },
+  unit: { fontSize: Fs.md, color: Colors.textMuted, fontFamily: Fonts.regular },
   trackWrap: { height: 28, justifyContent: 'center', position: 'relative' },
   track: { height: 4, backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: 2, overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 2 },
   thumb: { position: 'absolute', width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.primary, top: 0, shadowColor: Colors.primary, shadowOpacity: 0.5, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 4 },
   minMax: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  minMaxTxt: { fontSize: Fs.xs, color: Colors.textMuted },
+  minMaxTxt: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -216,9 +217,13 @@ export default function OnboardingModal() {
                 <Text style={styles.welcomeTagline}>{'Ton coach IA. Tes données.\nTa transformation.'}</Text>
               </View>
               <View style={styles.welcomeActions}>
-                <TouchableOpacity style={styles.startBtn} onPress={goNext}>
-                  <Text style={styles.startBtnText}>Commencer →</Text>
-                </TouchableOpacity>
+                <Button
+                  title="Commencer →"
+                  onPress={goNext}
+                  size="lg"
+                  fullWidth={false}
+                  style={{ alignSelf: 'center', paddingHorizontal: 48 }}
+                />
                 <TouchableOpacity onPress={() => router.push('/modals/privacy-policy')}>
                   <Text style={styles.legalText}>En continuant, tu acceptes notre politique de confidentialité</Text>
                 </TouchableOpacity>
@@ -450,16 +455,13 @@ export default function OnboardingModal() {
               <Ionicons name="arrow-back" size={18} color={Colors.textSecondary} />
               <Text style={styles.backBtnText}>Retour</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.nextBtn, !canNext() && styles.nextBtnDisabled]}
+            <Button
+              title={step < TOTAL_STEPS - 1 ? 'Suivant →' : "C'est parti 🚀"}
               onPress={step < TOTAL_STEPS - 1 ? goNext : handleFinish}
               disabled={!canNext()}
-            >
-              <Text style={styles.nextBtnText}>
-                {step < TOTAL_STEPS - 1 ? 'Suivant' : "C'est parti 🚀"}
-              </Text>
-              <Ionicons name={step < TOTAL_STEPS - 1 ? 'arrow-forward' : 'checkmark'} size={18} color={Colors.onPrimary} />
-            </TouchableOpacity>
+              fullWidth={false}
+              style={{ flex: 1 }}
+            />
           </View>
         )}
       </ScrollView>
@@ -480,8 +482,8 @@ function GenderBtn({ label, emoji, active, onPress }: { value: Gender; label: st
 const gbStyles = StyleSheet.create({
   btn: { flex: 1, alignItems: 'center', paddingVertical: Sp.lg, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, gap: 6 },
   active: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  emoji: { fontSize: 48 },
-  label: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.textSecondary },
+  emoji: { fontSize: 48, fontFamily: Fonts.regular },
+  label: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.textSecondary },
   labelActive: { color: Colors.primary },
 });
 
@@ -496,25 +498,25 @@ const styles = StyleSheet.create({
   // Welcome
   welcomeContainer: { flex: 1, justifyContent: 'space-between', minHeight: 500, paddingTop: Sp.xxl },
   welcomeContent: { alignItems: 'center', gap: Sp.lg },
-  welcomeEmoji: { fontSize: 80 },
+  welcomeEmoji: { fontSize: 80, fontFamily: Fonts.regular },
   welcomeTitle: { fontSize: 36, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', lineHeight: 44 },
-  welcomeTagline: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
+  welcomeTagline: { fontSize: 16, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   welcomeActions: { gap: Sp.md, alignItems: 'center', paddingBottom: Sp.lg },
   startBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 16, paddingHorizontal: 48, alignSelf: 'center' },
-  startBtnText: { color: Colors.onPrimary, fontSize: Fs.lg, fontWeight: Fw.bold },
-  legalText: { fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center', textDecorationLine: 'underline' },
+  startBtnText: { color: Colors.onPrimary, fontSize: Fs.lg, fontFamily: Fonts.bold },
+  legalText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', textDecorationLine: 'underline' },
 
   // Steps
   stepContainer: { paddingTop: Sp.xl },
-  stepTitle: { fontSize: Fs.xxl, fontWeight: Fw.heavy, color: Colors.text, marginBottom: 6 },
-  stepSubtitle: { fontSize: Fs.sm, color: Colors.textSecondary },
-  subLabel: { fontSize: Fs.sm, color: Colors.textSecondary, fontWeight: Fw.medium, marginTop: Sp.sm },
+  stepTitle: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text, marginBottom: 6 },
+  stepSubtitle: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  subLabel: { fontSize: Fs.sm, color: Colors.textSecondary, fontFamily: Fonts.medium, marginTop: Sp.sm },
 
   // Identity
   bigInput: {
     backgroundColor: Colors.surfaceElevated, borderRadius: R,
     paddingHorizontal: Sp.lg, paddingVertical: 16,
-    fontSize: Fs.xxl, color: Colors.text, fontWeight: Fw.semibold,
+    fontSize: Fs.xxl, color: Colors.text, fontFamily: Fonts.semibold,
     borderWidth: 1, borderColor: Colors.border, textAlign: 'center',
   },
   genderRow: { flexDirection: 'row', gap: Sp.sm },
@@ -522,57 +524,57 @@ const styles = StyleSheet.create({
   // Goals
   goalCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.border, gap: Sp.md },
   goalCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  goalEmoji: { fontSize: 56 },
-  goalLabel: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text, marginBottom: 2 },
+  goalEmoji: { fontSize: 56, fontFamily: Fonts.regular },
+  goalLabel: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 2 },
   goalLabelActive: { color: Colors.primary },
-  goalDesc: { fontSize: Fs.xs, color: Colors.textSecondary },
+  goalDesc: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
 
   // Activities
   actCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.border, gap: Sp.md },
   actCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  actEmoji: { fontSize: 28 },
-  actLabel: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text, marginBottom: 2 },
+  actEmoji: { fontSize: 28, fontFamily: Fonts.regular },
+  actLabel: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 2 },
   actLabelActive: { color: Colors.primary },
-  actDesc: { fontSize: Fs.xs, color: Colors.textSecondary },
+  actDesc: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
 
   // Summary
   tdeeCard: { backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', marginTop: Sp.lg },
   tdeeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  tdeeLabel: { fontSize: Fs.md, color: Colors.textSecondary },
+  tdeeLabel: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textSecondary },
   tdeeValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  tdeeValue: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
-  tdeeValueUnit: { fontSize: Fs.sm, color: Colors.textMuted },
+  tdeeValue: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  tdeeValueUnit: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted },
   macrosGrid: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.sm },
   macroCell: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  macroCellValue: { fontSize: Fs.xl, fontWeight: Fw.bold },
-  macroCellUnit: { fontSize: Fs.xs, color: Colors.textMuted },
-  macroCellLabel: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  macroCellValue: { fontSize: Fs.xl, fontFamily: Fonts.bold },
+  macroCellUnit: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  macroCellLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   tdeeNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, borderWidth: 1, borderColor: Colors.border, marginTop: Sp.sm },
-  tdeeNoteText: { flex: 1, fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 16 },
+  tdeeNoteText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 16 },
 
   // RGPD
   gdprBox: { backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, gap: Sp.sm, marginTop: Sp.md },
   gdprCheckRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 1, flexShrink: 0 },
   checkboxChecked: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  gdprCheckText: { flex: 1, fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
-  gdprLink: { color: Colors.primary, fontWeight: Fw.semibold },
+  gdprCheckText: { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 20 },
+  gdprLink: { color: Colors.primary, fontFamily: Fonts.semibold },
   gdprInfo: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  gdprInfoText: { flex: 1, fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17 },
+  gdprInfoText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
 
   // Delete
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: Sp.md, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '50', backgroundColor: Colors.red + '10', marginTop: Sp.md },
-  deleteBtnText: { fontSize: Fs.sm, color: Colors.red, fontWeight: Fw.semibold },
+  deleteBtnText: { fontSize: Fs.sm, color: Colors.red, fontFamily: Fonts.semibold },
 
   // Dev reset (visible uniquement en __DEV__)
   devResetBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.orange + '50', backgroundColor: Colors.orange + '08', marginTop: Sp.sm },
-  devResetBtnText: { fontSize: Fs.xs, color: Colors.orange, fontWeight: Fw.medium },
+  devResetBtnText: { fontSize: Fs.xs, color: Colors.orange, fontFamily: Fonts.medium },
 
   // Navigation
   navRow: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.xl },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Sp.md, paddingVertical: 14, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
-  backBtnText: { fontSize: Fs.md, color: Colors.textSecondary },
+  backBtnText: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textSecondary },
   nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
   nextBtnDisabled: { opacity: 0.38 },
-  nextBtnText: { color: Colors.onPrimary, fontSize: Fs.md, fontWeight: Fw.bold },
+  nextBtnText: { color: Colors.onPrimary, fontSize: Fs.md, fontFamily: Fonts.bold },
 });

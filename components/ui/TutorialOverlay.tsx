@@ -4,7 +4,8 @@ import {
   Animated, Dimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from './Button';
 
 const { width: W, height: H } = Dimensions.get('window');
 const TAB_H    = 90;
@@ -134,11 +135,12 @@ export default function TutorialOverlay({ onDone }: Props) {
           <TouchableOpacity style={styles.skipBtn} onPress={skip}>
             <Text style={styles.skipText}>Passer</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
-            <Text style={styles.nextText}>
-              {stepIdx < STEPS.length - 1 ? 'Suivant' : 'C\'est parti 🚀'}
-            </Text>
-          </TouchableOpacity>
+          <Button
+            title={stepIdx < STEPS.length - 1 ? 'Suivant' : 'C\'est parti 🚀'}
+            onPress={goNext}
+            fullWidth={false}
+            style={{ flex: 1 }}
+          />
         </View>
       </Animated.View>
     </Animated.View>
@@ -168,8 +170,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 12,
   },
-  cardTitle: { fontSize: Fs.lg, fontWeight: Fw.heavy, color: Colors.text },
-  cardDesc:  { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  cardTitle: { fontSize: Fs.lg, fontFamily: Fonts.heavy, color: Colors.text },
+  cardDesc:  { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
   dots: { flexDirection: 'row', gap: Sp.xs, justifyContent: 'center', marginTop: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.border },
   dotActive: { width: 18, borderRadius: 3, backgroundColor: Colors.primary },
@@ -178,11 +180,11 @@ const styles = StyleSheet.create({
     paddingVertical: 11, paddingHorizontal: Sp.md,
     borderRadius: R, borderWidth: 1, borderColor: Colors.border,
   },
-  skipText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  skipText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   nextBtn: {
     flex: 1, paddingVertical: 11,
     borderRadius: R, backgroundColor: Colors.primary,
     alignItems: 'center',
   },
-  nextText: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.onPrimary },
+  nextText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.onPrimary },
 });

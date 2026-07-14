@@ -10,7 +10,8 @@ import { useAppStore } from '../../store/useAppStore';
 import AnimatedRing from '../../components/ui/AnimatedRing';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
 import { localISO } from '../../services/date';
@@ -377,7 +378,7 @@ export default function DashboardScreen() {
           </Text>
           {projectionDays !== null ? (
             <Text style={styles.goalProjection}>
-              📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontWeight: Fw.bold }}>{projectionDays} jours</Text>
+              📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontFamily: Fonts.bold }}>{projectionDays} jours</Text>
             </Text>
           ) : (
             <Text style={styles.goalProjection}>Enregistre ton poids régulièrement pour voir la projection</Text>
@@ -568,9 +569,7 @@ function WeeklyBilanModal({ stats, onClose, onDetail }: {
 
           {/* Boutons */}
           <View style={wbStyles.btns}>
-            <TouchableOpacity style={wbStyles.detailBtn} onPress={onDetail}>
-              <Text style={wbStyles.detailBtnText}>Voir le détail</Text>
-            </TouchableOpacity>
+            <Button title="Voir le détail" onPress={onDetail} fullWidth={false} style={{ flex: 1 }} />
             <TouchableOpacity style={wbStyles.closeActionBtn} onPress={onClose}>
               <Text style={wbStyles.closeActionBtnText}>Fermer</Text>
             </TouchableOpacity>
@@ -585,21 +584,21 @@ const wbStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', padding: Sp.lg },
   card: { width: '100%', backgroundColor: Colors.surface, borderRadius: R * 1.5, padding: Sp.lg, gap: Sp.md, borderWidth: 1, borderColor: Colors.border },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
+  title: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
   closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
-  weekLabel: { fontSize: Fs.sm, color: Colors.textSecondary },
+  weekLabel: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   statBox: { flex: 1, minWidth: '45%', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, alignItems: 'center', gap: 2, borderWidth: 1, borderColor: Colors.border },
-  statValue: { fontSize: Fs.xl, fontWeight: Fw.bold },
-  statLabel: { fontSize: Fs.xs, color: Colors.textSecondary, textAlign: 'center' },
-  statSub: { fontSize: 10, color: Colors.textMuted },
+  statValue: { fontSize: Fs.xl, fontFamily: Fonts.bold },
+  statLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' },
+  statSub: { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted },
   motivBox: { backgroundColor: Colors.primary + '12', borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.primary + '30' },
-  motivText: { fontSize: Fs.sm, color: Colors.text, lineHeight: 20 },
+  motivText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 20 },
   btns: { flexDirection: 'row', gap: Sp.sm },
   detailBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center' },
-  detailBtnText: { color: Colors.onPrimary, fontWeight: Fw.bold, fontSize: Fs.sm },
+  detailBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.sm },
   closeActionBtn: { flex: 1, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  closeActionBtnText: { color: Colors.textSecondary, fontSize: Fs.sm },
+  closeActionBtnText: { color: Colors.textSecondary, fontSize: Fs.sm, fontFamily: Fonts.regular },
 });
 
 // ─── Modal saisie poids ───────────────────────────────────────────────────────
@@ -629,15 +628,15 @@ function WeightInputModal({ currentWeight, onSave, onClose }: {
           <TouchableOpacity style={weightModalStyles.cancelBtn} onPress={onClose}>
             <Text style={weightModalStyles.cancelText}>Annuler</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={weightModalStyles.saveBtn}
+          <Button
+            title="Enregistrer"
             onPress={() => {
               const w = parseFloat(value);
               if (w > 0 && !isNaN(w)) onSave(w);
             }}
-          >
-            <Text style={weightModalStyles.saveText}>Enregistrer</Text>
-          </TouchableOpacity>
+            fullWidth={false}
+            style={{ flex: 1 }}
+          />
         </View>
       </View>
     </View>
@@ -647,14 +646,14 @@ function WeightInputModal({ currentWeight, onSave, onClose }: {
 const weightModalStyles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', zIndex: 999 },
   card: { width: '80%', backgroundColor: Colors.surface, borderRadius: R * 1.5, padding: Sp.lg, alignItems: 'center', gap: Sp.md, borderWidth: 1, borderColor: Colors.border },
-  title: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
-  input: { fontSize: 40, fontWeight: Fw.heavy, color: Colors.text, textAlign: 'center', width: '100%', backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingVertical: Sp.md, borderWidth: 1, borderColor: Colors.border },
-  unit: { fontSize: Fs.md, color: Colors.textMuted, marginTop: -Sp.sm },
+  title: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  input: { fontSize: 40, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', width: '100%', backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingVertical: Sp.md, borderWidth: 1, borderColor: Colors.border },
+  unit: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: -Sp.sm },
   btns: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
   cancelBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   cancelText: { color: Colors.textSecondary },
   saveBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
-  saveText: { color: Colors.onPrimary, fontWeight: Fw.bold },
+  saveText: { color: Colors.onPrimary, fontFamily: Fonts.bold },
 });
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
@@ -662,9 +661,9 @@ const weightModalStyles = StyleSheet.create({
 function RingStat({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
   return (
     <View style={{ alignItems: 'center', gap: 1 }}>
-      <Text style={[{ fontSize: Fs.lg, fontWeight: Fw.bold, color }]}>{value}</Text>
-      <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{unit}</Text>
-      <Text style={{ fontSize: Fs.xs, color: Colors.textSecondary }}>{label}</Text>
+      <Text style={[{ fontSize: Fs.lg, fontFamily: Fonts.bold, color }]}>{value}</Text>
+      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{unit}</Text>
+      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary }}>{label}</Text>
     </View>
   );
 }
@@ -686,70 +685,70 @@ function StatCard({ icon, iconColor, value, label, onPress }: {
 const scStyles = StyleSheet.create({
   card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center', gap: 4 },
   iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  value: { fontSize: Fs.xxl, fontWeight: Fw.bold, color: Colors.text },
-  label: { fontSize: Fs.xs, color: Colors.textSecondary },
+  value: { fontSize: Fs.xxl, fontFamily: Fonts.bold, color: Colors.text },
+  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
 });
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.xs },
-  greeting: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
-  date: { fontSize: Fs.sm, color: Colors.textSecondary, marginTop: 2, textTransform: 'capitalize' },
+  greeting: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
+  date: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2, textTransform: 'capitalize' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   streakBadge: { backgroundColor: Colors.orange + '20', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 },
-  streakText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: Colors.orange },
+  streakText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.orange },
   avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary + '30', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.primary },
+  avatarText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary },
   // Streak card
   streakCard:     { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakCardFire: { borderColor: Colors.red + '60', backgroundColor: Colors.red + '10' },
   streakRow:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  streakEmoji:    { fontSize: 32 },
+  streakEmoji:    { fontSize: 32, fontFamily: Fonts.regular },
   streakTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  streakTitle:    { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text },
+  streakTitle:    { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   fireBadge:      { backgroundColor: Colors.red + '25', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
-  fireBadgeText:  { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.red },
-  streakSub:      { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 2 },
+  fireBadgeText:  { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.red },
+  streakSub:      { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   jokerBtn:       { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border },
-  jokerBtnText:   { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.text },
+  jokerBtnText:   { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.text },
   // Ring
   ringCard: {},
   ringRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Sp.md },
   ringStats: { flex: 1, gap: 10 },
-  adjustedGoalText: { fontSize: Fs.xs, color: Colors.orange, textAlign: 'center', marginTop: Sp.xs, fontWeight: Fw.medium },
-  sectionTitle: { fontSize: Fs.xs, fontWeight: Fw.semibold, color: Colors.textSecondary, marginBottom: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
+  adjustedGoalText: { fontSize: Fs.xs, color: Colors.orange, textAlign: 'center', marginTop: Sp.xs, fontFamily: Fonts.medium },
+  sectionTitle: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Eau
   waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.sm },
-  waterValue: { fontSize: Fs.sm, fontWeight: Fw.semibold },
+  waterValue: { fontSize: Fs.sm, fontFamily: Fonts.semibold },
   waterTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: Sp.sm },
   waterFill: { height: '100%', borderRadius: 99 },
   waterBtns: { flexDirection: 'row', gap: Sp.xs },
   waterBtn: { flex: 1, borderRadius: R, borderWidth: 1, paddingVertical: 8, alignItems: 'center' },
-  waterBtnText: { fontSize: Fs.xs, fontWeight: Fw.semibold },
-  waterDone: { fontSize: Fs.xs, color: Colors.primary, textAlign: 'center', marginTop: 6 },
+  waterBtnText: { fontSize: Fs.xs, fontFamily: Fonts.semibold },
+  waterDone: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary, textAlign: 'center', marginTop: 6 },
   // Objectif poids
   goalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Sp.sm },
-  goalCurrent: { fontSize: Fs.xl, fontWeight: Fw.bold, color: Colors.text },
-  goalLabel: { fontSize: Fs.xs, color: Colors.textMuted },
+  goalCurrent: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
+  goalLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   goalArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
   goalTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 },
   goalFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 99 },
-  goalProjection: { fontSize: Fs.xs, color: Colors.textSecondary, lineHeight: 18 },
+  goalProjection: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18 },
   // Stats
   statRow: { flexDirection: 'row', gap: Sp.sm },
   // Coach
   coachCard: {},
   coachHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   coachDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green },
-  coachLabel: { fontSize: Fs.sm, fontWeight: Fw.semibold, color: Colors.primary },
-  coachMsg: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  coachLabel: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
+  coachMsg: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
   coachBtn: { marginTop: 10 },
-  coachBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
+  coachBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
   // Actions rapides
   quickActionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   quickActionBtn: { width: '48%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, padding: Sp.md, gap: 4 },
-  quickActionEmoji: { fontSize: 24 },
-  quickActionLabel: { fontSize: Fs.sm, fontWeight: Fw.bold },
-  quickActionSub: { fontSize: Fs.xs, color: Colors.textMuted },
+  quickActionEmoji: { fontSize: 24, fontFamily: Fonts.regular },
+  quickActionLabel: { fontSize: Fs.sm, fontFamily: Fonts.bold },
+  quickActionSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });

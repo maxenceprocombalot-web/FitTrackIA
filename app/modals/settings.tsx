@@ -10,7 +10,8 @@ import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, is
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import Button from '../../components/ui/Button';
 import { ActivityLevel, NotifPrefs } from '../../types';
 
 const ACTIVITY_OPTS: { value: ActivityLevel; emoji: string; short: string }[] = [
@@ -295,12 +296,11 @@ export default function SettingsScreen() {
               <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
               <Text style={styles.recalcBtnText}>Recalculer avec Harris-Benedict</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveObjBtn, objSaved && styles.saveObjBtnSaved]}
+            <Button
+              title={objSaved ? '✓ Sauvegardé' : 'Sauvegarder'}
               onPress={handleSaveObjectives}
-            >
-              <Text style={styles.saveObjBtnText}>{objSaved ? '✓ Sauvegardé' : 'Sauvegarder'}</Text>
-            </TouchableOpacity>
+              fullWidth={false}
+            />
           </View>
         </View>
 
@@ -357,12 +357,11 @@ export default function SettingsScreen() {
               <Ionicons name={apiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.saveApiBtn, apiKeySaved && styles.saveApiBtnSaved]}
+          <Button
+            title={apiKeySaved ? '✓ Sauvegardé' : 'Sauvegarder la clé'}
             onPress={handleSaveApiKey}
-          >
-            <Text style={styles.saveApiBtnText}>{apiKeySaved ? '✓ Sauvegardé' : 'Sauvegarder la clé'}</Text>
-          </TouchableOpacity>
+            style={{ marginHorizontal: Sp.md, marginBottom: Sp.sm }}
+          />
           <View style={styles.apiKeyNote}>
             <Ionicons name="lock-closed-outline" size={12} color={Colors.green} />
             <Text style={styles.apiKeyNoteText}>Ta clé API reste sur ton téléphone uniquement — jamais transmise à nos serveurs.</Text>
@@ -386,8 +385,8 @@ export default function SettingsScreen() {
                   await AsyncStorage.setItem('@fit_coach_persona', p.id);
                 }}
               >
-                <Text style={{ flex: 1, fontSize: Fs.sm, color: persona === p.id ? Colors.primary : Colors.text, fontWeight: Fw.medium }}>{p.label}</Text>
-                <Text style={{ fontSize: Fs.xs, color: Colors.textMuted }}>{p.desc}</Text>
+                <Text style={{ flex: 1, fontSize: Fs.sm, color: persona === p.id ? Colors.primary : Colors.text, fontFamily: Fonts.medium }}>{p.label}</Text>
+                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{p.desc}</Text>
                 {persona === p.id && <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />}
               </TouchableOpacity>
             ))}
@@ -508,7 +507,7 @@ export default function SettingsScreen() {
           />
           {Platform.OS === 'ios' && healthSync && (
             <View style={{ paddingHorizontal: Sp.md, paddingBottom: Sp.sm }}>
-              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17 }}>
+              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 }}>
                 ⚠️ Nécessite un build natif. Données synchronisées : poids, calories actives, séances d'entraînement.
               </Text>
             </View>
@@ -534,13 +533,13 @@ const styles = StyleSheet.create({
   // Header
   header:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, paddingTop: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { padding: 4 },
-  headerTitle: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  headerTitle: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
 
   // Contenu
   content: { padding: Sp.md, paddingBottom: 60, gap: 2 },
 
   // Sections
-  sectionHeader: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.textMuted, letterSpacing: 0.8, paddingHorizontal: 4, paddingTop: Sp.md, paddingBottom: Sp.xs },
+  sectionHeader: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.textMuted, letterSpacing: 0.8, paddingHorizontal: 4, paddingTop: Sp.md, paddingBottom: Sp.xs },
 
   // Carte
   card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', marginBottom: 2 },
@@ -550,75 +549,75 @@ const styles = StyleSheet.create({
   rowIcon:       { width: 30, height: 30, borderRadius: 8, backgroundColor: Colors.primary + '18', alignItems: 'center', justifyContent: 'center' },
   rowIconDanger: { backgroundColor: Colors.red + '18' },
   rowContent:    { flex: 1 },
-  rowLabel:      { fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
-  rowSublabel:   { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 1 },
+  rowLabel:      { fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
+  rowSublabel:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
   divider:       { height: 1, backgroundColor: Colors.border, marginLeft: Sp.md + 30 + Sp.sm },
 
   // Profil
   profileRow:      { flexDirection: 'row', alignItems: 'center', gap: Sp.md, padding: Sp.md },
   profileAvatar:   { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.primary + '25', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.primary + '50' },
-  profileInitiale: { fontSize: Fs.xl, fontWeight: Fw.heavy, color: Colors.primary },
+  profileInitiale: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.primary },
   profileInfo:     { flex: 1, gap: 3 },
-  profileName:     { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
-  profileStats:    { fontSize: Fs.xs, color: Colors.textSecondary },
+  profileName:     { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  profileStats:    { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
   goalBadge:       { alignSelf: 'flex-start', backgroundColor: Colors.primary + '18', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
-  goalBadgeText:   { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.semibold },
+  goalBadgeText:   { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold },
   editProfileBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginHorizontal: Sp.md, marginBottom: Sp.md, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '0A' },
-  editProfileBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.medium },
+  editProfileBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
 
   // Objectifs
   calRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  calLabel:    { fontSize: Fs.sm, color: Colors.textSecondary, fontWeight: Fw.medium },
+  calLabel:    { fontSize: Fs.sm, color: Colors.textSecondary, fontFamily: Fonts.medium },
   calInputRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.sm, borderWidth: 1, borderColor: Colors.border },
-  calInput:    { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.green, paddingVertical: 7, minWidth: 70, textAlign: 'center' },
-  calUnit:     { fontSize: Fs.xs, color: Colors.textMuted },
+  calInput:    { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.green, paddingVertical: 7, minWidth: 70, textAlign: 'center' },
+  calUnit:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   macrosRow:   { flexDirection: 'row', gap: Sp.xs, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   macroInputWrap: { flex: 1, alignItems: 'center', gap: 4 },
-  macroInputLabel: { fontSize: Fs.xs, fontWeight: Fw.medium },
+  macroInputLabel: { fontSize: Fs.xs, fontFamily: Fonts.medium },
   macroInputRow: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.xs, borderWidth: 1, width: '100%' },
-  macroInput:  { flex: 1, fontSize: Fs.md, fontWeight: Fw.bold, paddingVertical: 7, textAlign: 'center' },
-  macroUnit:   { fontSize: Fs.xs, color: Colors.textMuted },
-  fieldLabel:  { fontSize: Fs.xs, color: Colors.textSecondary, fontWeight: Fw.medium, paddingHorizontal: Sp.md, paddingTop: Sp.sm, paddingBottom: 6 },
+  macroInput:  { flex: 1, fontSize: Fs.md, fontFamily: Fonts.bold, paddingVertical: 7, textAlign: 'center' },
+  macroUnit:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  fieldLabel:  { fontSize: Fs.xs, color: Colors.textSecondary, fontFamily: Fonts.medium, paddingHorizontal: Sp.md, paddingTop: Sp.sm, paddingBottom: 6 },
   actScroll:         { marginBottom: 2 },
   actScrollContent:  { paddingHorizontal: Sp.md, paddingBottom: Sp.sm, gap: Sp.xs },
   actChip:           { alignItems: 'center', gap: 3, paddingHorizontal: Sp.sm, paddingVertical: 7, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, minWidth: 62 },
   actChipActive:     { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  actChipEmoji:      { fontSize: 18 },
-  actChipText:       { fontSize: Fs.xs, color: Colors.textSecondary, fontWeight: Fw.medium },
+  actChipEmoji:      { fontSize: 18, fontFamily: Fonts.regular },
+  actChipText:       { fontSize: Fs.xs, color: Colors.textSecondary, fontFamily: Fonts.medium },
   actChipTextActive: { color: Colors.primary },
   objBtnsRow:     { flexDirection: 'row', gap: Sp.sm, padding: Sp.md },
   recalcBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '0A' },
-  recalcBtnText:  { fontSize: Fs.xs, color: Colors.primary, fontWeight: Fw.medium },
+  recalcBtnText:  { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.medium },
   saveObjBtn:     { paddingHorizontal: Sp.md, paddingVertical: 10, borderRadius: R, backgroundColor: Colors.primary, minWidth: 100, alignItems: 'center' },
   saveObjBtnSaved: { backgroundColor: Colors.green },
-  saveObjBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontWeight: Fw.semibold },
+  saveObjBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontFamily: Fonts.semibold },
 
   // Coach IA
   demoBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '18', borderRadius: R, margin: Sp.md, marginBottom: 0, padding: Sp.sm },
-  demoBannerText: { flex: 1, fontSize: Fs.xs, color: Colors.orange, lineHeight: 17 },
+  demoBannerText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 17 },
   apiKeyRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: Sp.md, marginBottom: Sp.sm, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
-  apiKeyInput:    { flex: 1, fontSize: Fs.sm, color: Colors.text, paddingHorizontal: Sp.sm, paddingVertical: 11 },
+  apiKeyInput:    { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, paddingHorizontal: Sp.sm, paddingVertical: 11 },
   eyeBtn:         { padding: Sp.sm },
   saveApiBtn:     { marginHorizontal: Sp.md, marginBottom: Sp.sm, paddingVertical: 10, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
   saveApiBtnSaved: { backgroundColor: Colors.green },
-  saveApiBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontWeight: Fw.semibold },
+  saveApiBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontFamily: Fonts.semibold },
   apiKeyNote:     { flexDirection: 'row', alignItems: 'flex-start', gap: 6, margin: Sp.md, marginTop: 0 },
-  apiKeyNoteText: { flex: 1, fontSize: Fs.xs, color: Colors.textMuted, lineHeight: 17 },
+  apiKeyNoteText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
 
   // Langue
   langRow:      { flexDirection: 'row', gap: Sp.sm, padding: Sp.md },
   langBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 11, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated },
   langBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  langEmoji:    { fontSize: 18 },
-  langLabel:    { flex: 1, fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium },
-  langSoon:     { fontSize: Fs.xs, color: Colors.textMuted, backgroundColor: Colors.surfaceHighlight, borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2 },
+  langEmoji:    { fontSize: 18, fontFamily: Fonts.regular },
+  langLabel:    { flex: 1, fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
+  langSoon:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, backgroundColor: Colors.surfaceHighlight, borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2 },
 
   // Dev
   devBtn:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: Sp.md, paddingVertical: 13 },
-  devBtnText: { fontSize: Fs.sm, color: Colors.orange, fontWeight: Fw.medium },
+  devBtnText: { fontSize: Fs.sm, color: Colors.orange, fontFamily: Fonts.medium },
 
   // Footer
   footer:     { alignItems: 'center', paddingTop: Sp.xl, paddingBottom: Sp.md, gap: 4 },
-  footerTitle: { fontSize: Fs.sm, color: Colors.textSecondary, fontWeight: Fw.semibold },
-  footerSub:  { fontSize: Fs.xs, color: Colors.textMuted },
+  footerTitle: { fontSize: Fs.sm, color: Colors.textSecondary, fontFamily: Fonts.semibold },
+  footerSub:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });

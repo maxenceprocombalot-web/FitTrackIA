@@ -6,7 +6,7 @@ import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
 import { estimate1RM } from '../../services/metrics';
 import { daysAgo } from '../../services/date';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 
 const CW = Dimensions.get('window').width - 32;
 const CH = 160;
@@ -80,15 +80,15 @@ export default function ExerciseHistoryScreen() {
             { label: '1RM estimé',     value: best1RM > 0 ? `${Math.round(best1RM)} kg` : '—', color: Colors.orange },
           ].map(stat => (
             <View key={stat.label} style={{ flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.sm, alignItems: 'center' }}>
-              <Text style={{ fontSize: Fs.lg, fontWeight: Fw.heavy, color: stat.color }}>{stat.value}</Text>
-              <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, textAlign: 'center', marginTop: 2 }}>{stat.label}</Text>
+              <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.heavy, color: stat.color }}>{stat.value}</Text>
+              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: 2 }}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
         {progressKg > 0 && progressWeeks > 0 && (
           <View style={{ backgroundColor: Colors.green + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.green + '30', padding: Sp.sm, marginBottom: Sp.sm }}>
-            <Text style={{ fontSize: Fs.sm, color: Colors.green, fontWeight: Fw.semibold }}>
+            <Text style={{ fontSize: Fs.sm, color: Colors.green, fontFamily: Fonts.semibold }}>
               📈 Progression : +{progressKg.toFixed(1)} kg en {progressWeeks} semaines
             </Text>
           </View>
@@ -97,7 +97,7 @@ export default function ExerciseHistoryScreen() {
         {/* Graphique */}
         {chartData.length >= 2 ? (
           <View style={{ backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, marginBottom: Sp.sm }}>
-            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm, fontWeight: Fw.semibold, textTransform: 'uppercase', letterSpacing: 0.5 }}>ÉVOLUTION DU MEILLEUR POIDS — 90 JOURS</Text>
+            <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, marginBottom: Sp.sm, fontFamily: Fonts.semibold, textTransform: 'uppercase', letterSpacing: 0.5 }}>ÉVOLUTION DU MEILLEUR POIDS — 90 JOURS</Text>
             <Svg width={CW} height={CH}>
               <Path d={chartData.map((s, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(s.maxWeight).toFixed(1)}`).join(' ')} stroke={Colors.yellow} strokeWidth={2} fill="none" />
               {chartData.map((s, i) => (
@@ -114,21 +114,21 @@ export default function ExerciseHistoryScreen() {
           </View>
         ) : (
           <View style={{ alignItems: 'center', paddingVertical: 24, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, marginBottom: Sp.sm }}>
-            <Text style={{ color: Colors.textMuted, fontSize: Fs.sm }}>Pas assez de données pour le graphique</Text>
+            <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular }}>Pas assez de données pour le graphique</Text>
           </View>
         )}
 
         {/* Historique des séances */}
         <View style={{ backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' }}>
-          <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, padding: Sp.md, fontWeight: Fw.semibold }}>HISTORIQUE</Text>
+          <Text style={{ fontSize: Fs.xs, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, padding: Sp.md, fontFamily: Fonts.semibold }}>HISTORIQUE</Text>
           {sessions.length === 0 ? (
             <Text style={{ color: Colors.textMuted, textAlign: 'center', padding: Sp.md }}>Aucune séance</Text>
           ) : (
             [...sessions].reverse().slice(0, 20).map((s, i) => (
               <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Sp.md, paddingVertical: 10, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: Colors.border }}>
-                <Text style={{ fontSize: Fs.sm, color: Colors.textSecondary }}>{new Date(s.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</Text>
-                <Text style={{ fontSize: Fs.sm, color: Colors.text, fontWeight: Fw.medium }}>{s.maxWeight > 0 ? `${s.maxWeight} kg` : '—'}</Text>
-                <Text style={{ fontSize: Fs.sm, color: Colors.textMuted }}>{s.sets} séries · {s.bestReps} reps</Text>
+                <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary }}>{new Date(s.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</Text>
+                <Text style={{ fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium }}>{s.maxWeight > 0 ? `${s.maxWeight} kg` : '—'}</Text>
+                <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted }}>{s.sets} séries · {s.bestReps} reps</Text>
               </View>
             ))
           )}
@@ -143,6 +143,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  headerTitle: { flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
   content: { padding: Sp.md, gap: Sp.sm, paddingBottom: 60 },
 });

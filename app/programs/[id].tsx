@@ -10,7 +10,7 @@ import {
   PROGRAMS, ProgramSession, ProgramExercise,
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
-import { Colors, R, Sp, Fs, Fw } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
 // Jour ISO courant : 1=Lundi … 7=Dimanche
@@ -221,19 +221,19 @@ const scStyles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', padding: Sp.md, gap: Sp.sm },
   dayPill: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   dayPillToday: { backgroundColor: Colors.primary },
-  dayText: { fontSize: Fs.xs, fontWeight: Fw.bold, color: Colors.textSecondary },
+  dayText: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.textSecondary },
   dayTextToday: { color: '#fff' },
-  name: { fontSize: Fs.md, fontWeight: Fw.semibold, color: Colors.text },
-  meta: { fontSize: Fs.xs, color: Colors.textSecondary, marginTop: 1 },
+  name: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  meta: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
   todayDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green },
   tableHeader: { flexDirection: 'row', paddingHorizontal: Sp.md, paddingVertical: 6, borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.surfaceElevated },
-  th: { fontSize: Fs.xs, color: Colors.textMuted, fontWeight: Fw.semibold },
+  th: { fontSize: Fs.xs, color: Colors.textMuted, fontFamily: Fonts.semibold },
   exRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: Sp.md, paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border },
-  exName: { fontSize: Fs.sm, color: Colors.text },
-  exNotes: { fontSize: Fs.xs, color: Colors.textMuted, marginTop: 2 },
-  exVal: { fontSize: Fs.sm, color: Colors.textSecondary, textAlign: 'center' },
+  exName: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text },
+  exNotes: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 },
+  exVal: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' },
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border },
-  startBtnText: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.semibold },
+  startBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
 });
 
 // ─── Sous-composants de la page ───────────────────────────────────────────────
@@ -248,7 +248,7 @@ function Badge({ icon, label, color }: { icon: React.ComponentProps<typeof Ionic
 }
 const bdgStyles = StyleSheet.create({
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surfaceElevated, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: Colors.border },
-  text: { fontSize: Fs.xs, fontWeight: Fw.medium },
+  text: { fontSize: Fs.xs, fontFamily: Fonts.medium },
 });
 
 const styles = StyleSheet.create({
@@ -256,25 +256,25 @@ const styles = StyleSheet.create({
   content: { padding: Sp.md, gap: Sp.sm },
   // Héro
   hero: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.lg, gap: Sp.sm },
-  emoji: { fontSize: 48 },
-  name: { fontSize: Fs.xxl, fontWeight: Fw.heavy, color: Colors.text },
-  desc: { fontSize: Fs.sm, color: Colors.textSecondary, lineHeight: 20 },
+  emoji: { fontSize: 48, fontFamily: Fonts.regular },
+  name: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text },
+  desc: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   progressBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.green + '15', borderRadius: R, padding: Sp.sm },
-  progressText: { fontSize: Fs.sm, color: Colors.green, fontWeight: Fw.medium },
+  progressText: { fontSize: Fs.sm, color: Colors.green, fontFamily: Fonts.medium },
   // Séance du jour
   todayCard: { backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', padding: Sp.md, gap: 6 },
   todayHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  todayTitle: { fontSize: Fs.sm, color: Colors.primary, fontWeight: Fw.semibold },
-  todayName: { fontSize: Fs.lg, fontWeight: Fw.bold, color: Colors.text },
+  todayTitle: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
+  todayName: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
   startSessionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm },
-  startSessionBtnText: { fontSize: Fs.sm, fontWeight: Fw.bold, color: '#fff' },
+  startSessionBtnText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: '#fff' },
   restCard: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
-  restText: { fontSize: Fs.sm, color: Colors.textSecondary },
+  restText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Bouton démarrer
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md },
   startBtnActive: { backgroundColor: Colors.green },
-  startBtnText: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.onPrimary },
+  startBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
   // Plan
-  planTitle: { fontSize: Fs.md, fontWeight: Fw.bold, color: Colors.text, marginTop: Sp.xs },
+  planTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginTop: Sp.xs },
 });
