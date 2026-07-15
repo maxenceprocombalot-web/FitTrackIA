@@ -66,6 +66,18 @@ export default function AddWorkoutModal() {
   const [showPicker, setShowPicker] = useState(false);
   const [searchEx,  setSearchEx]  = useState('');
 
+  // Chrono auto : démarre à l'ouverture du modal. Si l'utilisateur ne saisit
+  // pas de durée, on utilise le temps écoulé — zéro champ obligatoire.
+  const startRef = useRef(Date.now());
+  const elapsedMin = () => Math.max(1, Math.round((Date.now() - startRef.current) / 60_000));
+
+  // Nom auto si laissé vide : « Muscu du mardi »
+  const autoName = () => {
+    const weekday = new Date().toLocaleDateString('fr-FR', { weekday: 'long' });
+    const typeLabel = TYPE_OPTIONS.find(t => t.value === type)?.label ?? 'Séance';
+    return `${typeLabel} du ${weekday}`;
+  };
+
   // Pré-remplissage : répétition de la dernière séance
   useEffect(() => {
     if (params.repeatWorkoutId) {
@@ -218,16 +230,17 @@ export default function AddWorkoutModal() {
   }, []);
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Erreur', 'Donne un nom à ta séance.'); return; }
-    if (!duration || parseInt(duration) <= 0) { Alert.alert('Erreur', 'Indique la durée.'); return; }
+    // Zéro champ obligatoire : nom et durée se déduisent si laissés vides.
+    const effDuration = parseInt(duration) > 0 ? parseInt(duration) : elapsedMin();
+    const effName     = name.trim() || autoName();
 
     const workout: WorkoutSession = {
       id: Date.now().toString(),
       date: storage.today(),
-      name: name.trim(),
+      name: effName,
       type,
-      duration: parseInt(duration),
-      caloriesBurned: estimatedCal,
+      duration: effDuration,
+      caloriesBurned: Math.round(effDuration * (CALORIES_PER_MIN[type] ?? 5)),
       exercises,
       notes: notes.trim() || undefined,
     };
@@ -342,14 +355,13 @@ export default function AddWorkoutModal() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
       {/* ── Nom ─────────────────────────────────────────────────────────── */}
-      <Label text="Nom de la séance" />
+      <Label text="Nom de la séance (optionnel)" />
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="Push Day, Cardio matin…"
+        placeholder={`Auto : ${autoName()}`}
         placeholderTextColor={Colors.textMuted}
-        autoFocus
       />
       {/* ── Bouton Mode Focus ────────────────────────────────────────────── */}
       {exercises.length > 0 && (
@@ -375,13 +387,13 @@ export default function AddWorkoutModal() {
       </ScrollView>
 
       {/* ── Durée ───────────────────────────────────────────────────────── */}
-      <Label text="Durée (minutes)" />
+      <Label text="Durée (optionnel — chrono auto)" />
       <View style={styles.durationRow}>
         <TextInput
           style={[styles.input, { flex: 1, marginBottom: 0 }]}
           value={duration}
           onChangeText={setDuration}
-          placeholder="45"
+          placeholder={`Auto : ${elapsedMin()} min`}
           placeholderTextColor={Colors.textMuted}
           keyboardType="number-pad"
         />
