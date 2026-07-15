@@ -13,6 +13,7 @@ import { WeightEntry, SavedPlan, BodyMeasurement, WeeklyChallenge } from '../../
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
+import WeightField from '../../components/ui/WeightField';
 import * as ImagePicker from 'expo-image-picker';
 // API legacy : documentDirectory/copyAsync (SDK 54 a déplacé l'API moderne vers Paths)
 import * as FileSystem from 'expo-file-system/legacy';
@@ -81,7 +82,14 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
   ];
   const yLabels = [minY + 0.5, (minY + maxY) / 2, maxY - 0.5];
 
+  const first = entries[0].weight, last = entries[entries.length - 1].weight;
+  const delta = Math.round((last - first) * 10) / 10;
   return (
+    <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Courbe de poids : ${entries.length} pesées, de ${first} à ${last} kilos (${delta > 0 ? '+' : ''}${delta} kilos)`}
+    >
     <Svg width={CHART_W} height={CHART_H}>
       {yLabels.map((v, i) => (
         <Line key={i}
@@ -105,6 +113,7 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
         </SvgText>
       ))}
     </Svg>
+    </View>
   );
 }
 
@@ -267,7 +276,6 @@ function getChallengeProgress(challenge: WeeklyChallenge, weekKey: string, store
 export default function ProgressScreen() {
   const store  = useAppStore();
   const router = useRouter();
-  const [weightIn,      setWeightIn]      = useState('');
   const [period,        setPeriod]        = useState<Period>('30j');
   const [activeTab,     setActiveTab]     = useState<ActiveTab>('mesures');
   const [selectedExo,   setSelectedExo]   = useState<string | null>(null);
@@ -483,12 +491,6 @@ export default function ProgressScreen() {
     null,
   );
 
-  const handleSaveWeight = () => {
-    const w = parseFloat(weightIn);
-    if (!w || isNaN(w) || w < 20 || w > 300) return;
-    store.addWeight({ date: today(), weight: w });
-    setWeightIn('');
-  };
 
   const TAB_LABELS: Record<ActiveTab, string> = {
     mesures: '📏 Mesures',
@@ -546,19 +548,7 @@ export default function ProgressScreen() {
         <>
           <Card>
             <Text style={styles.sectionLabel}>Poids du jour</Text>
-            <View style={styles.weightInputRow}>
-              <TextInput
-                style={styles.weightInput}
-                value={weightIn}
-                onChangeText={setWeightIn}
-                placeholder={`${latest?.weight ?? 70} kg`}
-                placeholderTextColor={Colors.textMuted}
-                keyboardType="decimal-pad"
-                returnKeyType="done"
-                onSubmitEditing={handleSaveWeight}
-              />
-              <Button title="Enregistrer" onPress={handleSaveWeight} fullWidth={false} />
-            </View>
+            <WeightField initial={latest?.weight} onSave={w => store.addWeight({ date: today(), weight: w })} />
             <View style={styles.weightSummary}>
               <WBadge label="Actuel"    value={latest ? `${latest.weight} kg` : '—'} color={Colors.text} />
               <WBadge label="Départ"    value={first  ? `${first.weight} kg`  : '—'} color={Colors.textSecondary} />

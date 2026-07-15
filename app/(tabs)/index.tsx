@@ -12,6 +12,7 @@ import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
+import WeightField from '../../components/ui/WeightField';
 import * as storage from '../../services/storage';
 import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
 import { localISO } from '../../services/date';
@@ -175,6 +176,9 @@ export default function DashboardScreen() {
   // ── Bilan hebdomadaire automatique ─────────────────────────────────────────
   const generateWeeklyBilan = useCallback(async () => {
     if (!user || weeklyBilanShown.current) return;
+    // Jamais deux bilans empilés au lancement : si le bilan mensuel vient de
+    // s'afficher (1er du mois), l'hebdo attend la prochaine ouverture.
+    if (bilanGenerated.current) return;
     const today = new Date();
     if (today.getDay() !== 1) return; // seulement le lundi
 
@@ -608,36 +612,14 @@ function WeightInputModal({ currentWeight, onSave, onClose }: {
   onSave: (w: number) => void;
   onClose: () => void;
 }) {
-  const [value, setValue] = useState(currentWeight ? String(currentWeight) : '');
   return (
     <View style={weightModalStyles.overlay}>
       <View style={weightModalStyles.card}>
-        <Text style={weightModalStyles.title}>⚖️ Mon poids aujourd'hui</Text>
-        <TextInput
-          style={weightModalStyles.input}
-          value={value}
-          onChangeText={setValue}
-          keyboardType="decimal-pad"
-          placeholder="75.0"
-          placeholderTextColor={Colors.textMuted}
-          autoFocus
-          selectTextOnFocus
-        />
-        <Text style={weightModalStyles.unit}>kg</Text>
-        <View style={weightModalStyles.btns}>
-          <TouchableOpacity style={weightModalStyles.cancelBtn} onPress={onClose}>
-            <Text style={weightModalStyles.cancelText}>Annuler</Text>
-          </TouchableOpacity>
-          <Button
-            title="Enregistrer"
-            onPress={() => {
-              const w = parseFloat(value);
-              if (w > 0 && !isNaN(w)) onSave(w);
-            }}
-            fullWidth={false}
-            style={{ flex: 1 }}
-          />
-        </View>
+        <Text style={weightModalStyles.title}>⚖️ Mon poids aujourd'hui (kg)</Text>
+        <WeightField hero autoFocus initial={currentWeight} onSave={onSave} />
+        <TouchableOpacity style={weightModalStyles.cancelBtn} onPress={onClose} accessibilityRole="button">
+          <Text style={weightModalStyles.cancelText}>Annuler</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -650,7 +632,7 @@ const weightModalStyles = StyleSheet.create({
   input: { fontSize: 40, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', width: '100%', backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingVertical: Sp.md, borderWidth: 1, borderColor: Colors.border },
   unit: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: -Sp.sm },
   btns: { flexDirection: 'row', gap: Sp.sm, width: '100%' },
-  cancelBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
+  cancelBtn: { alignSelf: 'stretch', paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   cancelText: { color: Colors.textSecondary },
   saveBtn: { flex: 1, paddingVertical: Sp.sm, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
   saveText: { color: Colors.onPrimary, fontFamily: Fonts.bold },

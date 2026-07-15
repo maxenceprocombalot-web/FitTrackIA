@@ -73,7 +73,12 @@ export default function AnimatedRing({ consumed, burned, goal, size = 160, strok
   }, []);
 
   return (
-    <Animated.View style={[styles.wrapper, { opacity: fadeAnim }]}>
+    <Animated.View
+      style={[styles.wrapper, { opacity: fadeAnim }]}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Calories : ${Math.round(consumed)} consommées sur ${Math.round(effectiveGoal)}, il reste ${Math.round(remaining)} kilocalories`}
+    >
       <Svg width={size} height={size}>
         {/* Piste de fond */}
         <Circle

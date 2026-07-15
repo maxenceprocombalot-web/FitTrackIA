@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { WorkoutSession, WorkoutType } from '../../types';
 import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
@@ -274,9 +275,7 @@ function EmptyWorkout({ onAdd }: { onAdd: () => void }) {
       <Ionicons name="barbell-outline" size={56} color={Colors.textMuted} />
       <Text style={{ color: Colors.textSecondary, fontSize: Fs.lg, fontFamily: Fonts.semibold }}>Aucune séance</Text>
       <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular, textAlign: 'center' }}>Commence à enregistrer tes entraînements</Text>
-      <TouchableOpacity style={{ backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8 }} onPress={onAdd}>
-        <Text style={{ color: '#fff', fontFamily: Fonts.semibold }}>Ajouter une séance</Text>
-      </TouchableOpacity>
+      <Button title="+ Ma première séance" onPress={onAdd} fullWidth={false} style={{ marginTop: 8, paddingHorizontal: 20 }} />
     </View>
   );
 }

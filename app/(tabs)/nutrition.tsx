@@ -246,8 +246,34 @@ export default function NutritionScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Bouton jeûne ─────────────────────────────────────────────────── */}
-      <View style={{ flexDirection: 'row', gap: Sp.sm }}>
+      {/* ── Bande des 7 derniers jours : navigation en un tap ────────────── */}
+      <View style={styles.weekStrip}>
+        {Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(TODAY + 'T12:00:00');
+          d.setDate(d.getDate() - (6 - i));
+          const ds = localISO(d);
+          const sel = ds === selectedDate;
+          const hasMeals = store.meals.some(m => m.date === ds);
+          return (
+            <TouchableOpacity
+              key={ds}
+              style={[styles.dayPill, sel && styles.dayPillActive]}
+              onPress={() => setSelectedDate(ds)}
+              accessibilityRole="button"
+              accessibilityLabel={`Voir le ${fmtDate(ds, TODAY)}`}
+            >
+              <Text style={[styles.dayPillDow, sel && styles.dayPillTextActive]}>
+                {d.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 2)}
+              </Text>
+              <Text style={[styles.dayPillNum, sel && styles.dayPillTextActive]}>{d.getDate()}</Text>
+              {hasMeals && !sel && <View style={styles.dayPillDot} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* ── Outils (rangée défilante compacte) ───────────────────────────── */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: Sp.sm }}>
         <TouchableOpacity style={styles.fastBtn} onPress={() => setShowFastingModal(true)}>
           <Ionicons name="time-outline" size={15} color={Colors.yellow} />
           <Text style={styles.fastBtnText}>⏱ Jeûne</Text>
@@ -264,7 +290,7 @@ export default function NutritionScreen() {
           <Ionicons name="clipboard-outline" size={16} color={Colors.green} />
           <Text style={[styles.recipesBtnText, { color: Colors.green }]}>Meal Prep</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
       {fastTimerText !== '' && (
         <View style={[styles.fastTimer, { borderColor: fastTimerText.startsWith('🔒') ? Colors.orange + '50' : Colors.green + '50', backgroundColor: fastTimerText.startsWith('🔒') ? Colors.orange + '10' : Colors.green + '10' }]}>
           <Text style={{ fontSize: Fs.sm, color: fastTimerText.startsWith('🔒') ? Colors.orange : Colors.green, fontFamily: Fonts.semibold }}>{fastTimerText}</Text>
@@ -526,6 +552,13 @@ const styles = StyleSheet.create({
     paddingVertical: Sp.sm,
   },
   dateArrow:         { paddingHorizontal: Sp.md, paddingVertical: 4 },
+  weekStrip:         { flexDirection: 'row', gap: 5, marginBottom: Sp.sm },
+  dayPill:           { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 10, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  dayPillActive:     { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  dayPillDow:        { fontSize: 10, fontFamily: Fonts.medium, color: Colors.textMuted, textTransform: 'capitalize' },
+  dayPillNum:        { fontSize: Fs.md, fontFamily: Fonts.condensedBold, color: Colors.text },
+  dayPillTextActive: { color: Colors.onPrimary },
+  dayPillDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.green, marginTop: 2 },
   dateArrowDisabled: { opacity: 0.25 },
   dateLabelWrap:     { flex: 1, alignItems: 'center', gap: 2 },
   dateLabel:         { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },

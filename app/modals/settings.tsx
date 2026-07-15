@@ -126,6 +126,9 @@ export default function SettingsScreen() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiKeySaved,   setApiKeySaved]   = useState(false);
 
+  // ── Options avancées repliées (clé API) ──────────────────────────────────
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   // ── Persona Coach IA ──────────────────────────────────────────────────────
   const [persona, setPersona] = useState<CoachPersona>('motivateur');
 
@@ -335,38 +338,6 @@ export default function SettingsScreen() {
         {/* ── COACH IA ─────────────────────────────────────────────────── */}
         <SectionHeader title="COACH IA" />
         <View style={styles.card}>
-          {isDemoMode && (
-            <View style={styles.demoBanner}>
-              <Ionicons name="warning-outline" size={14} color={Colors.orange} />
-              <Text style={styles.demoBannerText}>Mode démo actif — entre ta clé API pour activer GPT-4o</Text>
-            </View>
-          )}
-          <Text style={styles.fieldLabel}>Clé API OpenAI</Text>
-          <View style={styles.apiKeyRow}>
-            <TextInput
-              style={styles.apiKeyInput}
-              value={apiKey}
-              onChangeText={setApiKey}
-              placeholder="sk-..."
-              placeholderTextColor={Colors.textMuted}
-              secureTextEntry={!apiKeyVisible}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TouchableOpacity onPress={() => setApiKeyVisible(v => !v)} style={styles.eyeBtn} accessibilityRole="button" accessibilityLabel={apiKeyVisible ? "Masquer la clé" : "Afficher la clé"} hitSlop={tapSlop}>
-              <Ionicons name={apiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-          <Button
-            title={apiKeySaved ? '✓ Sauvegardé' : 'Sauvegarder la clé'}
-            onPress={handleSaveApiKey}
-            style={{ marginHorizontal: Sp.md, marginBottom: Sp.sm }}
-          />
-          <View style={styles.apiKeyNote}>
-            <Ionicons name="lock-closed-outline" size={12} color={Colors.green} />
-            <Text style={styles.apiKeyNoteText}>Ta clé API reste sur ton téléphone uniquement — jamais transmise à nos serveurs.</Text>
-          </View>
-
           {/* Sélecteur persona */}
           <Text style={styles.fieldLabel}>Personnalité du coach</Text>
           <View style={{ gap: Sp.xs, paddingHorizontal: Sp.md, paddingBottom: Sp.md }}>
@@ -391,6 +362,53 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Options avancées : clé API repliée (technique, rarement utile) */}
+          {isDemoMode && (
+            <View style={styles.demoBanner}>
+              <Ionicons name="warning-outline" size={14} color={Colors.orange} />
+              <Text style={styles.demoBannerText}>Mode démo actif — ouvre les options avancées pour entrer ta clé API</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.advancedToggle}
+            onPress={() => setShowAdvanced(v => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={showAdvanced ? 'Masquer les options avancées' : 'Afficher les options avancées'}
+          >
+            <Ionicons name="construct-outline" size={15} color={Colors.textSecondary} />
+            <Text style={styles.advancedToggleText}>Options avancées (clé API)</Text>
+            <Ionicons name={showAdvanced ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+          {showAdvanced && (
+            <>
+              <Text style={styles.fieldLabel}>Clé API OpenAI</Text>
+              <View style={styles.apiKeyRow}>
+                <TextInput
+                  style={styles.apiKeyInput}
+                  value={apiKey}
+                  onChangeText={setApiKey}
+                  placeholder="sk-..."
+                  placeholderTextColor={Colors.textMuted}
+                  secureTextEntry={!apiKeyVisible}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity onPress={() => setApiKeyVisible(v => !v)} style={styles.eyeBtn} accessibilityRole="button" accessibilityLabel={apiKeyVisible ? "Masquer la clé" : "Afficher la clé"} hitSlop={tapSlop}>
+                  <Ionicons name={apiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <Button
+                title={apiKeySaved ? '✓ Sauvegardé' : 'Sauvegarder la clé'}
+                onPress={handleSaveApiKey}
+                style={{ marginHorizontal: Sp.md, marginBottom: Sp.sm }}
+              />
+              <View style={styles.apiKeyNote}>
+                <Ionicons name="lock-closed-outline" size={12} color={Colors.green} />
+                <Text style={styles.apiKeyNoteText}>Ta clé API reste sur ton téléphone uniquement — jamais transmise à nos serveurs.</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* ── LANGUE ───────────────────────────────────────────────────── */}
@@ -595,6 +613,8 @@ const styles = StyleSheet.create({
   // Coach IA
   demoBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '18', borderRadius: R, margin: Sp.md, marginBottom: 0, padding: Sp.sm },
   demoBannerText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 17 },
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: Sp.md, marginBottom: Sp.sm, paddingVertical: 10, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated },
+  advancedToggleText: { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.textSecondary },
   apiKeyRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: Sp.md, marginBottom: Sp.sm, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   apiKeyInput:    { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, paddingHorizontal: Sp.sm, paddingVertical: 11 },
   eyeBtn:         { padding: Sp.sm },
