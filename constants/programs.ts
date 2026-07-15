@@ -713,24 +713,24 @@ export const PROGRAMS: ProgramTemplate[] = [
   MIXTE_4J,
 ];
 
-// Couleurs et icônes par catégorie
+// Couleurs et icônes par catégorie — alignées sur la charte OR & NOIR
 export const CATEGORY_META: Record<ProgramCategory, { color: string; icon: string }> = {
-  'Full Body':    { color: '#22c97a', icon: '⚡' },
-  'Upper/Lower':  { color: '#4a9eff', icon: '🔁' },
-  'PPL':          { color: '#7c6dfa', icon: '🔄' },
-  'Brosplit':     { color: '#f07830', icon: '💪' },
-  'Cardio':       { color: '#e8445a', icon: '🏃' },
+  'Full Body':    { color: '#3FB96B', icon: '⚡' },
+  'Upper/Lower':  { color: '#5B9BE8', icon: '🔁' },
+  'PPL':          { color: '#E8B84B', icon: '🔄' },
+  'Brosplit':     { color: '#E8894B', icon: '💪' },
+  'Cardio':       { color: '#E8546B', icon: '🏃' },
 };
 
 export const LEVEL_COLOR: Record<ProgramLevel, string> = {
-  'Débutant':      '#22c97a',
-  'Intermédiaire': '#f5c542',
-  'Avancé':        '#e8445a',
+  'Débutant':      '#3FB96B',
+  'Intermédiaire': '#F0CC5A',
+  'Avancé':        '#E8546B',
 };
 
 export const GOAL_COLOR: Record<ProgramGoal, string> = {
-  'Force':          '#4a9eff',
-  'Hypertrophie':   '#7c6dfa',
-  'Perte de poids': '#e8445a',
-  'Endurance':      '#22c97a',
+  'Force':          '#5B9BE8',
+  'Hypertrophie':   '#E8B84B',
+  'Perte de poids': '#E8546B',
+  'Endurance':      '#3FB96B',
 };

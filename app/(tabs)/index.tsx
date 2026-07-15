@@ -256,7 +256,7 @@ export default function DashboardScreen() {
 
   const waterGoal   = user.waterGoalMl ?? 2000;
   const waterPct    = Math.min(store.water.ml / waterGoal, 1);
-  const waterColor  = waterPct >= 1 ? Colors.primary : waterPct >= 0.6 ? '#4a9eff' : waterPct >= 0.3 ? Colors.orange : Colors.red;
+  const waterColor  = waterPct >= 1 ? Colors.primary : waterPct >= 0.6 ? Colors.blue : waterPct >= 0.3 ? Colors.orange : Colors.red;
   const streak      = store.streak.current;
   const jokerMonth  = storage.thisMonth();
   const jokerAvail  = store.streak.jokerUsedMonth !== jokerMonth;
@@ -479,12 +479,12 @@ export default function DashboardScreen() {
 
         {/* Eau +250ml */}
         <TouchableOpacity
-          style={[styles.quickActionBtn, { borderColor: '#4a9eff40' }]}
+          style={[styles.quickActionBtn, { borderColor: Colors.blue + '40' }]}
           onPress={() => store.addWater(250)}
           accessibilityLabel="Ajouter 250ml d'eau"
         >
           <Text style={styles.quickActionEmoji}>💧</Text>
-          <Text style={[styles.quickActionLabel, { color: '#4a9eff' }]}>Eau +250ml</Text>
+          <Text style={[styles.quickActionLabel, { color: Colors.blue }]}>Eau +250ml</Text>
           <Text style={styles.quickActionSub}>{store.water.ml}ml / {user.waterGoalMl ?? 2000}ml</Text>
         </TouchableOpacity>
       </View>

@@ -127,9 +127,9 @@ ${correlationLines}`;
 // ─── Envoi de message ─────────────────────────────────────────────────────────
 
 const DEMO_RESPONSES = [
-  "Salut ! Je suis en mode démo 👋 Pour activer le vrai coach GPT-4o, ajoute ta clé OpenAI dans un fichier `.env.local` avec `EXPO_PUBLIC_OPENAI_KEY=sk-...` et relance l'app.",
-  "Mode démo actif — mes réponses sont simulées. Configure `EXPO_PUBLIC_OPENAI_KEY` pour des conseils personnalisés basés sur tes vraies données.",
-  "Je suis ton FitCoach en mode aperçu ! Tes données sont bien là, mais je ne peux pas encore les analyser sans clé API. Ajoute `EXPO_PUBLIC_OPENAI_KEY` dans ton `.env.local`.",
+  "Salut ! Le coach IA n'est pas encore activé sur cet appareil 👋 En attendant, tu peux tout suivre : séances, repas, poids et progrès sont enregistrés normalement.",
+  "Le coach personnalisé n'est pas activé pour l'instant. Tu peux l'activer dans Réglages → Coach IA → Options avancées. D'ici là, continue à enregistrer tes données, je les garde bien au chaud.",
+  "Mode aperçu : je ne peux pas encore analyser tes données en détail. Rends-toi dans Réglages → Coach IA pour activer les conseils personnalisés.",
 ];
 let demoIdx = 0;
 
@@ -235,7 +235,7 @@ LUNDI
 • Collation : Fromage blanc 0% 200g + amandes 20g — 220kcal, P22g G12g L10g
 Total jour : 1640kcal
 
-[Configure EXPO_PUBLIC_OPENAI_KEY pour un vrai plan personnalisé GPT-4o]`;
+[Aperçu — active le coach IA dans Réglages → Coach IA pour un plan personnalisé selon tes objectifs]`;
   }
 
   const res = await client.chat.completions.create({
@@ -285,7 +285,7 @@ JOUR 1 — Full Body A
 • Développé militaire : 3×10, repos 90s
 • Curl haltères : 3×12, repos 60s
 
-[Configure EXPO_PUBLIC_OPENAI_KEY pour un programme GPT-4o entièrement personnalisé]`;
+[Aperçu — active le coach IA dans Réglages → Coach IA pour un programme entièrement personnalisé]`;
   }
 
   const res = await client.chat.completions.create({
@@ -385,7 +385,7 @@ LUNDI–MERCREDI
 • Dîner : Pâtes 200g + Thon 100g + Tomate — 480kcal
 • Collation : Yaourt 150g + 20g amandes — 220kcal
 
-[Configure EXPO_PUBLIC_OPENAI_KEY pour un plan personnalisé]`,
+[Aperçu — active le coach IA dans Réglages → Coach IA pour un plan personnalisé]`,
       shopping: `LISTE DE COURSES (mode démo)
 
 FÉCULENTS : riz, pâtes, flocons d'avoine
