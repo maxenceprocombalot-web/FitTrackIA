@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 
 // Disques standard (kg) + couleurs code IPF.
 const PLATES: { kg: number; color: string; text: string }[] = [
@@ -54,7 +54,7 @@ export default function PlateCalculatorScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour">
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Calculateur de charge</Text>

@@ -176,7 +176,7 @@ function SwipeableWorkoutCard({ workout, index, onDelete }: {
     <Animated.View style={{ opacity, transform: [{ translateY: slideIn }] }}>
       {/* Fond rouge visible au swipe */}
       <View style={swipeStyles.bg}>
-        <Ionicons name="trash-outline" size={22} color="#fff" />
+        <Ionicons name="trash-outline" size={22} color={Colors.onPrimary} />
         <Text style={swipeStyles.bgText}>Supprimer</Text>
       </View>
 
@@ -219,7 +219,7 @@ const swipeStyles = StyleSheet.create({
     width: 110, borderRadius: R, backgroundColor: Colors.red,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: Sp.sm,
   },
-  bgText: { color: '#fff', fontSize: Fs.sm, fontFamily: Fonts.semibold },
+  bgText: { color: Colors.onPrimary, fontSize: Fs.sm, fontFamily: Fonts.semibold },
   card: {
     backgroundColor: Colors.surface, borderRadius: R,
     borderWidth: 1, borderColor: Colors.border,

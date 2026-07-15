@@ -10,7 +10,7 @@ import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, is
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import { ActivityLevel, NotifPrefs } from '../../types';
 
@@ -216,7 +216,7 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityLabel="Retour" accessibilityRole="button">
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityLabel="Retour" accessibilityRole="button" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Paramètres</Text>
@@ -353,7 +353,7 @@ export default function SettingsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={() => setApiKeyVisible(v => !v)} style={styles.eyeBtn}>
+            <TouchableOpacity onPress={() => setApiKeyVisible(v => !v)} style={styles.eyeBtn} accessibilityRole="button" accessibilityLabel={apiKeyVisible ? "Masquer la clé" : "Afficher la clé"} hitSlop={tapSlop}>
               <Ionicons name={apiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>

@@ -260,7 +260,7 @@ export default function AddFoodModal() {
               <Text style={styles.cancelText}>Retour</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.addBtn} onPress={confirmAdd}>
-              <Ionicons name="add-circle-outline" size={18} color="#fff" />
+              <Ionicons name="add-circle-outline" size={18} color={Colors.onPrimary} />
               <Text style={styles.addBtnText}>Ajouter au {MEAL_LABELS[mealType]}</Text>
             </TouchableOpacity>
           </View>
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
   manualContent: { padding: Sp.md, paddingBottom: 80 },
   manualRow: { flexDirection: 'row', marginHorizontal: -4 },
   manualBtn: { backgroundColor: Colors.green, borderRadius: R, padding: Sp.md, alignItems: 'center', marginTop: Sp.md },
-  manualBtnText: { color: '#fff', fontFamily: Fonts.bold },
+  manualBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold },
   // Confirmation quantité
   confirmCard: { flex: 1, padding: Sp.lg, justifyContent: 'center', gap: Sp.md },
   confirmTitle: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
@@ -639,5 +639,5 @@ const styles = StyleSheet.create({
   cancelBtn: { paddingHorizontal: Sp.lg, paddingVertical: Sp.md, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   cancelText: { color: Colors.textSecondary, fontFamily: Fonts.medium },
   addBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.green, borderRadius: R, paddingVertical: Sp.md },
-  addBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.md },
+  addBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.md },
 });

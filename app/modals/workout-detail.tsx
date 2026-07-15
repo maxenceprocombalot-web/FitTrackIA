@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ViewShot from 'react-native-view-shot';
 import { useAppStore } from '../../store/useAppStore';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -32,7 +32,7 @@ export default function WorkoutDetailScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
             <Ionicons name="arrow-back" size={20} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Séance introuvable</Text>
@@ -97,7 +97,7 @@ export default function WorkoutDetailScreen() {
     <View style={styles.container}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Retour" accessibilityRole="button">
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Retour" accessibilityRole="button" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{workout.name}</Text>
@@ -183,7 +183,7 @@ export default function WorkoutDetailScreen() {
 
         {/* ── Actions ───────────────────────────────────────────────────── */}
         <TouchableOpacity style={styles.shareBtn} onPress={handleShare} accessibilityRole="button">
-          <Ionicons name="share-outline" size={18} color="#fff" />
+          <Ionicons name="share-outline" size={18} color={Colors.onPrimary} />
           <Text style={styles.repeatBtnText}>Partager cette séance 📸</Text>
         </TouchableOpacity>
 
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
 
   shareBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green, borderRadius: R, paddingVertical: 14 },
   repeatBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
-  repeatBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.md },
+  repeatBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.md },
 
   deleteBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '40', backgroundColor: Colors.red + '0A' },
   deleteBtnText: { color: Colors.red, fontFamily: Fonts.medium, fontSize: Fs.sm },

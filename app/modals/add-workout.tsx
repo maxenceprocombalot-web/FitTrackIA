@@ -16,7 +16,7 @@ import {
   CALORIES_PER_MIN,
 } from '../../constants/exercises';
 import { PROGRAMS } from '../../constants/programs';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
 import Button from '../../components/ui/Button';
@@ -281,7 +281,7 @@ export default function AddWorkoutModal() {
             placeholderTextColor={Colors.textMuted}
             autoFocus
           />
-          <TouchableOpacity onPress={() => setShowPicker(false)} style={styles.closeBtn}>
+          <TouchableOpacity onPress={() => setShowPicker(false)} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}>
             <Ionicons name="close" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -474,7 +474,7 @@ export default function AddWorkoutModal() {
                 style={[styles.checkBtn, set.completed && styles.checkBtnDone]}
                 onPress={() => updateSet(exIdx, setIdx, 'completed', !set.completed)}
               >
-                <Ionicons name={set.completed ? 'checkmark' : 'ellipse-outline'} size={16} color={set.completed ? '#fff' : Colors.textMuted} />
+                <Ionicons name={set.completed ? 'checkmark' : 'ellipse-outline'} size={16} color={set.completed ? Colors.onPrimary : Colors.textMuted} />
               </TouchableOpacity>
             </View>
           ))}
@@ -770,7 +770,7 @@ function FocusModeModal({ exercises, exIdx, setIdx, onSetDone, onNext, onPrev, o
         {/* Header */}
         <View style={focusStyles.header}>
           <Text style={focusStyles.progress}>{exIdx + 1} / {exercises.length}</Text>
-          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={26} color="rgba(255,255,255,0.5)" /></TouchableOpacity>
+          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Quitter le mode Focus" hitSlop={tapSlop}><Ionicons name="close" size={26} color="rgba(255,255,255,0.5)" /></TouchableOpacity>
         </View>
 
         {/* Exercice en grand */}
@@ -838,7 +838,7 @@ const focusStyles = StyleSheet.create({
   skipRestBtn: { marginTop: Sp.md, paddingHorizontal: Sp.lg, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
   skipRestText:{ color: Colors.primary, fontFamily: Fonts.semibold },
   doneBtn:     { marginBottom: 50, backgroundColor: Colors.green, borderRadius: 24, paddingVertical: 24, marginHorizontal: Sp.md, alignItems: 'center', shadowColor: Colors.green, shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 0 }, elevation: 10 },
-  doneBtnText: { fontSize: 26, fontFamily: Fonts.heavy, color: '#fff', letterSpacing: 0.5 },
+  doneBtnText: { fontSize: 26, fontFamily: Fonts.heavy, color: Colors.onPrimary, letterSpacing: 0.5 },
   navRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 50, paddingHorizontal: Sp.md },
   navBtn:      { padding: 12 },
   swipeHint:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: 'rgba(255,255,255,0.2)' },

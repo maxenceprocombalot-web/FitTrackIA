@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
@@ -370,10 +370,10 @@ export default function CoachScreen() {
           <Text style={styles.coachName}>FitCoach IA</Text>
           <Text style={styles.coachSub}>{DEMO_MODE ? 'Mode démo' : `${PERSONA_LABELS[currentPersona] ?? ''} · GPT-4o`}</Text>
         </View>
-        <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn}>
+        <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Historique des conversations" hitSlop={tapSlop}>
           <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleNewConversation} style={styles.clearBtn}>
+        <TouchableOpacity onPress={handleNewConversation} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Nouvelle conversation" hitSlop={tapSlop}>
           <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
         </TouchableOpacity>
       </View>
@@ -547,7 +547,7 @@ function ConversationHistoryModal({ onClose, onRestore }: {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.bg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
-          <TouchableOpacity onPress={() => setSelected(null)}><Ionicons name="arrow-back" size={20} color={Colors.text} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelected(null)} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}><Ionicons name="arrow-back" size={20} color={Colors.text} /></TouchableOpacity>
           <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }} numberOfLines={1}>{selected.title}</Text>
         </View>
         <ScrollView contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}>
@@ -565,7 +565,7 @@ function ConversationHistoryModal({ onClose, onRestore }: {
     <View style={{ flex: 1, backgroundColor: Colors.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
         <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>Historique</Text>
-        <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
+        <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
       </View>
       {conversations.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

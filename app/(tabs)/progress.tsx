@@ -1405,7 +1405,7 @@ const styles = StyleSheet.create({
   addPhotoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary + '18', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', paddingVertical: 14, marginBottom: Sp.sm },
   addPhotoBtnText: { fontSize: Fs.md, color: Colors.primary, fontFamily: Fonts.semibold },
   beforeAfterBtn: { backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm },
-  beforeAfterBtnText: { color: '#fff', fontFamily: Fonts.bold, fontSize: Fs.sm },
+  beforeAfterBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.sm },
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs },
   photoThumb: { width: '31.5%', aspectRatio: 1, borderRadius: R, overflow: 'hidden', position: 'relative' },
   photoThumbSelected: { borderWidth: 2, borderColor: Colors.primary },

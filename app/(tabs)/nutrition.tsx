@@ -12,7 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, Recipe, FastingConfig } from '../../types';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
 import { today, localISO } from '../../services/date';
@@ -218,7 +218,7 @@ export default function NutritionScreen() {
 
       {/* ── Navigateur de date ───────────────────────────────────────────── */}
       <View style={styles.dateNav}>
-        <TouchableOpacity style={styles.dateArrow} onPress={goToPrev}>
+        <TouchableOpacity style={styles.dateArrow} onPress={goToPrev} accessibilityRole="button" accessibilityLabel="Jour précédent" hitSlop={tapSlop}>
           <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </TouchableOpacity>
         <TouchableOpacity
@@ -238,6 +238,9 @@ export default function NutritionScreen() {
           style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
           onPress={goToNext}
           disabled={isToday}
+          accessibilityRole="button"
+          accessibilityLabel="Jour suivant"
+          hitSlop={tapSlop}
         >
           <Ionicons name="chevron-forward" size={22} color={isToday ? Colors.textMuted : Colors.text} />
         </TouchableOpacity>
@@ -468,7 +471,7 @@ function FoodRow({ item, onDelete }: { item: FoodItem; onDelete: () => void }) {
     <View style={foodStyles.swipeWrap}>
       {/* Fond rouge */}
       <View style={foodStyles.swipeBg}>
-        <Ionicons name="trash-outline" size={18} color="#fff" />
+        <Ionicons name="trash-outline" size={18} color={Colors.onPrimary} />
         <Text style={foodStyles.swipeBgText}>Suppr.</Text>
       </View>
       <Animated.View
@@ -501,7 +504,7 @@ function MacroPill({ value, unit, color }: { value: string; unit: string; color:
 const foodStyles = StyleSheet.create({
   swipeWrap: { position: 'relative', borderTopWidth: 1, borderTopColor: Colors.border, overflow: 'hidden' },
   swipeBg:   { position: 'absolute', right: 0, top: 0, bottom: 0, width: DELETE_W, backgroundColor: Colors.red, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  swipeBgText: { color: '#fff', fontSize: Fs.xs, fontFamily: Fonts.semibold },
+  swipeBgText: { color: Colors.onPrimary, fontSize: Fs.xs, fontFamily: Fonts.semibold },
   row:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: Sp.md, gap: 6, backgroundColor: Colors.surface },
   info:     { flex: 1 },
   name:     { fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
@@ -651,7 +654,7 @@ function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, on
       <View style={fmStyles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
           <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>⏱ Jeûne intermittent</Text>
-          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
         </View>
 
         <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.sm }}>Protocole</Text>
@@ -720,7 +723,7 @@ function RestaurantModal({ onClose, onAdd }: {
       <View style={{ backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
           <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>🍽️ Mode Restaurant</Text>
-          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
+          <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
         </View>
         <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton plat</Text>
         <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md }}>
@@ -764,7 +767,7 @@ function RestaurantModal({ onClose, onAdd }: {
               const item: FoodItem = { id: `rest_${Date.now()}`, name: `🍽️ ${result.name}`, quantity: qty, caloriesPer100g: result.caloriesPer100g, proteinPer100g: result.proteinPer100g, carbsPer100g: result.carbsPer100g, fatPer100g: result.fatPer100g };
               onAdd(item);
             }}>
-              <Text style={{ color: '#fff', fontFamily: Fonts.bold }}>Ajouter à mon repas</Text>
+              <Text style={{ color: Colors.onPrimary, fontFamily: Fonts.bold }}>Ajouter à mon repas</Text>
             </TouchableOpacity>
           </>
         )}
@@ -791,7 +794,7 @@ function MealPrepModal({ user, onClose }: { user: any; onClose: () => void }) {
     <View style={{ flex: 1, backgroundColor: Colors.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
         <Text style={{ flex: 1, fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>📋 Meal Prep 7 jours</Text>
-        <TouchableOpacity onPress={onClose}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
+        <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}><Ionicons name="close" size={22} color={Colors.text} /></TouchableOpacity>
       </View>
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md }}>

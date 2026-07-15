@@ -22,7 +22,7 @@ export const Colors = {
   // Texte
   text: '#F5F2EA',          // crème
   textSecondary: '#8A8578', // gris-or atténué
-  textMuted: '#5C584F',
+  textMuted: '#858072',     // ≥4.5:1 sur carte ET fond (WCAG AA)
 
   // Bordures
   border: 'rgba(255,255,255,0.06)',
@@ -77,6 +77,10 @@ export const Fonts = {
   condensedBold:  'BarlowCondensed_700Bold',
   condensedHeavy: 'BarlowCondensed_800ExtraBold',
 };
+
+// Zone de tap étendue pour les petits boutons icône (retour, fermer…) :
+// invisible visuellement, porte la cible à ≥44pt (WCAG 2.5.5).
+export const tapSlop = { top: 12, bottom: 12, left: 12, right: 12 };
 
 // Ombre utilisée sur les cartes
 export const shadow = {

@@ -6,7 +6,7 @@ import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
 import { estimate1RM } from '../../services/metrics';
 import { daysAgo } from '../../services/date';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 
 const CW = Dimensions.get('window').width - 32;
 const CH = 160;
@@ -64,7 +64,7 @@ export default function ExerciseHistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{name}</Text>

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 
 const SECTIONS = [
   {
@@ -57,6 +57,7 @@ export default function TermsScreen() {
           style={styles.backBtn}
           accessibilityLabel="Retour"
           accessibilityRole="button"
+          hitSlop={tapSlop}
         >
           <Ionicons name="arrow-back" size={20} color={Colors.text} />
         </TouchableOpacity>

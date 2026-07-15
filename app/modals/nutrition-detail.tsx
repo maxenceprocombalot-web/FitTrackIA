@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
 import { FoodItem, Meal, MealType } from '../../types';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
@@ -141,7 +141,7 @@ export default function NutritionDetailModal() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>

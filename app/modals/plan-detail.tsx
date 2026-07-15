@@ -5,7 +5,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
 export default function PlanDetailModal() {
@@ -20,7 +20,7 @@ export default function PlanDetailModal() {
       <View style={styles.empty}>
         <Ionicons name="document-outline" size={48} color={Colors.textMuted} />
         <Text style={styles.emptyText}>Plan introuvable</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
           <Text style={{ color: Colors.primary, marginTop: 8 }}>Fermer</Text>
         </TouchableOpacity>
       </View>

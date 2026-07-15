@@ -10,7 +10,7 @@ import { useAppStore } from '../../store/useAppStore';
 import AnimatedRing from '../../components/ui/AnimatedRing';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
@@ -529,7 +529,7 @@ function WeeklyBilanModal({ stats, onClose, onDetail }: {
           {/* Header */}
           <View style={wbStyles.header}>
             <Text style={wbStyles.title}>📊 Bilan de la semaine</Text>
-            <TouchableOpacity onPress={onClose} style={wbStyles.closeBtn}>
+            <TouchableOpacity onPress={onClose} style={wbStyles.closeBtn} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}>
               <Ionicons name="close" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>

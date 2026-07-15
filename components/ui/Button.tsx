@@ -85,7 +85,7 @@ const VARIANTS: Record<Variant, { bg: string; fg: string; border: string }> = {
   primary:   { bg: Colors.primary,          fg: Colors.onPrimary,    border: 'transparent' },
   secondary: { bg: Colors.surfaceElevated,  fg: Colors.text,         border: Colors.borderStrong },
   ghost:     { bg: 'transparent',           fg: Colors.primary,      border: 'transparent' },
-  danger:    { bg: Colors.red,              fg: '#fff',              border: 'transparent' },
+  danger:    { bg: Colors.red,              fg: Colors.onPrimary,    border: 'transparent' },
 };
 
 const styles = StyleSheet.create({
