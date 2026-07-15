@@ -10,23 +10,25 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#080a0e"
+      "backgroundColor": "#0A0A0B"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fittrackia.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments."
+        "NSCameraUsageDescription": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments.",
+        "NSPhotoLibraryUsageDescription": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#080a0e"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#0A0A0B"
       },
       "package": "com.fittrackia.app",
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
       ]
     },
     "web": {
@@ -39,13 +41,19 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#7c6dfa"
+          "color": "#E8B84B"
         }
       ],
       [
         "expo-camera",
         {
           "cameraPermission": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression."
         }
       ],
       "expo-secure-store"
