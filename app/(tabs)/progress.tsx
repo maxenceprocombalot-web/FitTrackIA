@@ -30,7 +30,8 @@ const CHART_H = 160;
 const PAD     = { top: 16, bottom: 24, left: 30, right: 10 };
 
 type Period  = '30j' | '90j' | 'tout';
-type ActiveTab = 'weight' | 'sport' | 'nutrition' | 'calories' | 'muscles' | 'corps' | 'badges' | 'plans' | 'photos' | 'defis';
+// 4 groupes au lieu de 10 onglets : chaque groupe concatène les anciennes sections
+type ActiveTab = 'mesures' | 'sport' | 'nutrition' | 'recompenses';
 
 // Régression linéaire
 function linearReg(ys: number[]): { slope: number; intercept: number } {
@@ -268,8 +269,7 @@ export default function ProgressScreen() {
   const router = useRouter();
   const [weightIn,      setWeightIn]      = useState('');
   const [period,        setPeriod]        = useState<Period>('30j');
-  const [activeTab,     setActiveTab]     = useState<ActiveTab>('weight');
-  const [plansFilter,   setPlansFilter]   = useState<'all' | 'sport' | 'nutrition'>('all');
+  const [activeTab,     setActiveTab]     = useState<ActiveTab>('mesures');
   const [selectedExo,   setSelectedExo]   = useState<string | null>(null);
 
   // Photos de progression
@@ -462,9 +462,6 @@ export default function ProgressScreen() {
     return { avg, daysTracked: vals.length, daysInRange: inRange };
   })();
 
-  const filteredPlans = plansFilter === 'all'
-    ? store.savedPlans
-    : store.savedPlans.filter(p => p.type === plansFilter);
 
   const calories30 = useMemo(() => {
     const since = daysAgo(30);
@@ -494,16 +491,10 @@ export default function ProgressScreen() {
   };
 
   const TAB_LABELS: Record<ActiveTab, string> = {
-    weight: 'Poids',
-    sport: 'Sport',
-    nutrition: 'Nutrition',
-    calories: 'Calories',
-    muscles: 'Muscles',
-    corps: 'Corps',
-    badges: 'Badges',
-    plans: 'Plans',
-    photos: 'Photos',
-    defis: 'Défis',
+    mesures: '📏 Mesures',
+    sport: '💪 Sport',
+    nutrition: '🥗 Nutrition',
+    recompenses: '🏆 Récompenses',
   };
 
   return (
@@ -537,7 +528,7 @@ export default function ProgressScreen() {
 
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
-        {(['weight', 'sport', 'nutrition', 'calories', 'muscles', 'corps', 'badges', 'plans', 'photos', 'defis'] as ActiveTab[]).map(tab => (
+        {(['mesures', 'sport', 'nutrition', 'recompenses'] as ActiveTab[]).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -551,7 +542,7 @@ export default function ProgressScreen() {
       </ScrollView>
 
       {/* ── Onglet Poids ─────────────────────────────────────────────────── */}
-      {activeTab === 'weight' && (
+      {activeTab === 'mesures' && (
         <>
           <Card>
             <Text style={styles.sectionLabel}>Poids du jour</Text>
@@ -744,7 +735,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Onglet Calories ──────────────────────────────────────────────── */}
-      {activeTab === 'calories' && (
+      {activeTab === 'nutrition' && (
         <>
           <View style={styles.statGrid}>
             <BigStat value={String(calAvg)}     label={`moy. 30j (obj: ${calTarget})`} color={calAvg > calTarget ? Colors.red : Colors.green} />
@@ -783,7 +774,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Onglet Muscles ───────────────────────────────────────────────── */}
-      {activeTab === 'muscles' && (
+      {activeTab === 'sport' && (
         <>
           <Card>
             <Text style={styles.sectionLabel}>Volume musculaire – 7 derniers jours</Text>
@@ -818,7 +809,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Onglet Corps ─────────────────────────────────────────────────── */}
-      {activeTab === 'corps' && (
+      {activeTab === 'mesures' && (
         <>
           {store.user && (() => {
             const w = store.weights[store.weights.length - 1]?.weight ?? store.user.weight;
@@ -905,7 +896,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Onglet Badges ────────────────────────────────────────────────── */}
-      {activeTab === 'badges' && (() => {
+      {activeTab === 'recompenses' && (() => {
         const unlocked = getUnlockedBadges(store);
         const count = unlocked.size;
         return (
@@ -933,45 +924,8 @@ export default function ProgressScreen() {
         );
       })()}
 
-      {/* ── Onglet Plans ─────────────────────────────────────────────────── */}
-      {activeTab === 'plans' && (
-        <>
-          <View style={styles.plansFilterRow}>
-            {(['all', 'sport', 'nutrition'] as const).map(f => (
-              <TouchableOpacity
-                key={f}
-                style={[styles.plansFilterBtn, plansFilter === f && styles.plansFilterBtnActive]}
-                onPress={() => setPlansFilter(f)}
-              >
-                <Text style={[styles.plansFilterText, plansFilter === f && styles.plansFilterTextActive]}>
-                  {f === 'all' ? 'Tous' : f === 'sport' ? '💪 Sport' : '🥗 Nutrition'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.plansCount}>{filteredPlans.length} plan{filteredPlans.length > 1 ? 's' : ''}</Text>
-
-          {filteredPlans.length === 0 ? (
-            <View style={styles.plansEmpty}>
-              <Ionicons name="document-outline" size={40} color={Colors.textMuted} />
-              <Text style={styles.plansEmptyText}>Aucun plan sauvegardé</Text>
-              <Text style={styles.plansEmptySub}>Demande un plan au Coach IA et clique "Sauvegarder"</Text>
-            </View>
-          ) : (
-            filteredPlans.map(plan => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                onPress={() => router.push({ pathname: '/modals/plan-detail', params: { planId: plan.id } })}
-              />
-            ))
-          )}
-        </>
-      )}
-
       {/* ── Onglet Photos ────────────────────────────────────────────────── */}
-      {activeTab === 'photos' && (
+      {activeTab === 'mesures' && (
         <>
           <TouchableOpacity style={styles.addPhotoBtn} onPress={async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -1078,7 +1032,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Onglet Défis ─────────────────────────────────────────────────── */}
-      {activeTab === 'defis' && (
+      {activeTab === 'recompenses' && (
         <>
           <Card>
             <Text style={styles.sectionLabel}>Défis de la semaine</Text>
@@ -1228,48 +1182,6 @@ const exoStyles = StyleSheet.create({
 });
 
 // ─── Carte plan ───────────────────────────────────────────────────────────────
-
-function PlanCard({ plan, onPress }: { plan: SavedPlan; onPress: () => void }) {
-  const typeColor = plan.type === 'sport' ? Colors.primary : plan.type === 'nutrition' ? Colors.green : Colors.orange;
-  const typeLabel = plan.type === 'sport' ? '💪' : plan.type === 'nutrition' ? '🥗' : '✨';
-  const preview   = plan.content.slice(0, 80).replace(/\n/g, ' ');
-
-  return (
-    <TouchableOpacity style={pcStyles.card} onPress={onPress}>
-      <View style={pcStyles.row}>
-        <View style={[pcStyles.typeIcon, { backgroundColor: typeColor + '20' }]}>
-          <Text style={pcStyles.typeEmoji}>{typeLabel}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={pcStyles.titleRow}>
-            <Text style={pcStyles.title} numberOfLines={1}>{plan.title}</Text>
-            {plan.isPredefined && (
-              <View style={pcStyles.predBadge}>
-                <Text style={pcStyles.predText}>Prédéfini</Text>
-              </View>
-            )}
-          </View>
-          <Text style={pcStyles.preview} numberOfLines={2}>{preview}…</Text>
-          <Text style={pcStyles.date}>{new Date(plan.date).toLocaleDateString('fr-FR')}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-const pcStyles = StyleSheet.create({
-  card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, marginBottom: Sp.xs },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm },
-  typeIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  typeEmoji: { fontSize: 20, fontFamily: Fonts.regular },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
-  title: { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
-  predBadge: { backgroundColor: Colors.yellow + '20', borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1 },
-  predText: { fontSize: 10, fontFamily: Fonts.regular, color: Colors.yellow },
-  preview: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17, marginBottom: 4 },
-  date: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
-});
 
 // ─── Sous-composants ──────────────────────────────────────────────────────────
 

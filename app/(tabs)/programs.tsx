@@ -11,6 +11,7 @@ import {
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { SavedPlan } from '../../types';
 
 // ─── Filtres disponibles ──────────────────────────────────────────────────────
 
@@ -126,10 +127,68 @@ export default function ProgramsScreen() {
         />
       ))}
 
+      {/* ── Mes plans sauvegardés (coach IA + prédéfinis) ─────────────────── */}
+      <Text style={styles.filterLabel}>Mes plans sauvegardés</Text>
+      {store.savedPlans.length === 0 ? (
+        <Text style={styles.resultCount}>Aucun plan — demande un plan au Coach IA et touche « Sauvegarder ».</Text>
+      ) : (
+        store.savedPlans.map(plan => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            onPress={() => router.push({ pathname: '/modals/plan-detail', params: { planId: plan.id } })}
+          />
+        ))
+      )}
+
       <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
+
+// ─── Carte plan sauvegardé (déplacée depuis l'écran Progrès) ─────────────────
+
+function PlanCard({ plan, onPress }: { plan: SavedPlan; onPress: () => void }) {
+  const typeColor = plan.type === 'sport' ? Colors.primary : plan.type === 'nutrition' ? Colors.green : Colors.orange;
+  const typeLabel = plan.type === 'sport' ? '💪' : plan.type === 'nutrition' ? '🥗' : '✨';
+  const preview   = plan.content.slice(0, 80).replace(/\n/g, ' ');
+
+  return (
+    <TouchableOpacity style={pcStyles.card} onPress={onPress}>
+      <View style={pcStyles.row}>
+        <View style={[pcStyles.typeIcon, { backgroundColor: typeColor + '20' }]}>
+          <Text style={pcStyles.typeEmoji}>{typeLabel}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={pcStyles.titleRow}>
+            <Text style={pcStyles.title} numberOfLines={1}>{plan.title}</Text>
+            {plan.isPredefined && (
+              <View style={pcStyles.predBadge}>
+                <Text style={pcStyles.predText}>Prédéfini</Text>
+              </View>
+            )}
+          </View>
+          <Text style={pcStyles.preview} numberOfLines={2}>{preview}…</Text>
+          <Text style={pcStyles.date}>{new Date(plan.date).toLocaleDateString('fr-FR')}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const pcStyles = StyleSheet.create({
+  card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, marginBottom: Sp.xs },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm },
+  typeIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  typeEmoji: { fontSize: 20, fontFamily: Fonts.regular },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+  title: { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  predBadge: { backgroundColor: Colors.yellow + '20', borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1 },
+  predText: { fontSize: 10, fontFamily: Fonts.regular, color: Colors.yellow },
+  preview: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17, marginBottom: 4 },
+  date: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+});
 
 // ─── Carte programme ──────────────────────────────────────────────────────────
 
