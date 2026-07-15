@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, FlatList,
+  StyleSheet, ActivityIndicator, Alert, FlatList, SectionList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,24 +12,16 @@ import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
 import { COMMON_FOODS } from '../../constants/foods';
 import { CIQUAL_FOODS } from '../../constants/ciqual';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts, tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import * as storage from '../../services/storage';
 
-type Tab = 'recent' | 'favorites' | 'common' | 'search' | 'scan' | 'manual';
+// Écran unifié : plus d'onglets de source — une recherche unique + scan/manuel
+type Tab = 'browse' | 'scan' | 'manual';
 
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: 'Petit-déjeuner', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Collation',
 };
-
-const TAB_META: { key: Tab; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { key: 'recent',    label: 'Récents',   icon: 'time-outline' },
-  { key: 'favorites', label: 'Favoris',   icon: 'star-outline' },
-  { key: 'common',    label: 'Courants',  icon: 'list-outline' },
-  { key: 'search',    label: 'Recherche', icon: 'search-outline' },
-  { key: 'scan',      label: 'Scan',      icon: 'barcode-outline' },
-  { key: 'manual',    label: 'Manuel',    icon: 'create-outline' },
-];
 
 // Conversion module-level (COMMON_FOODS est une constante, pas besoin de recalculer)
 const COMMON_AS_FOOD_ITEMS: FoodItem[] = COMMON_FOODS.map(f => ({
@@ -50,9 +42,10 @@ export default function AddFoodModal() {
   // Date cible : aujourd'hui par défaut, ou la date transmise depuis nutrition.tsx
   const targetDate = (params.targetDate as string) ?? storage.today();
 
-  // Onglet par défaut : startTab param si fourni, récents si disponibles, sinon courants
-  const startTabParam = params.startTab as Tab | undefined;
-  const defaultTab: Tab = startTabParam ?? (store.recentFoods.length > 0 ? 'recent' : 'common');
+  // Mode par défaut : browse (recherche + récents + favoris + courants).
+  // Compat anciens liens : startTab scan/manual respectés, le reste → browse.
+  const startTabParam = params.startTab as string | undefined;
+  const defaultTab: Tab = startTabParam === 'scan' || startTabParam === 'manual' ? startTabParam : 'browse';
   const [tab,         setTab]         = useState<Tab>(defaultTab);
   const [quantity,    setQuantity]    = useState('');
   const [pending,     setPending]     = useState<FoodItem | null>(null);
@@ -142,6 +135,16 @@ export default function AddFoodModal() {
 
   // ─── Recherche OpenFoodFacts ───────────────────────────────────────────────
 
+  // Résultats instantanés pendant la frappe (CIQUAL + courants, local)
+  const instantResults = React.useMemo<FoodItem[]>(() => {
+    const q = searchQ.toLowerCase().trim();
+    if (q.length < 2) return [];
+    const ciqual = CIQUAL_FOODS.filter(f => f.name.toLowerCase().includes(q)).slice(0, 15)
+      .map<FoodItem>(f => ({ id: f.id, name: f.name, quantity: f.defaultPortion, caloriesPer100g: f.caloriesPer100g, proteinPer100g: f.proteinPer100g, carbsPer100g: f.carbsPer100g, fatPer100g: f.fatPer100g }));
+    const commons = COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q) && !ciqual.some(c => c.name === f.name));
+    return [...ciqual, ...commons].slice(0, 20);
+  }, [searchQ]);
+
   const handleSearch = useCallback(async () => {
     if (!searchQ.trim()) return;
     setSearching(true);
@@ -198,7 +201,7 @@ export default function AddFoodModal() {
     const food = await searchByBarcode(data);
     if (food) {
       selectItem(food);
-      setTab('common');
+      setTab('browse');
     } else {
       Alert.alert('Produit non trouvé', `Code-barres : ${data}\nTente une recherche manuelle.`);
       setScanned(false);
@@ -274,190 +277,62 @@ export default function AddFoodModal() {
       {/* ── En-tête ──────────────────────────────────────────────────────── */}
       <Text style={styles.mealTypeLabel}>{MEAL_LABELS[mealType]}</Text>
 
-      {/* ── Onglets ──────────────────────────────────────────────────────── */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
-        {TAB_META.map(t => (
-          <TouchableOpacity
-            key={t.key}
-            style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]}
-            onPress={() => setTab(t.key)}
-          >
-            <Ionicons
-              name={t.icon}
-              size={14}
-              color={tab === t.key ? Colors.primary : Colors.textSecondary}
-            />
-            <Text style={[styles.tabBtnText, tab === t.key && styles.tabBtnTextActive]}>
-              {t.label}
-              {t.key === 'recent'    && store.recentFoods.length > 0 ? ` (${store.recentFoods.length})` : ''}
-              {t.key === 'favorites' && store.favorites.length > 0   ? ` (${store.favorites.length})` : ''}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* ── Onglet Récents ───────────────────────────────────────────────── */}
-      {tab === 'recent' && (
-        <FlatList
-          data={store.recentFoods}
-          keyExtractor={(item, idx) => `${item.name}_${idx}`}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="time-outline" size={40} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Aucun aliment récent</Text>
-              <Text style={styles.emptySubText}>Les aliments que tu ajoutes apparaissent ici</Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
-              <View style={[styles.recentDot, { backgroundColor: Colors.primary + '30' }]}>
-                <Ionicons name="time-outline" size={14} color={Colors.primary} />
-              </View>
-              <View style={styles.foodInfo}>
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodMacros}>
-                  {item.caloriesPer100g}kcal • P:{item.proteinPer100g}g • G:{item.carbsPer100g}g /100g
-                </Text>
-              </View>
-              <Text style={styles.foodDef}>{item.quantity}g</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-            </TouchableOpacity>
-          )}
+      {/* ── Recherche unique + accès scan/manuel ─────────────────────────── */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          value={searchQ}
+          onChangeText={t => { setSearchQ(t); if (tab !== 'browse') setTab('browse'); setHasSearched(false); setSearchRes([]); setLocalResults([]); }}
+          placeholder="Rechercher un aliment…"
+          placeholderTextColor={Colors.textMuted}
+          returnKeyType="search"
+          onSubmitEditing={handleSearch}
+          accessibilityLabel="Rechercher un aliment"
         />
-      )}
+        <TouchableOpacity
+          style={[styles.modeBtn, tab === 'scan' && styles.modeBtnActive]}
+          onPress={() => setTab(tab === 'scan' ? 'browse' : 'scan')}
+          accessibilityRole="button" accessibilityLabel="Scanner un code-barres" hitSlop={tapSlop}
+        >
+          <Ionicons name="barcode-outline" size={20} color={tab === 'scan' ? Colors.onPrimary : Colors.textSecondary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeBtn, tab === 'manual' && styles.modeBtnActive]}
+          onPress={() => setTab(tab === 'manual' ? 'browse' : 'manual')}
+          accessibilityRole="button" accessibilityLabel="Saisie manuelle" hitSlop={tapSlop}
+        >
+          <Ionicons name="create-outline" size={20} color={tab === 'manual' ? Colors.onPrimary : Colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-      {/* ── Onglet Favoris ───────────────────────────────────────────────── */}
-      {tab === 'favorites' && (
-        <FlatList
-          data={store.favorites}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="star-outline" size={40} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Aucun repas favori</Text>
-              <Text style={styles.emptySubText}>Sauvegarde un repas depuis l'onglet Nutrition avec ⭐</Text>
-            </View>
-          }
-          renderItem={({ item: fav }) => {
-            const totalCal = Math.round(
-              fav.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0)
-            );
-            return (
-              <TouchableOpacity style={styles.favRow} onPress={() => addFavoriteToMeal(fav)}>
-                <View style={styles.favIcon}>
-                  <Ionicons name="star" size={18} color={Colors.yellow} />
-                </View>
-                <View style={styles.foodInfo}>
-                  <Text style={styles.foodName}>{fav.name}</Text>
-                  <Text style={styles.foodMacros}>
-                    {fav.items.length} aliment{fav.items.length > 1 ? 's' : ''} • {totalCal} kcal
-                  </Text>
-                  <Text style={styles.favItems} numberOfLines={1}>
-                    {fav.items.map(i => i.name).join(', ')}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.favDeleteBtn}
-                  onPress={() => handleDeleteFavorite(fav)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="trash-outline" size={15} color={Colors.red} />
-                </TouchableOpacity>
-                <Ionicons name="add-circle-outline" size={22} color={Colors.green} style={{ marginLeft: 4 }} />
-              </TouchableOpacity>
-            );
-          }}
-        />
-      )}
-
-      {/* ── Onglet Courants ──────────────────────────────────────────────── */}
-      {tab === 'common' && (
-        <FlatList
-          data={COMMON_FOODS}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.foodRow} onPress={() => selectItem({
-              id: item.id, name: item.name, quantity: item.defaultPortion,
-              caloriesPer100g: item.caloriesPer100g, proteinPer100g: item.proteinPer100g,
-              carbsPer100g: item.carbsPer100g, fatPer100g: item.fatPer100g,
-            })}>
-              <Text style={styles.foodEmoji}>{item.emoji}</Text>
-              <View style={styles.foodInfo}>
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.foodMacros}>
-                  {item.caloriesPer100g}kcal • P:{item.proteinPer100g}g • G:{item.carbsPer100g}g • L:{item.fatPer100g}g /100g
-                </Text>
-              </View>
-              <Text style={styles.foodDef}>{item.defaultPortion}g</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        />
-      )}
-
-      {/* ── Onglet Recherche ─────────────────────────────────────────────── */}
-      {tab === 'search' && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchRow}>
-            <TextInput
-              style={styles.searchInput}
-              value={searchQ}
-              onChangeText={setSearchQ}
-              placeholder="Poulet, riz, avocat…"
-              placeholderTextColor={Colors.textMuted}
-              returnKeyType="search"
-              onSubmitEditing={handleSearch}
-            />
-            <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={searching}>
-              {searching ? <ActivityIndicator size="small" color={Colors.onPrimary} /> : <Ionicons name="search" size={18} color={Colors.onPrimary} />}
-            </TouchableOpacity>
-          </View>
-
-          {/* Hint contextuel */}
-          {!hasSearched && (
-            <Text style={styles.searchHint}>Aliments courants — tape pour chercher dans la base CIQUAL</Text>
-          )}
-          {hasSearched && resultSource === 'ciqual' && (
-            <Text style={styles.searchHint}>Base CIQUAL 2020 ({searchRes.length} résultats)</Text>
-          )}
-          {hasSearched && resultSource === 'off' && (
-            <Text style={styles.searchHint}>OpenFoodFacts ({searchRes.length} résultats)</Text>
-          )}
-          {hasSearched && resultSource === 'local' && localResults.length > 0 && (
-            <Text style={styles.searchHintFallback}>Aliments courants correspondants</Text>
-          )}
-
-          {/* Indicateur de chargement */}
-          {searching && (
+      {/* ── Vue unifiée : résultats de recherche OU récents/favoris/courants ── */}
+      {tab === 'browse' && (
+        searchQ.trim().length >= 2 ? (
+          /* Résultats : instantanés (local) puis OpenFoodFacts après ↵ */
+          searching ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
               <Text style={styles.loadingText}>Recherche en cours…</Text>
             </View>
-          )}
-
-          {/* Liste : aliments courants si pas encore cherché, résultats OFF, fallback local ou vide */}
-          {!searching && (
+          ) : (
             <FlatList
-              data={
-                !hasSearched
-                  ? COMMON_AS_FOOD_ITEMS
-                  : searchRes.length > 0
-                    ? searchRes
-                    : localResults
+              data={hasSearched ? (searchRes.length > 0 ? searchRes : localResults) : instantResults}
+              keyExtractor={(item, idx) => `${item.id}_${idx}`}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              ListHeaderComponent={
+                hasSearched && resultSource === 'off'
+                  ? <Text style={styles.searchHint}>Résultats OpenFoodFacts</Text>
+                  : !hasSearched && instantResults.length > 0
+                    ? <Text style={styles.searchHint}>Appuie sur ↵ pour chercher aussi en ligne</Text>
+                    : null
               }
-              keyExtractor={item => item.id}
-              contentContainerStyle={{ paddingBottom: 40 }}
               ListEmptyComponent={
-                hasSearched ? (
-                  <View style={styles.emptyState}>
-                    <Ionicons name="search-outline" size={40} color={Colors.textMuted} />
-                    <Text style={styles.emptyText}>Aucun résultat</Text>
-                    <Text style={styles.emptySubText}>Essaie un autre terme ou ajoute l'aliment manuellement</Text>
-                  </View>
-                ) : null
+                <View style={styles.emptyState}>
+                  <Ionicons name="search-outline" size={40} color={Colors.textMuted} />
+                  <Text style={styles.emptyText}>{hasSearched ? 'Aucun résultat' : 'Continue à taper ou appuie sur ↵'}</Text>
+                  <Text style={styles.emptySubText}>Sinon, ajoute l'aliment manuellement (✏️ en haut)</Text>
+                </View>
               }
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
@@ -472,8 +347,83 @@ export default function AddFoodModal() {
                 </TouchableOpacity>
               )}
             />
-          )}
-        </View>
+          )
+        ) : (
+          /* Sans recherche : tout au même endroit — récents, favoris, courants */
+          <SectionList
+            sections={[
+              ...(store.recentFoods.length > 0 ? [{ key: 'recent', title: '🕐 Récents', data: store.recentFoods as unknown[] }] : []),
+              ...(store.favorites.length > 0 ? [{ key: 'fav', title: '⭐ Repas favoris', data: store.favorites as unknown[] }] : []),
+              { key: 'common', title: '🍽 Aliments courants', data: COMMON_FOODS as unknown[] },
+            ]}
+            keyExtractor={(_, idx) => String(idx)}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            stickySectionHeadersEnabled={false}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionTitle}>{(section as { title: string }).title}</Text>
+            )}
+            renderItem={({ item, section }) => {
+              if ((section as { key: string }).key === 'fav') {
+                const fav = item as FavoriteMeal;
+                const totalCal = Math.round(fav.items.reduce((sum, i) => sum + i.caloriesPer100g * i.quantity / 100, 0));
+                return (
+                  <TouchableOpacity style={styles.favRow} onPress={() => addFavoriteToMeal(fav)}>
+                    <View style={styles.favIcon}>
+                      <Ionicons name="star" size={18} color={Colors.yellow} />
+                    </View>
+                    <View style={styles.foodInfo}>
+                      <Text style={styles.foodName}>{fav.name}</Text>
+                      <Text style={styles.foodMacros}>{fav.items.length} aliment{fav.items.length > 1 ? 's' : ''} • {totalCal} kcal</Text>
+                      <Text style={styles.favItems} numberOfLines={1}>{fav.items.map(i => i.name).join(', ')}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.favDeleteBtn}
+                      onPress={() => handleDeleteFavorite(fav)}
+                      accessibilityRole="button" accessibilityLabel="Supprimer ce favori"
+                      hitSlop={tapSlop}
+                    >
+                      <Ionicons name="trash-outline" size={15} color={Colors.red} />
+                    </TouchableOpacity>
+                    <Ionicons name="add-circle-outline" size={22} color={Colors.green} style={{ marginLeft: 4 }} />
+                  </TouchableOpacity>
+                );
+              }
+              if ((section as { key: string }).key === 'recent') {
+                const food = item as FoodItem;
+                return (
+                  <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(food)}>
+                    <View style={[styles.recentDot, { backgroundColor: Colors.primary + '30' }]}>
+                      <Ionicons name="time-outline" size={14} color={Colors.primary} />
+                    </View>
+                    <View style={styles.foodInfo}>
+                      <Text style={styles.foodName}>{food.name}</Text>
+                      <Text style={styles.foodMacros}>{food.caloriesPer100g}kcal • P:{food.proteinPer100g}g • G:{food.carbsPer100g}g /100g</Text>
+                    </View>
+                    <Text style={styles.foodDef}>{food.quantity}g</Text>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                );
+              }
+              const cf = item as typeof COMMON_FOODS[number];
+              return (
+                <TouchableOpacity style={styles.foodRow} onPress={() => selectItem({
+                  id: cf.id, name: cf.name, quantity: cf.defaultPortion,
+                  caloriesPer100g: cf.caloriesPer100g, proteinPer100g: cf.proteinPer100g,
+                  carbsPer100g: cf.carbsPer100g, fatPer100g: cf.fatPer100g,
+                })}>
+                  <Text style={styles.foodEmoji}>{cf.emoji}</Text>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{cf.name}</Text>
+                    <Text style={styles.foodMacros}>{cf.caloriesPer100g}kcal • P:{cf.proteinPer100g}g • G:{cf.carbsPer100g}g • L:{cf.fatPer100g}g /100g</Text>
+                  </View>
+                  <Text style={styles.foodDef}>{cf.defaultPortion}g</Text>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )
       )}
 
       {/* ── Onglet Scan ──────────────────────────────────────────────────── */}
@@ -603,7 +553,10 @@ const styles = StyleSheet.create({
   emptySubText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
   // Recherche
   searchContainer: { flex: 1, padding: Sp.md },
-  searchRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: 6 },
+  searchRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: 6, marginHorizontal: Sp.md },
+  modeBtn: { width: 44, height: 44, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  modeBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  sectionTitle: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Sp.md, marginBottom: 6 },
   searchInput: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
   searchBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, alignItems: 'center', justifyContent: 'center', width: 48 },
   searchHint: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm },
