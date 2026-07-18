@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
-  ActivityIndicator, Alert, Modal, FlatList,
+  ActivityIndicator, Alert, Modal, FlatList, Animated,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
@@ -386,7 +386,7 @@ export default function CoachScreen() {
               <Ionicons name="warning-outline" size={16} color={Colors.orange} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 18 }}>{alert.message}</Text>
-                <TouchableOpacity onPress={() => sendMessage(alert.message.replace('⚠️ ', '') + ' Que faire ?')} style={{ marginTop: 4 }}>
+                <TouchableOpacity onPress={() => sendMessage(alert.message.replace('⚠️ ', '') + ' Que faire ?')} style={{ marginTop: 4 }} accessibilityRole="button" accessibilityLabel="Demander conseil au coach sur cette alerte" hitSlop={tapSlop}>
                   <Text style={{ fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold }}>Demander au coach →</Text>
                 </TouchableOpacity>
               </View>
@@ -420,19 +420,19 @@ export default function CoachScreen() {
               onPress={() => sendMessage(WEEKLY_ANALYSIS_PROMPT)}
               style={{ marginBottom: 8 }}
             />
-            <TouchableOpacity style={styles.mealPlanBtn} onPress={handleGenerateMealPlan} disabled={generatingMealPlan}>
+            <TouchableOpacity style={styles.mealPlanBtn} onPress={handleGenerateMealPlan} disabled={generatingMealPlan} accessibilityRole="button" accessibilityLabel="Générer mon plan repas de la semaine" accessibilityState={{ disabled: generatingMealPlan, busy: generatingMealPlan }}>
               {generatingMealPlan
                 ? <ActivityIndicator size="small" color={Colors.green} />
                 : <Ionicons name="calendar-outline" size={16} color={Colors.green} />}
               <Text style={styles.mealPlanBtnText}>📅 Générer mon plan repas semaine</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.nutritionAnalysisBtn} onPress={handleAnalyzeNutrition} disabled={analyzingNutrition}>
+            <TouchableOpacity style={styles.nutritionAnalysisBtn} onPress={handleAnalyzeNutrition} disabled={analyzingNutrition} accessibilityRole="button" accessibilityLabel="Analyser mes carences nutritionnelles" accessibilityState={{ disabled: analyzingNutrition, busy: analyzingNutrition }}>
               {analyzingNutrition ? <ActivityIndicator size="small" color={Colors.yellow} /> : <Ionicons name="flask-outline" size={16} color={Colors.yellow} />}
               <Text style={styles.nutritionAnalysisBtnText}>🔬 Analyser ma nutrition</Text>
             </TouchableOpacity>
             <View style={styles.quickBtns}>
               {contextualQuestions.map(q => (
-                <TouchableOpacity key={q} style={styles.quickBtn} onPress={() => sendMessage(q)}>
+                <TouchableOpacity key={q} style={styles.quickBtn} onPress={() => sendMessage(q)} accessibilityRole="button" accessibilityLabel={q}>
                   <Text style={styles.quickBtnText}>{q}</Text>
                 </TouchableOpacity>
               ))}
@@ -447,7 +447,7 @@ export default function CoachScreen() {
             {msg.role === 'assistant' && looksLikePlan(msg.content) && (
               <View style={styles.msgActions}>
                 {/* Sauvegarder ce plan */}
-                <TouchableOpacity style={styles.savePlanBtn} onPress={() => handleSavePlan(msg.content)}>
+                <TouchableOpacity style={styles.savePlanBtn} onPress={() => handleSavePlan(msg.content)} accessibilityRole="button" accessibilityLabel="Sauvegarder ce plan dans Progrès">
                   <Ionicons name="save-outline" size={13} color={Colors.primary} />
                   <Text style={styles.savePlanBtnText}>💾 Sauvegarder ce plan</Text>
                 </TouchableOpacity>
@@ -457,6 +457,9 @@ export default function CoachScreen() {
                     style={styles.applyPlanBtn}
                     onPress={() => handleApplyMealPlan(msg.id, msg.content)}
                     disabled={applyingPlan === msg.id}
+                    accessibilityRole="button"
+                    accessibilityLabel="Appliquer ce plan repas à cette semaine"
+                    accessibilityState={{ disabled: applyingPlan === msg.id, busy: applyingPlan === msg.id }}
                   >
                     {applyingPlan === msg.id
                       ? <ActivityIndicator size="small" color={Colors.green} />
@@ -470,8 +473,8 @@ export default function CoachScreen() {
         ))}
 
         {(loading || generatingMealPlan) && (
-          <View style={styles.typing}>
-            <ActivityIndicator size="small" color={Colors.primary} />
+          <View style={styles.typing} accessibilityLiveRegion="polite" accessibilityLabel="Le coach rédige une réponse">
+            <TypingDots />
             <Text style={styles.typingText}>{generatingMealPlan ? 'Génération du plan repas…' : 'FitCoach rédige…'}</Text>
           </View>
         )}
@@ -509,6 +512,39 @@ export default function CoachScreen() {
     </Modal>
 
     </AnimatedScreen>
+  );
+}
+
+// ─── Indicateur de frappe (3 points qui pulsent en or) ────────────────────────
+
+function TypingDots() {
+  const d1 = useRef(new Animated.Value(0.3)).current;
+  const d2 = useRef(new Animated.Value(0.3)).current;
+  const d3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = (v: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(v, { toValue: 1,   duration: 320, useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0.3, duration: 320, useNativeDriver: true }),
+        ]),
+      );
+    const anims = [pulse(d1, 0), pulse(d2, 160), pulse(d3, 320)];
+    anims.forEach(a => a.start());
+    return () => anims.forEach(a => a.stop());
+  }, [d1, d2, d3]);
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+      {[d1, d2, d3].map((v, i) => (
+        <Animated.View
+          key={i}
+          style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary, opacity: v, transform: [{ scale: v }] }}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -618,8 +654,6 @@ const styles = StyleSheet.create({
   welcomeText:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md, marginBottom: Sp.lg },
   demoWarning:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '15', borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: Sp.xs, marginBottom: Sp.md },
   demoText:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, flex: 1 },
-  weeklyBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8 },
-  weeklyBtnText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: '#fff' },
   mealPlanBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8, borderWidth: 1, borderColor: Colors.green + '40' },
   mealPlanBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.green },
   nutritionAnalysisBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.yellow + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 12, borderWidth: 1, borderColor: Colors.yellow + '40' },
