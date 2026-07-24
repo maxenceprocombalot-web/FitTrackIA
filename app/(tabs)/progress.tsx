@@ -12,6 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { WeightEntry, SavedPlan, BodyMeasurement, WeeklyChallenge } from '../../types';
 import Card from '../../components/ui/Card';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { shareFooter } from '../../constants/app';
 import Button from '../../components/ui/Button';
 import WeightField from '../../components/ui/WeightField';
 import * as ImagePicker from 'expo-image-picker';
@@ -1010,7 +1011,7 @@ export default function ProgressScreen() {
                   </View>
                   <TouchableOpacity
                     style={{ margin: 20, backgroundColor: Colors.primary, borderRadius: R, padding: 14, alignItems: 'center' }}
-                    onPress={() => Share.share({ message: `Ma transformation FitTrack IA : de ${p1.date} à ${p2.date} 💪` })}
+                    onPress={() => Share.share({ message: `Ma transformation : de ${p1.date} à ${p2.date} 💪` + shareFooter() })}
                   >
                     <Text style={{ color: '#fff', fontFamily: Fonts.bold }}>Partager</Text>
                   </TouchableOpacity>

@@ -215,6 +215,26 @@ export default function OnboardingModal() {
                 </Animated.Text>
                 <Text style={styles.welcomeTitle}>{'Bienvenue sur\nFitTrack IA'}</Text>
                 <Text style={styles.welcomeTagline}>{'Ton coach IA. Tes données.\nTa transformation.'}</Text>
+
+                {/* Vitrine de valeur : on montre ce qu'on apporte avant de demander */}
+                <View style={styles.welcomeFeatures}>
+                  {[
+                    { icon: 'sparkles' as const,        title: 'Coach IA personnalisé',   sub: 'Analyse sport + nutrition, conseils sur-mesure' },
+                    { icon: 'barbell' as const,         title: 'Séances & records',        sub: 'Surcharge progressive, PRs, 100+ exercices' },
+                    { icon: 'restaurant' as const,      title: 'Nutrition sans effort',    sub: 'Scan code-barres, macros, plans de repas' },
+                    { icon: 'trending-up' as const,     title: 'Progrès visibles',         sub: 'Poids, mensurations, photos, badges' },
+                  ].map(f => (
+                    <View key={f.title} style={styles.welcomeFeatureRow}>
+                      <View style={styles.welcomeFeatureIcon}>
+                        <Ionicons name={f.icon} size={18} color={Colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.welcomeFeatureTitle}>{f.title}</Text>
+                        <Text style={styles.welcomeFeatureSub}>{f.sub}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
               </View>
               <View style={styles.welcomeActions}>
                 <Button
@@ -501,6 +521,11 @@ const styles = StyleSheet.create({
   welcomeEmoji: { fontSize: 80, fontFamily: Fonts.regular },
   welcomeTitle: { fontSize: 36, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', lineHeight: 44 },
   welcomeTagline: { fontSize: 16, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
+  welcomeFeatures: { alignSelf: 'stretch', gap: Sp.sm, marginTop: Sp.md },
+  welcomeFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.md, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
+  welcomeFeatureIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: Colors.primary + '18', alignItems: 'center', justifyContent: 'center' },
+  welcomeFeatureTitle: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
+  welcomeFeatureSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
   welcomeActions: { gap: Sp.md, alignItems: 'center', paddingBottom: Sp.lg },
   startBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 16, paddingHorizontal: 48, alignSelf: 'center' },
   startBtnText: { color: Colors.onPrimary, fontSize: Fs.lg, fontFamily: Fonts.bold },

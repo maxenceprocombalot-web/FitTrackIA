@@ -19,6 +19,8 @@ import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
+import { registerPositiveEvent } from '../../services/review';
+import { shareFooter } from '../../constants/app';
 import Button from '../../components/ui/Button';
 
 // ─── Type résumé de séance ────────────────────────────────────────────────────
@@ -271,6 +273,10 @@ export default function AddWorkoutModal() {
     }
 
     await store.addWorkout(workout);
+
+    // Moment positif → éventuelle demande d'avis in-app (gérée en interne :
+    // seulement au 3e, une seule fois, jamais intrusive).
+    registerPositiveEvent();
 
     // Affiche le résumé de fin de séance au lieu de router.back() direct
     setSummary({
@@ -629,8 +635,7 @@ function WorkoutSummaryModal({ summary, onClose }: { summary: SessionSummary; on
       summary.prs.length > 0
         ? summary.prs.map(pr => `🏆 PR ${pr.name} : ${pr.weight}kg × ${pr.reps}`).join('\n')
         : '',
-      '— FitTrackIA',
-    ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n') + shareFooter();
     Share.share({ message: lines });
   };
 

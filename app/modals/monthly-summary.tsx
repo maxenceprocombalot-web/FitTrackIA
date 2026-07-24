@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { shareFooter } from '../../constants/app';
 import Button from '../../components/ui/Button';
 
 export default function MonthlySummaryModal() {
@@ -36,7 +37,7 @@ export default function MonthlySummaryModal() {
       '',
       summary.coachMessage,
     ].filter(Boolean);
-    await Share.share({ message: lines.join('\n') });
+    await Share.share({ message: lines.join('\n') + shareFooter() });
   };
 
   if (!summary) {

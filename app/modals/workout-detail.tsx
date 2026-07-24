@@ -10,6 +10,7 @@ import ViewShot from 'react-native-view-shot';
 import { useAppStore } from '../../store/useAppStore';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
+import { shareFooter } from '../../constants/app';
 
 const TYPE_LABELS: Record<string, string> = {
   strength: 'Musculation',
@@ -86,10 +87,10 @@ export default function WorkoutDetailScreen() {
       const uri = await viewShotRef.current?.capture?.();
       if (!uri) {
         const text = `🏋️ ${workout.name} — ${workout.date}\n⏱ ${workout.duration} min | 🔥 ${workout.caloriesBurned} kcal | 💪 ${Math.round(totalVolume)} kg\n${workout.exercises.map(e => `• ${e.name}: ${e.sets.length} séries`).join('\n')}\n\nPartagé depuis FitTrack IA 💪`;
-        await Share.share({ message: text });
+        await Share.share({ message: text + shareFooter() });
         return;
       }
-      await Share.share({ url: uri, message: `Ma séance ${workout.name} 💪 via FitTrack IA` });
+      await Share.share({ url: uri, message: `Ma séance ${workout.name} 💪` + shareFooter() });
     } catch { /* ignore */ }
   };
 
