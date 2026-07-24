@@ -12,6 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, Recipe, FastingConfig } from '../../types';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
+import { usePremiumGate } from '../../hooks/usePremiumGate';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
@@ -54,6 +55,7 @@ function fmtDate(dateStr: string, todayStr: string): string {
 export default function NutritionScreen() {
   const router = useRouter();
   const store  = useAppStore();
+  const { requirePremium } = usePremiumGate();
   const user   = store.user;
 
   const TODAY = storage.today();
@@ -282,11 +284,11 @@ export default function NutritionScreen() {
           <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
           <Text style={styles.recipesBtnText}>Recettes</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRestaurant(true)}>
+        <TouchableOpacity style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowRestaurant(true); }}>
           <Ionicons name="fast-food-outline" size={16} color={Colors.orange} />
           <Text style={[styles.recipesBtnText, { color: Colors.orange }]}>Restaurant</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowMealPrep(true)}>
+        <TouchableOpacity style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowMealPrep(true); }}>
           <Ionicons name="clipboard-outline" size={16} color={Colors.green} />
           <Text style={[styles.recipesBtnText, { color: Colors.green }]}>Meal Prep</Text>
         </TouchableOpacity>

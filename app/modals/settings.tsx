@@ -227,6 +227,26 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
+        {/* ── PREMIUM ─────────────────────────────────────────────────── */}
+        {store.isPremium ? (
+          <View style={styles.premiumActive}>
+            <Text style={{ fontSize: 22 }}>👑</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.premiumActiveTitle}>FitTrack Premium actif</Text>
+              <Text style={styles.premiumActiveSub}>Merci de ton soutien ! Toutes les fonctions IA sont débloquées.</Text>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.premiumCard} onPress={() => router.push('/modals/paywall')} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel="Passer à FitTrack Premium">
+            <Text style={{ fontSize: 26 }}>👑</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.premiumCardTitle}>Passer à FitTrack Premium</Text>
+              <Text style={styles.premiumCardSub}>Coach IA illimité, plans de repas & programmes IA</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.onPrimary} />
+          </TouchableOpacity>
+        )}
+
         {/* ── PROFIL ──────────────────────────────────────────────────── */}
         <SectionHeader title="PROFIL" />
         <View style={styles.card}>
@@ -613,6 +633,12 @@ const styles = StyleSheet.create({
   // Coach IA
   demoBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '18', borderRadius: R, margin: Sp.md, marginBottom: 0, padding: Sp.sm },
   demoBannerText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 17 },
+  premiumCard: { flexDirection: 'row', alignItems: 'center', gap: Sp.md, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, marginHorizontal: Sp.md, marginBottom: Sp.md },
+  premiumCardTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
+  premiumCardSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.onPrimary, opacity: 0.85, marginTop: 1 },
+  premiumActive: { flexDirection: 'row', alignItems: 'center', gap: Sp.md, backgroundColor: Colors.primary + '14', borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, padding: Sp.md, marginHorizontal: Sp.md, marginBottom: Sp.md },
+  premiumActiveTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary },
+  premiumActiveSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
   advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: Sp.md, marginBottom: Sp.sm, paddingVertical: 10, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated },
   advancedToggleText: { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.textSecondary },
   apiKeyRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: Sp.md, marginBottom: Sp.sm, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border },

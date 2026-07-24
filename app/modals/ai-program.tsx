@@ -10,6 +10,7 @@ import { generateCustomProgram } from '../../services/openai';
 import { SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
+import { usePremiumGate } from '../../hooks/usePremiumGate';
 import * as storage from '../../services/storage';
 
 type Level     = 'Débutant' | 'Intermédiaire' | 'Avancé';
@@ -24,6 +25,7 @@ const EQUIP_OPTIONS: Equipment[]   = ['Salle complète', 'Haltères seulement', 
 export default function AIProgramModal() {
   const router = useRouter();
   const store  = useAppStore();
+  const { requirePremium } = usePremiumGate();
 
   const [days,      setDays]      = useState<number>(4);
   const [level,     setLevel]     = useState<Level>('Intermédiaire');
@@ -35,6 +37,7 @@ export default function AIProgramModal() {
 
   const handleGenerate = async () => {
     if (!store.user) return;
+    if (!requirePremium()) return;   // fonction IA → premium
     setLoading(true);
     try {
       const text = await generateCustomProgram({

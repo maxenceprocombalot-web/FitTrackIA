@@ -7,6 +7,7 @@ import {
 } from '../types';
 import * as S from '../services/storage';
 import { sumMeals } from '../services/metrics';
+import { initPurchases, checkPremium } from '../services/purchases';
 import { PREDEFINED_PLANS } from '../constants/predefined-plans';
 
 // ─── État global ──────────────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ interface AppState {
   monthlySummaries: MonthlySummary[];
   loading: boolean;
   tutorialDone: boolean;
+  isPremium: boolean;      // abonnement FitTrack Premium actif
 }
 
 let _state: AppState = {
@@ -36,7 +38,7 @@ let _state: AppState = {
   streak: { current: 0, best: 0, lastWorkoutDate: '' },
   savedPlans: PREDEFINED_PLANS, recentFoods: [],
   monthlySummaries: [], loading: true,
-  tutorialDone: false,
+  tutorialDone: false, isPremium: false,
 };
 
 const _listeners = new Set<() => void>();
@@ -95,6 +97,10 @@ export function useAppStore() {
       S.loadTutorialDone(),
     ]);
 
+    // Abonnement : init RevenueCat (no-op si non configuré) + statut premium
+    await initPurchases();
+    const isPremium = await checkPremium();
+
     // Hydratation : reset si nouveau jour
     const waterToday = await S.loadWaterEntry(S.today());
 
@@ -113,8 +119,13 @@ export function useAppStore() {
       user, workouts, meals, weights, chat, prs, activeProgram,
       favorites, water: waterToday, streak, savedPlans: allPlans,
       recentFoods, monthlySummaries, loading: false,
-      tutorialDone,
+      tutorialDone, isPremium,
     });
+  }, []);
+
+  // Rafraîchit le statut premium (après achat / restauration / override dev)
+  const refreshPremium = useCallback(async () => {
+    setState({ isPremium: await checkPremium() });
   }, []);
 
   useEffect(() => { if (_state.loading) refresh(); }, [refresh]);
@@ -360,6 +371,7 @@ export function useAppStore() {
     deleteAllData,
     resetOnboarding,
     markTutorialDone,
+    refreshPremium,
     getTodayMacros, getTodayBurned, getRecentWorkouts, getRecentMeals,
   };
 }

@@ -117,6 +117,10 @@ export default function RootLayout() {
           name="modals/plate-calculator"
           options={{ headerShown: false, presentation: 'modal' }}
         />
+        <Stack.Screen
+          name="modals/paywall"
+          options={{ headerShown: false, presentation: 'modal' }}
+        />
       </Stack>
     </>
   );

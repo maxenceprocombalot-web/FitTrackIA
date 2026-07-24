@@ -11,6 +11,8 @@ import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCo
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
+import { usePremiumGate } from '../../hooks/usePremiumGate';
+import { FREE_COACH_MESSAGES_PER_DAY } from '../../constants/premium';
 import * as storage from '../../services/storage';
 import { StoredConversation, loadConversations, saveConversation } from '../../services/storage';
 import { today, yesterday, daysAgo, localISO } from '../../services/date';
@@ -122,6 +124,7 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
 
 export default function CoachScreen() {
   const store     = useAppStore();
+  const { requirePremium } = usePremiumGate();
   const scrollRef = useRef<ScrollView>(null);
   const [input,              setInput]             = useState('');
   const [loading,            setLoading]           = useState(false);
@@ -217,6 +220,13 @@ export default function CoachScreen() {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || !store.user) return;
+    // Chat gratuit plafonné par jour ; illimité en premium.
+    if (!store.isPremium) {
+      const key = `@fit_coach_count_${today()}`;
+      const used = parseInt((await AsyncStorage.getItem(key)) ?? '0', 10);
+      if (used >= FREE_COACH_MESSAGES_PER_DAY) { requirePremium(); return; }
+      await AsyncStorage.setItem(key, String(used + 1));
+    }
     const userMsg: ChatMessage = {
       id: Date.now().toString(), role: 'user', content: text.trim(), timestamp: new Date().toISOString(),
     };
@@ -239,6 +249,7 @@ export default function CoachScreen() {
 
   const handleGenerateMealPlan = useCallback(async () => {
     if (!store.user) return;
+    if (!requirePremium()) return;   // plan de repas IA → premium
     setGeneratingMealPlan(true);
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: '📅 Génère mon plan repas pour la semaine', timestamp: new Date().toISOString() };
     await store.addChatMessage(userMsg);
@@ -342,6 +353,7 @@ export default function CoachScreen() {
   // ── Analyse carences nutritionnelles ──────────────────────────────────────
   const handleAnalyzeNutrition = useCallback(async () => {
     if (!store.user) return;
+    if (!requirePremium()) return;   // analyse IA → premium
     setAnalyzingNutrition(true);
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: '🔬 Analyse mes carences nutritionnelles des 7 derniers jours', timestamp: new Date().toISOString() };
     await store.addChatMessage(userMsg);
