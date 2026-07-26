@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { encryptString, decryptString, isEncrypted } from './crypto';
+import { encryptString, decryptString, isEncrypted, hasDataKey, deleteDataKey } from './crypto';
 import { Platform } from 'react-native';
 import {
   User, WorkoutSession, Meal, WeightEntry,
@@ -35,20 +35,70 @@ const K = {
 // La lecture accepte aussi l'ancien format en clair et le migre à la volée :
 // aucune donnée existante n'est perdue lors de la mise à jour.
 
+// ⚠️ COUPE-CIRCUIT ANTI-ÉCRASEMENT
+// Si des données chiffrées existent mais sont illisibles (clé absente après une
+// restauration iCloud, Keychain verrouillé, panne transitoire), une lecture
+// renverrait « vide » — et la première écriture écraserait définitivement tout
+// l'historique. On bloque donc TOUTE écriture tant que ce cas n'est pas résolu.
+let _dataUnreadable = false;
+
+export const isDataUnreadable = (): boolean => _dataUnreadable;
+
+function markUnreadable() {
+  if (!_dataUnreadable) _dataUnreadable = true;
+}
+
+export class StorageLockedError extends Error {
+  constructor() {
+    super('Données illisibles : écriture bloquée pour éviter toute perte.');
+    this.name = 'StorageLockedError';
+  }
+}
+
 export async function setSecure(key: string, value: string): Promise<void> {
+  if (_dataUnreadable) throw new StorageLockedError();
   await AsyncStorage.setItem(key, await encryptString(value));
 }
 
 export async function getSecure(key: string): Promise<string | null> {
   const raw = await AsyncStorage.getItem(key);
-  if (raw === null) return null;
+  if (raw === null) return null;                    // vraiment aucune donnée
 
   if (!isEncrypted(raw)) {
-    // Donnée héritée en clair → on la rechiffre immédiatement (migration)
-    await AsyncStorage.setItem(key, await encryptString(raw));
+    // Donnée héritée en clair → on la rechiffre (migration), sans bloquer la lecture
+    if (!_dataUnreadable) {
+      try { await AsyncStorage.setItem(key, await encryptString(raw)); } catch { /* non bloquant */ }
+    }
     return raw;
   }
-  return decryptString(raw);
+
+  // Donnée chiffrée : la clé doit exister. On ne la recrée JAMAIS ici — générer
+  // une clé neuve rendrait l'ancien contenu définitivement indéchiffrable.
+  if (!(await hasDataKey())) { markUnreadable(); return null; }
+
+  const plain = await decryptString(raw);
+  if (plain === null) { markUnreadable(); return null; }
+  return plain;
+}
+
+// ─── File d'écriture séquentielle (une par clé) ───────────────────────────────
+// Les mises à jour sont des lire-modifier-écrire ; sans sérialisation, deux
+// appels concurrents (ex. deux repas ajoutés coup sur coup) peuvent s'écraser.
+const _queues = new Map<string, Promise<unknown>>();
+
+function enqueue<T>(key: string, task: () => Promise<T>): Promise<T> {
+  const prev = _queues.get(key) ?? Promise.resolve();
+  const next = prev.then(task, task);              // s'exécute même après un échec
+  _queues.set(key, next.catch(() => undefined));
+  return next;
+}
+
+/** Lire-modifier-écrire atomique sur une clé (protégé par la file). */
+async function mutate<T>(key: string, updater: (current: T[]) => T[]): Promise<void> {
+  return enqueue(key, async () => {
+    const current = (await load<T[]>(key)) ?? [];
+    await save(key, updater(current));
+  });
 }
 
 async function save<T>(key: string, data: T): Promise<void> {
@@ -77,15 +127,15 @@ export async function loadWorkouts(): Promise<WorkoutSession[]> {
 }
 
 export async function saveWorkout(w: WorkoutSession): Promise<void> {
-  const list = await loadWorkouts();
-  const idx  = list.findIndex(x => x.id === w.id);
-  if (idx >= 0) list[idx] = w; else list.unshift(w);
-  await save(K.WORKOUTS, list);
+  await mutate<WorkoutSession>(K.WORKOUTS, list => {
+    const idx = list.findIndex(x => x.id === w.id);
+    if (idx >= 0) list[idx] = w; else list.unshift(w);
+    return list;
+  });
 }
 
 export async function deleteWorkout(id: string): Promise<void> {
-  const list = await loadWorkouts();
-  await save(K.WORKOUTS, list.filter(w => w.id !== id));
+  await mutate<WorkoutSession>(K.WORKOUTS, list => list.filter(w => w.id !== id));
 }
 
 // ─── Repas ────────────────────────────────────────────────────────────────────
@@ -95,15 +145,15 @@ export async function loadMeals(): Promise<Meal[]> {
 }
 
 export async function saveMeal(m: Meal): Promise<void> {
-  const list = await loadMeals();
-  const idx  = list.findIndex(x => x.id === m.id);
-  if (idx >= 0) list[idx] = m; else list.unshift(m);
-  await save(K.MEALS, list);
+  await mutate<Meal>(K.MEALS, list => {
+    const idx = list.findIndex(x => x.id === m.id);
+    if (idx >= 0) list[idx] = m; else list.unshift(m);
+    return list;
+  });
 }
 
 export async function deleteMeal(id: string): Promise<void> {
-  const list = await loadMeals();
-  await save(K.MEALS, list.filter(m => m.id !== id));
+  await mutate<Meal>(K.MEALS, list => list.filter(m => m.id !== id));
 }
 
 // ─── Poids ────────────────────────────────────────────────────────────────────
@@ -113,11 +163,11 @@ export async function loadWeights(): Promise<WeightEntry[]> {
 }
 
 export async function saveWeight(e: WeightEntry): Promise<void> {
-  const list = await loadWeights();
-  const idx  = list.findIndex(x => x.date === e.date);
-  if (idx >= 0) list[idx] = e; else list.push(e);
-  list.sort((a, b) => a.date.localeCompare(b.date));
-  await save(K.WEIGHTS, list);
+  await mutate<WeightEntry>(K.WEIGHTS, list => {
+    const idx = list.findIndex(x => x.date === e.date);
+    if (idx >= 0) list[idx] = e; else list.push(e);
+    return list.sort((a, b) => a.date.localeCompare(b.date));
+  });
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -137,10 +187,11 @@ export async function loadPRs(): Promise<PersonalRecord[]> {
 }
 
 export async function savePR(pr: PersonalRecord): Promise<void> {
-  const list = await loadPRs();
-  const idx  = list.findIndex(x => x.exerciseId === pr.exerciseId);
-  if (idx >= 0) list[idx] = pr; else list.push(pr);
-  await save(K.PRS, list);
+  await mutate<PersonalRecord>(K.PRS, list => {
+    const idx = list.findIndex(x => x.exerciseId === pr.exerciseId);
+    if (idx >= 0) list[idx] = pr; else list.push(pr);
+    return list;
+  });
 }
 
 // ─── Programme actif ──────────────────────────────────────────────────────────
@@ -156,15 +207,15 @@ export async function loadFavorites(): Promise<FavoriteMeal[]> {
 }
 
 export async function saveFavorite(f: FavoriteMeal): Promise<void> {
-  const list = await loadFavorites();
-  const idx  = list.findIndex(x => x.id === f.id);
-  if (idx >= 0) list[idx] = f; else list.unshift(f);
-  await save(K.FAVORITES, list);
+  await mutate<FavoriteMeal>(K.FAVORITES, list => {
+    const idx = list.findIndex(x => x.id === f.id);
+    if (idx >= 0) list[idx] = f; else list.unshift(f);
+    return list;
+  });
 }
 
 export async function deleteFavorite(id: string): Promise<void> {
-  const list = await loadFavorites();
-  await save(K.FAVORITES, list.filter(f => f.id !== id));
+  await mutate<FavoriteMeal>(K.FAVORITES, list => list.filter(f => f.id !== id));
 }
 
 // ─── Hydratation ──────────────────────────────────────────────────────────────
@@ -175,12 +226,12 @@ export async function loadWaterEntry(date: string): Promise<WaterEntry> {
 }
 
 export async function saveWaterEntry(e: WaterEntry): Promise<void> {
-  const all = (await load<WaterEntry[]>(K.WATER)) ?? [];
-  // Ne garder que les 30 derniers jours
-  const idx = all.findIndex(x => x.date === e.date);
-  if (idx >= 0) all[idx] = e; else all.push(e);
-  all.sort((a, b) => a.date.localeCompare(b.date));
-  await save(K.WATER, all.slice(-30));
+  await mutate<WaterEntry>(K.WATER, all => {
+    const idx = all.findIndex(x => x.date === e.date);
+    if (idx >= 0) all[idx] = e; else all.push(e);
+    all.sort((a, b) => a.date.localeCompare(b.date));
+    return all.slice(-30);   // ne garder que les 30 derniers jours
+  });
 }
 
 // ─── Streak ───────────────────────────────────────────────────────────────────
@@ -198,15 +249,15 @@ export async function loadSavedPlans(): Promise<SavedPlan[]> {
 }
 
 export async function savePlan(p: SavedPlan): Promise<void> {
-  const list = await loadSavedPlans();
-  const idx  = list.findIndex(x => x.id === p.id);
-  if (idx >= 0) list[idx] = p; else list.unshift(p);
-  await save(K.SAVED_PLANS, list);
+  await mutate<SavedPlan>(K.SAVED_PLANS, list => {
+    const idx = list.findIndex(x => x.id === p.id);
+    if (idx >= 0) list[idx] = p; else list.unshift(p);
+    return list;
+  });
 }
 
 export async function deletePlan(id: string): Promise<void> {
-  const list = await loadSavedPlans();
-  await save(K.SAVED_PLANS, list.filter(p => p.id !== id || p.isPredefined));
+  await mutate<SavedPlan>(K.SAVED_PLANS, list => list.filter(p => p.id !== id || p.isPredefined));
 }
 
 // ─── Aliments récents (10 derniers) ───────────────────────────────────────────
@@ -228,10 +279,11 @@ export async function loadMonthlySummaries(): Promise<MonthlySummary[]> {
 }
 
 export async function saveMonthlySummary(s: MonthlySummary): Promise<void> {
-  const list = await loadMonthlySummaries();
-  const idx  = list.findIndex(x => x.month === s.month);
-  if (idx >= 0) list[idx] = s; else list.unshift(s);
-  await save(K.MONTHLY, list.slice(0, 24));
+  await mutate<MonthlySummary>(K.MONTHLY, list => {
+    const idx = list.findIndex(x => x.month === s.month);
+    if (idx >= 0) list[idx] = s; else list.unshift(s);
+    return list.slice(0, 24);
+  });
 }
 
 // ─── Clé API OpenAI (stockage CHIFFRÉ) ────────────────────────────────────────
@@ -288,7 +340,24 @@ export const saveNotifPrefs = (p: NotifPrefs) =>
 // ─── Suppression de toutes les données (RGPD) ─────────────────────────────────
 
 export async function deleteAllData(): Promise<void> {
-  await AsyncStorage.multiRemove(Object.values(K));
+  // Efface TOUTES les clés de l'app (y compris recettes, photos, conversations,
+  // mensurations, défis hebdo, jeûne…) et pas seulement la liste K, puis la clé
+  // de chiffrement elle-même. Sans ça, des données personnelles survivaient à la
+  // « suppression de toutes mes données » (RGPD).
+  const all = await AsyncStorage.getAllKeys();
+  const mine = all.filter(k => k.startsWith('@fit_'));
+  if (mine.length) await AsyncStorage.multiRemove(mine);
+  await deleteDataKey();
+  _dataUnreadable = false;   // repartir d'un état sain
+}
+
+/**
+ * Récupération quand les données sont devenues illisibles (clé perdue après une
+ * restauration sur un autre iPhone). Efface le contenu chiffré irrécupérable et
+ * réarme l'app. À n'appeler qu'après confirmation explicite de l'utilisateur.
+ */
+export async function resetUnreadableData(): Promise<void> {
+  await deleteAllData();
 }
 
 // ─── Réinitialisation onboarding (dev uniquement) ─────────────────────────────
@@ -325,14 +394,14 @@ export async function loadRecipes(): Promise<import('../types').Recipe[]> {
   return (await load<import('../types').Recipe[]>('@fit_recipes')) ?? [];
 }
 export async function saveRecipe(r: import('../types').Recipe): Promise<void> {
-  const list = await loadRecipes();
-  const idx  = list.findIndex(x => x.id === r.id);
-  if (idx >= 0) list[idx] = r; else list.push(r);
-  await setSecure('@fit_recipes', JSON.stringify(list));
+  await mutate<import('../types').Recipe>('@fit_recipes', list => {
+    const idx = list.findIndex(x => x.id === r.id);
+    if (idx >= 0) list[idx] = r; else list.push(r);
+    return list;
+  });
 }
 export async function deleteRecipe(id: string): Promise<void> {
-  const list = await loadRecipes();
-  await setSecure('@fit_recipes', JSON.stringify(list.filter(r => r.id !== id)));
+  await mutate<import('../types').Recipe>('@fit_recipes', list => list.filter(r => r.id !== id));
 }
 
 // ─── Photos de progression ────────────────────────────────────────────────────
@@ -342,12 +411,10 @@ export async function loadProgressPhotos(): Promise<{ id: string; uri: string; d
   return raw ? JSON.parse(raw) : [];
 }
 export async function saveProgressPhoto(photo: { id: string; uri: string; date: string }): Promise<void> {
-  const list = await loadProgressPhotos();
-  await setSecure('@fit_progress_photos', JSON.stringify([...list, photo]));
+  await mutate<{ id: string; uri: string; date: string }>('@fit_progress_photos', list => [...list, photo]);
 }
 export async function deleteProgressPhoto(id: string): Promise<void> {
-  const list = await loadProgressPhotos();
-  await setSecure('@fit_progress_photos', JSON.stringify(list.filter(p => p.id !== id)));
+  await mutate<{ id: string; uri: string; date: string }>('@fit_progress_photos', list => list.filter(p => p.id !== id));
 }
 
 // ─── Historique conversations Coach IA ────────────────────────────────────────
@@ -363,9 +430,8 @@ export async function loadConversations(): Promise<StoredConversation[]> {
   return raw ? JSON.parse(raw) : [];
 }
 export async function saveConversation(conv: StoredConversation): Promise<void> {
-  const list = await loadConversations();
-  const trimmed = [conv, ...list.filter(c => c.id !== conv.id)].slice(0, 30);
-  await setSecure('@fit_conversations', JSON.stringify(trimmed));
+  await mutate<StoredConversation>('@fit_conversations',
+    list => [conv, ...list.filter(c => c.id !== conv.id)].slice(0, 30));
 }
 
 // ─── Mensurations ─────────────────────────────────────────────────────────────
@@ -374,11 +440,11 @@ export async function loadMeasurements(): Promise<import('../types').BodyMeasure
   return (await load<import('../types').BodyMeasurement[]>('@fit_measurements')) ?? [];
 }
 export async function saveMeasurement(m: import('../types').BodyMeasurement): Promise<void> {
-  const list = await loadMeasurements();
-  const idx  = list.findIndex(x => x.date === m.date);
-  if (idx >= 0) list[idx] = m; else list.push(m);
-  list.sort((a, b) => a.date.localeCompare(b.date));
-  await setSecure('@fit_measurements', JSON.stringify(list));
+  await mutate<import('../types').BodyMeasurement>('@fit_measurements', list => {
+    const idx = list.findIndex(x => x.date === m.date);
+    if (idx >= 0) list[idx] = m; else list.push(m);
+    return list.sort((a, b) => a.date.localeCompare(b.date));
+  });
 }
 
 // ─── Défis hebdomadaires ──────────────────────────────────────────────────────

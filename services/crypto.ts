@@ -88,3 +88,25 @@ export async function decryptString(payload: string): Promise<string | null> {
 }
 
 export const isEncrypted = (raw: string): boolean => raw.startsWith(ENC_PREFIX);
+
+/**
+ * La clé existe-t-elle ? (consultation seule — n'en crée JAMAIS).
+ * Sert à détecter le cas dangereux « données chiffrées présentes mais clé
+ * disparue » (ex. restauration iCloud sur un nouvel iPhone) sans écraser quoi
+ * que ce soit ni rendre les données définitivement illisibles.
+ */
+export async function hasDataKey(): Promise<boolean> {
+  if (_cachedKey) return true;
+  if (Platform.OS === 'web') return false;
+  try {
+    return (await SecureStore.getItemAsync(KEY_ID)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Supprime la clé (réinitialisation complète — rend les données illisibles). */
+export async function deleteDataKey(): Promise<void> {
+  _cachedKey = null;
+  try { await SecureStore.deleteItemAsync(KEY_ID); } catch { /* déjà absente */ }
+}

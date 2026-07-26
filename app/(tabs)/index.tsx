@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Animated, RefreshControl, Modal, TextInput,
+  StyleSheet, Animated, RefreshControl, Modal, TextInput, Alert,
 } from 'react-native';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
@@ -14,7 +14,7 @@ import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import WeightField from '../../components/ui/WeightField';
 import * as storage from '../../services/storage';
-import { loadWeeklyBilanShown, saveWeeklyBilanShown } from '../../services/storage';
+import { loadWeeklyBilanShown, saveWeeklyBilanShown, resetUnreadableData } from '../../services/storage';
 import { localISO } from '../../services/date';
 import { generateMonthlyMessage } from '../../services/openai';
 import { MonthlySummary } from '../../types';
@@ -277,6 +277,39 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
       showsVerticalScrollIndicator={false}
     >
+      {/* ── Alerte : données illisibles (écritures bloquées) ──────────────── */}
+      {store.dataUnreadable && (
+        <View style={styles.dataAlert}>
+          <Ionicons name="warning" size={20} color={Colors.red} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dataAlertTitle}>Données illisibles sur cet appareil</Text>
+            <Text style={styles.dataAlertSub}>
+              Tes données sont chiffrées avec une clé propre à ton iPhone d'origine
+              (elle n'est jamais copiée lors d'une restauration). Les enregistrements
+              sont <Text style={{ fontFamily: Fonts.bold }}>bloqués</Text> pour ne rien écraser.
+            </Text>
+            <TouchableOpacity
+              style={styles.dataAlertBtn}
+              accessibilityRole="button"
+              onPress={() => Alert.alert(
+                'Repartir de zéro ?',
+                "Les données chiffrées de cet appareil sont irrécupérables. Elles seront effacées et l'app repartira à neuf. Cette action est définitive.",
+                [
+                  { text: 'Annuler', style: 'cancel' },
+                  {
+                    text: 'Effacer et repartir',
+                    style: 'destructive',
+                    onPress: async () => { await resetUnreadableData(); await store.refresh(); },
+                  },
+                ],
+              )}
+            >
+              <Text style={styles.dataAlertBtnText}>Effacer et repartir de zéro</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <View>
@@ -673,6 +706,11 @@ const scStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  dataAlert: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm, backgroundColor: Colors.red + '14', borderWidth: 1, borderColor: Colors.red + '40', borderRadius: R, padding: Sp.md, marginBottom: Sp.md },
+  dataAlertTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.red },
+  dataAlertSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 17, marginTop: 3 },
+  dataAlertBtn: { alignSelf: 'flex-start', marginTop: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 7, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '60' },
+  dataAlertBtnText: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.red },
   content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.xs },
   greeting: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },

@@ -29,6 +29,7 @@ interface AppState {
   loading: boolean;
   tutorialDone: boolean;
   isPremium: boolean;      // abonnement FitTrack Premium actif
+  dataUnreadable: boolean; // données chiffrées illisibles → écritures bloquées
 }
 
 let _state: AppState = {
@@ -38,7 +39,7 @@ let _state: AppState = {
   streak: { current: 0, best: 0, lastWorkoutDate: '' },
   savedPlans: PREDEFINED_PLANS, recentFoods: [],
   monthlySummaries: [], loading: true,
-  tutorialDone: false, isPremium: false,
+  tutorialDone: false, isPremium: false, dataUnreadable: false,
 };
 
 const _listeners = new Set<() => void>();
@@ -104,9 +105,13 @@ export function useAppStore() {
     // Hydratation : reset si nouveau jour
     const waterToday = await S.loadWaterEntry(S.today());
 
-    // Streak calculé dynamiquement
+    // Streak calculé dynamiquement.
+    // ⚠️ C'est une ÉCRITURE pendant le chargement : si le coupe-circuit est armé
+    // (données illisibles), elle échoue. On ne doit surtout pas laisser l'erreur
+    // interrompre refresh(), sinon l'app resterait bloquée sur l'écran de
+    // chargement et l'utilisateur ne verrait jamais l'alerte.
     const streak = computeStreak(workouts, storedStreak ?? { current: 0, best: 0, lastWorkoutDate: '' });
-    await S.saveStreak(streak);
+    try { await S.saveStreak(streak); } catch { /* écriture bloquée : on continue */ }
 
     // Plans = prédéfinis toujours présents + plans utilisateur (sans doublons)
     const userPlanIds = new Set(PREDEFINED_PLANS.map(p => p.id));
@@ -120,6 +125,7 @@ export function useAppStore() {
       favorites, water: waterToday, streak, savedPlans: allPlans,
       recentFoods, monthlySummaries, loading: false,
       tutorialDone, isPremium,
+      dataUnreadable: S.isDataUnreadable(),
     });
   }, []);
 
