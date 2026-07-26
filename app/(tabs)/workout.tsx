@@ -57,6 +57,24 @@ export default function WorkoutScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
         </TouchableOpacity>
 
+        {/* ── Bloc athlétique PERSONNEL (dev uniquement, jamais en prod) ──── */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.persoRow}
+            onPress={() => router.push('/modals/perso-athletique')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir mon bloc athlétique basket"
+          >
+            <Text style={{ fontSize: 20 }}>🏀</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.persoTitle}>Mon bloc athlétique</Text>
+              <Text style={styles.persoSub}>Plyo · endurance · skills — calé sur ta prépa force</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
+
         {/* ── Calculateur de charge ──────────────────────────────────────── */}
         <TouchableOpacity style={styles.toolRow} onPress={() => router.push('/modals/plate-calculator')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Ouvrir le calculateur de charge">
           <Ionicons name="calculator-outline" size={18} color={Colors.blue} />
@@ -308,6 +326,9 @@ const styles = StyleSheet.create({
   },
   repeatBtnTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.text },
   repeatBtnSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
+  persoRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.borderStrong, padding: Sp.md },
+  persoTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.text },
+  persoSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   toolRow: {
     flexDirection: 'row', alignItems: 'center', gap: Sp.sm,
     backgroundColor: Colors.blue + '10',

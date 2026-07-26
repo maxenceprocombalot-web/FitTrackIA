@@ -122,6 +122,10 @@ export default function RootLayout() {
           name="modals/paywall"
           options={{ headerShown: false, presentation: 'modal' }}
         />
+        <Stack.Screen
+          name="modals/perso-athletique"
+          options={{ headerShown: false, presentation: 'modal' }}
+        />
       </Stack>
     </AppLockGate>
   );
