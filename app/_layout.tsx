@@ -11,6 +11,7 @@ import {
   BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
 } from '@expo-google-fonts/barlow-condensed';
 import { Colors, Fonts } from '../constants/theme';
+import AppLockGate from '../components/ui/AppLockGate';
 import { requestNotificationPermissions, scheduleAllReminders } from '../services/notifications';
 import { loadApiKey, loadNotifPrefs } from '../services/storage';
 import { setRuntimeApiKey } from '../services/openai';
@@ -48,7 +49,7 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontsError) return null;
 
   return (
-    <>
+    <AppLockGate>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -122,6 +123,6 @@ export default function RootLayout() {
           options={{ headerShown: false, presentation: 'modal' }}
         />
       </Stack>
-    </>
+    </AppLockGate>
   );
 }

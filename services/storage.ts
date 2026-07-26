@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { encryptString, decryptString, isEncrypted } from './crypto';
 import { Platform } from 'react-native';
 import {
   User, WorkoutSession, Meal, WeightEntry,
@@ -28,13 +29,40 @@ const K = {
 
 // ─── Utilitaires génériques ────────────────────────────────────────────────────
 
+// ─── Lecture / écriture CHIFFRÉES ─────────────────────────────────────────────
+// Toutes les données personnelles passent par ici. Le contenu est chiffré
+// (AES-256, clé dans le Keychain liée à l'appareil — voir services/crypto.ts).
+// La lecture accepte aussi l'ancien format en clair et le migre à la volée :
+// aucune donnée existante n'est perdue lors de la mise à jour.
+
+export async function setSecure(key: string, value: string): Promise<void> {
+  await AsyncStorage.setItem(key, await encryptString(value));
+}
+
+export async function getSecure(key: string): Promise<string | null> {
+  const raw = await AsyncStorage.getItem(key);
+  if (raw === null) return null;
+
+  if (!isEncrypted(raw)) {
+    // Donnée héritée en clair → on la rechiffre immédiatement (migration)
+    await AsyncStorage.setItem(key, await encryptString(raw));
+    return raw;
+  }
+  return decryptString(raw);
+}
+
 async function save<T>(key: string, data: T): Promise<void> {
-  await AsyncStorage.setItem(key, JSON.stringify(data));
+  await setSecure(key, JSON.stringify(data));
 }
 
 async function load<T>(key: string): Promise<T | null> {
-  const raw = await AsyncStorage.getItem(key);
-  return raw ? (JSON.parse(raw) as T) : null;
+  const raw = await getSecure(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;   // valeur illisible → on ne crashe pas
+  }
 }
 
 // ─── Utilisateur ──────────────────────────────────────────────────────────────
@@ -300,26 +328,26 @@ export async function saveRecipe(r: import('../types').Recipe): Promise<void> {
   const list = await loadRecipes();
   const idx  = list.findIndex(x => x.id === r.id);
   if (idx >= 0) list[idx] = r; else list.push(r);
-  await AsyncStorage.setItem('@fit_recipes', JSON.stringify(list));
+  await setSecure('@fit_recipes', JSON.stringify(list));
 }
 export async function deleteRecipe(id: string): Promise<void> {
   const list = await loadRecipes();
-  await AsyncStorage.setItem('@fit_recipes', JSON.stringify(list.filter(r => r.id !== id)));
+  await setSecure('@fit_recipes', JSON.stringify(list.filter(r => r.id !== id)));
 }
 
 // ─── Photos de progression ────────────────────────────────────────────────────
 
 export async function loadProgressPhotos(): Promise<{ id: string; uri: string; date: string }[]> {
-  const raw = await AsyncStorage.getItem('@fit_progress_photos');
+  const raw = await getSecure('@fit_progress_photos');
   return raw ? JSON.parse(raw) : [];
 }
 export async function saveProgressPhoto(photo: { id: string; uri: string; date: string }): Promise<void> {
   const list = await loadProgressPhotos();
-  await AsyncStorage.setItem('@fit_progress_photos', JSON.stringify([...list, photo]));
+  await setSecure('@fit_progress_photos', JSON.stringify([...list, photo]));
 }
 export async function deleteProgressPhoto(id: string): Promise<void> {
   const list = await loadProgressPhotos();
-  await AsyncStorage.setItem('@fit_progress_photos', JSON.stringify(list.filter(p => p.id !== id)));
+  await setSecure('@fit_progress_photos', JSON.stringify(list.filter(p => p.id !== id)));
 }
 
 // ─── Historique conversations Coach IA ────────────────────────────────────────
@@ -331,13 +359,13 @@ export interface StoredConversation {
   messages: import('../types').ChatMessage[];
 }
 export async function loadConversations(): Promise<StoredConversation[]> {
-  const raw = await AsyncStorage.getItem('@fit_conversations');
+  const raw = await getSecure('@fit_conversations');
   return raw ? JSON.parse(raw) : [];
 }
 export async function saveConversation(conv: StoredConversation): Promise<void> {
   const list = await loadConversations();
   const trimmed = [conv, ...list.filter(c => c.id !== conv.id)].slice(0, 30);
-  await AsyncStorage.setItem('@fit_conversations', JSON.stringify(trimmed));
+  await setSecure('@fit_conversations', JSON.stringify(trimmed));
 }
 
 // ─── Mensurations ─────────────────────────────────────────────────────────────
@@ -350,26 +378,26 @@ export async function saveMeasurement(m: import('../types').BodyMeasurement): Pr
   const idx  = list.findIndex(x => x.date === m.date);
   if (idx >= 0) list[idx] = m; else list.push(m);
   list.sort((a, b) => a.date.localeCompare(b.date));
-  await AsyncStorage.setItem('@fit_measurements', JSON.stringify(list));
+  await setSecure('@fit_measurements', JSON.stringify(list));
 }
 
 // ─── Défis hebdomadaires ──────────────────────────────────────────────────────
 
 export async function loadChallenges(weekKey: string): Promise<import('../types').WeeklyChallenge[]> {
-  const raw = await AsyncStorage.getItem(`@fit_challenges_${weekKey}`);
+  const raw = await getSecure(`@fit_challenges_${weekKey}`);
   return raw ? JSON.parse(raw) : [];
 }
 export async function saveChallenges(weekKey: string, challenges: import('../types').WeeklyChallenge[]): Promise<void> {
-  await AsyncStorage.setItem(`@fit_challenges_${weekKey}`, JSON.stringify(challenges));
+  await setSecure(`@fit_challenges_${weekKey}`, JSON.stringify(challenges));
 }
 
 // ─── Jeûne intermittent ───────────────────────────────────────────────────────
 
 export async function loadFasting(): Promise<import('../types').FastingConfig | null> {
-  const raw = await AsyncStorage.getItem('@fit_fasting');
+  const raw = await getSecure('@fit_fasting');
   return raw ? JSON.parse(raw) : null;
 }
 export async function saveFasting(f: import('../types').FastingConfig | null): Promise<void> {
   if (f === null) await AsyncStorage.removeItem('@fit_fasting');
-  else await AsyncStorage.setItem('@fit_fasting', JSON.stringify(f));
+  else await setSecure('@fit_fasting', JSON.stringify(f));
 }

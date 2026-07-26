@@ -10,6 +10,7 @@ import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, is
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
+import { isLockEnabled, setLockEnabled, canUseLock, biometricLabel, authenticate } from '../../services/applock';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import { ActivityLevel, NotifPrefs } from '../../types';
@@ -132,16 +133,39 @@ export default function SettingsScreen() {
   // ── Persona Coach IA ──────────────────────────────────────────────────────
   const [persona, setPersona] = useState<CoachPersona>('motivateur');
 
+  // ── Verrou biométrique ───────────────────────────────────────────────────
+  const [lockEnabled,   setLockEnabledState] = useState(false);
+  const [lockAvailable, setLockAvailable]    = useState(true);
+  const [bioLabel,      setBioLabel]         = useState('Face ID');
+
   // ── Apple Health ─────────────────────────────────────────────────────────
   const [healthSync, setHealthSync] = useState(false);
 
   useEffect(() => {
     loadApiKey().then(k => { if (k) setApiKey(k); });
     loadNotifPrefs().then(p => setNotifPrefs(p));
+    isLockEnabled().then(setLockEnabledState);
+    canUseLock().then(setLockAvailable);
+    biometricLabel().then(setBioLabel);
     AsyncStorage.getItem('@fit_health_sync').then(v => setHealthSync(v === 'true'));
     AsyncStorage.getItem('@fit_coach_persona').then(v => {
       if (v) { setPersona(v as CoachPersona); setCoachPersona(v as CoachPersona); }
     });
+  }, []);
+
+  // ── Activer / désactiver le verrou ───────────────────────────────────────
+  const handleToggleLock = useCallback(async (on: boolean) => {
+    if (on && !(await canUseLock())) {
+      Alert.alert(
+        'Impossible d\'activer',
+        'Configure d\'abord Face ID, Touch ID ou un code sur ton iPhone (Réglages iOS).',
+      );
+      return;
+    }
+    // On vérifie l'identité dans les deux sens : activer ET désactiver
+    if (!(await authenticate())) return;
+    await setLockEnabled(on);
+    setLockEnabledState(on);
   }, []);
 
   // ── Sauvegarder les objectifs ────────────────────────────────────────────
@@ -451,10 +475,26 @@ export default function SettingsScreen() {
         {/* ── DONNÉES & CONFIDENTIALITÉ ─────────────────────────────────── */}
         <SectionHeader title="DONNÉES & CONFIDENTIALITÉ" />
         <View style={styles.card}>
+          <RowToggle
+            icon="lock-closed-outline"
+            label={`Verrouiller avec ${bioLabel}`}
+            sublabel={lockAvailable
+              ? "Demande une authentification à l'ouverture"
+              : 'Configure Face ID ou un code sur ton iPhone'}
+            value={lockEnabled}
+            onToggle={handleToggleLock}
+          />
+          <View style={styles.encryptedNote}>
+            <Ionicons name="shield-checkmark" size={13} color={Colors.green} />
+            <Text style={styles.encryptedNoteText}>
+              Tes séances, repas et notes sont chiffrés sur cet appareil (AES-256). La clé
+              reste dans le Keychain et n'est jamais incluse dans les sauvegardes iCloud.
+            </Text>
+          </View>
           <RowLink
             icon="download-outline"
             label="Exporter mes données"
-            sublabel="Format JSON"
+            sublabel="⚠️ Le fichier exporté n'est pas chiffré"
             onPress={handleExport}
           />
           <View style={styles.divider} />
@@ -633,6 +673,8 @@ const styles = StyleSheet.create({
   // Coach IA
   demoBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '18', borderRadius: R, margin: Sp.md, marginBottom: 0, padding: Sp.sm },
   demoBannerText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, lineHeight: 17 },
+  encryptedNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginHorizontal: Sp.md, marginBottom: Sp.sm },
+  encryptedNoteText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 16 },
   premiumCard: { flexDirection: 'row', alignItems: 'center', gap: Sp.md, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, marginHorizontal: Sp.md, marginBottom: Sp.md },
   premiumCardTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
   premiumCardSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.onPrimary, opacity: 0.85, marginTop: 1 },

@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.fittrackia.app",
       "infoPlist": {
         "NSCameraUsageDescription": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments.",
-        "NSPhotoLibraryUsageDescription": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression."
+        "NSPhotoLibraryUsageDescription": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression.",
+        "NSFaceIDUsageDescription": "FitTrackIA utilise Face ID pour protéger l'accès à tes données d'entraînement."
       }
     },
     "android": {
@@ -54,6 +55,12 @@
         "expo-image-picker",
         {
           "photosPermission": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "FitTrackIA utilise Face ID pour protéger l'accès à tes données d'entraînement."
         }
       ],
       "expo-secure-store"
