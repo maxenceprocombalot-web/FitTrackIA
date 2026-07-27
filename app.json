@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "FitTrackIA utilise la caméra pour scanner les codes-barres des aliments.",
         "NSPhotoLibraryUsageDescription": "FitTrackIA accède à tes photos pour enregistrer tes photos de progression.",
-        "NSFaceIDUsageDescription": "FitTrackIA utilise Face ID pour protéger l'accès à tes données d'entraînement."
+        "NSFaceIDUsageDescription": "FitTrackIA utilise Face ID pour protéger l'accès à tes données d'entraînement.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
