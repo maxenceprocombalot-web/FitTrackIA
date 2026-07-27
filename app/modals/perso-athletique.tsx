@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { getSecure, setSecure } from '../../services/storage';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -18,11 +19,67 @@ const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: 
   interdit:   { color: Colors.red,     icon: 'ban' },
 };
 
+// Créneaux fixes de la semaine. Le CONTENU des séances peut être déplacé d'un
+// créneau à l'autre (la vie ne suit pas toujours le plan) ; l'ordre choisi est
+// mémorisé par phase.
+const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+const orderKey = (phaseId: string) => `@fit_perso_order_${phaseId}`;
+
 export default function PersoAthletiqueScreen() {
   const router = useRouter();
   const [phaseIdx, setPhaseIdx] = useState(0);
+  // order[i] = index de la séance affichée dans le créneau i
+  const [order, setOrder]       = useState<number[]>([]);
+  const [swapFrom, setSwapFrom] = useState<number | null>(null);
 
-  if (PERSONAL_PHASES.length === 0) {
+  // Les hooks doivent être appelés inconditionnellement : le cas « aucun
+  // programme » est traité APRÈS, au rendu.
+  const phase = PERSONAL_PHASES[phaseIdx];
+
+  // Charge l'ordre mémorisé à chaque changement de phase
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const identity = (phase?.week ?? []).map((_, i) => i);
+      try {
+        if (!phase) { if (alive) setOrder([]); return; }
+        const raw = await getSecure(orderKey(phase.id));
+        const saved = raw ? (JSON.parse(raw) as number[]) : null;
+        // Validation : on n'accepte qu'une permutation complète et cohérente
+        const valid = Array.isArray(saved)
+          && saved.length === identity.length
+          && [...saved].sort((a, b) => a - b).every((v, i) => v === i);
+        if (alive) setOrder(valid ? saved! : identity);
+      } catch {
+        if (alive) setOrder(identity);
+      }
+    })();
+    return () => { alive = false; };
+  }, [phase?.id]);
+
+  const persist = useCallback(async (next: number[]) => {
+    setOrder(next);
+    if (!phase) return;
+    try { await setSecure(orderKey(phase.id), JSON.stringify(next)); } catch { /* non bloquant */ }
+  }, [phase?.id]);
+
+  // Échange le contenu de deux créneaux
+  const swap = useCallback((a: number, b: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const next = [...order];
+    [next[a], next[b]] = [next[b], next[a]];
+    persist(next);
+    setSwapFrom(null);
+  }, [order, persist]);
+
+  const resetOrder = useCallback(() => {
+    Haptics.selectionAsync();
+    persist((phase?.week ?? []).map((_, i) => i));
+  }, [phase?.week, persist]);
+
+  const isCustom = order.some((v, i) => v !== i);
+
+  if (!phase) {
     return (
       <View style={[styles.container, { alignItems: 'center', justifyContent: 'center', padding: Sp.lg }]}>
         <Ionicons name="lock-closed-outline" size={44} color={Colors.textMuted} />
@@ -33,8 +90,6 @@ export default function PersoAthletiqueScreen() {
       </View>
     );
   }
-
-  const phase = PERSONAL_PHASES[phaseIdx];
 
   return (
     <View style={styles.container}>
@@ -67,12 +122,41 @@ export default function PersoAthletiqueScreen() {
           <Text style={styles.goalText}>{phase.goal}</Text>
         </View>
 
-        {/* Semaine */}
-        {phase.week.map(d => (
-          <View key={d.day} style={styles.dayCard}>
+        {/* Astuce + réinitialisation */}
+        <View style={styles.reorderHint}>
+          <Ionicons name="swap-vertical" size={14} color={Colors.textSecondary} />
+          <Text style={styles.reorderHintText}>
+            Touche ⇅ sur un jour pour déplacer sa séance vers un autre jour.
+          </Text>
+          {isCustom && (
+            <TouchableOpacity onPress={resetOrder} hitSlop={tapSlop} accessibilityRole="button">
+              <Text style={styles.resetLink}>Réinitialiser</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Semaine — créneaux fixes, contenu déplaçable */}
+        {order.map((sessionIdx, slot) => {
+          const d = phase.week[sessionIdx];
+          if (!d) return null;
+          const moved = sessionIdx !== slot;
+          return (
+          <View key={`${slot}_${sessionIdx}`} style={[styles.dayCard, moved && styles.dayCardMoved]}>
             <View style={styles.dayHeader}>
-              <Text style={styles.dayName}>{d.day}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.dayName}>{WEEKDAYS[slot]}</Text>
+                {moved && <Text style={styles.movedTag}>déplacé depuis {WEEKDAYS[sessionIdx]}</Text>}
+              </View>
               <Text style={styles.dayMuscu}>{d.muscu}</Text>
+              <TouchableOpacity
+                onPress={() => { Haptics.selectionAsync(); setSwapFrom(slot); }}
+                style={styles.swapBtn}
+                hitSlop={tapSlop}
+                accessibilityRole="button"
+                accessibilityLabel={`Déplacer la séance de ${WEEKDAYS[slot]} vers un autre jour`}
+              >
+                <Ionicons name="swap-vertical" size={17} color={Colors.primary} />
+              </TouchableOpacity>
             </View>
             {d.items.map((it, i) => {
               const meta = it.tag ? TAG_META[it.tag] : null;
@@ -89,7 +173,8 @@ export default function PersoAthletiqueScreen() {
               );
             })}
           </View>
-        ))}
+          );
+        })}
 
         {/* Allures calibrées */}
         <View style={styles.paceCard}>
@@ -194,6 +279,32 @@ export default function PersoAthletiqueScreen() {
           🔒 Écran personnel — absent des builds de production, contenu jamais commité.
         </Text>
       </ScrollView>
+
+      {/* Choix du jour de destination */}
+      <Modal visible={swapFrom !== null} transparent animationType="fade" onRequestClose={() => setSwapFrom(null)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSwapFrom(null)}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>
+              Déplacer la séance de {swapFrom !== null ? WEEKDAYS[swapFrom] : ''} vers…
+            </Text>
+            <Text style={styles.sheetSub}>Les deux journées seront échangées.</Text>
+            {WEEKDAYS.map((wd, i) => {
+              if (i === swapFrom) return null;
+              const target = phase.week[order[i]];
+              return (
+                <TouchableOpacity key={wd} style={styles.sheetRow} onPress={() => swap(swapFrom!, i)} accessibilityRole="button">
+                  <Text style={styles.sheetDay}>{wd}</Text>
+                  <Text style={styles.sheetMuscu} numberOfLines={1}>{target?.muscu ?? ''}</Text>
+                  <Ionicons name="swap-horizontal" size={16} color={Colors.primary} />
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity style={styles.sheetCancel} onPress={() => setSwapFrom(null)} accessibilityRole="button">
+              <Text style={styles.sheetCancelText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -234,6 +345,22 @@ const styles = StyleSheet.create({
   shortBox:  { marginHorizontal: Sp.md, marginTop: Sp.sm, padding: Sp.sm, borderRadius: 10, backgroundColor: Colors.surfaceElevated },
   shortTitle:{ fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: 4 },
   shortItem: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
+  reorderHint:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, marginBottom: 2 },
+  reorderHintText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 16 },
+  resetLink:       { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.primary },
+  dayCardMoved:    { borderColor: Colors.primary + '55' },
+  movedTag:        { fontSize: 10, fontFamily: Fonts.medium, color: Colors.primary, marginTop: 1 },
+  swapBtn:         { padding: 6, marginLeft: 4 },
+
+  overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: Sp.lg, paddingBottom: 40, gap: 2 },
+  sheetTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  sheetSub:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm },
+  sheetRow:   { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  sheetDay:   { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, width: 96 },
+  sheetMuscu: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  sheetCancel:{ alignItems: 'center', paddingVertical: Sp.md, marginTop: Sp.sm },
+  sheetCancelText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.textSecondary },
   paceCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.blue + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
   paceTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.blue, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: Sp.xs },
   paceHead:  { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Sp.sm },
