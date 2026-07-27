@@ -16,6 +16,11 @@ import * as storage from '../../services/storage';
 
 const SCREEN_W = Dimensions.get('window').width;
 
+// Écran personnel : visible en développement ET dans le build « perso »
+// (profil EAS qui pose EXPO_PUBLIC_PERSO=1). Le profil « production » force
+// cette variable à 0 → l'écran n'existe dans aucun build App Store.
+const SHOW_PERSO = __DEV__ || process.env.EXPO_PUBLIC_PERSO === '1';
+
 const TYPE_META: Record<WorkoutType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
   strength: { label: 'Musculation', icon: 'barbell-outline',  color: Colors.primary },
   cardio:   { label: 'Cardio',      icon: 'bicycle-outline',  color: Colors.green },
@@ -58,7 +63,7 @@ export default function WorkoutScreen() {
         </TouchableOpacity>
 
         {/* ── Bloc athlétique PERSONNEL (dev uniquement, jamais en prod) ──── */}
-        {__DEV__ && (
+        {SHOW_PERSO && (
           <TouchableOpacity
             style={styles.persoRow}
             onPress={() => router.push('/modals/perso-athletique')}
