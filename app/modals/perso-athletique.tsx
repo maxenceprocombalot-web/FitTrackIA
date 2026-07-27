@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { PERSONAL_PHASES, PERSONAL_RULES, PERSONAL_HOME_ROUTINE, PERSONAL_HOME_SHORT, AthleticItem } from '../../constants/personal-program';
+import { PERSONAL_PHASES, PERSONAL_RULES, PERSONAL_HOME_ROUTINE, PERSONAL_HOME_SHORT, PERSONAL_RIM_WORK, PERSONAL_RIM_RULES, AthleticItem } from '../../constants/personal-program';
 import { Colors, R, Sp, Fs, Fonts, tapSlop } from '../../constants/theme';
 
 // Écran PERSONNEL (bloc athlétique basket).
@@ -117,6 +117,31 @@ export default function PersoAthletiqueScreen() {
           </View>
         </View>
 
+        {/* Travail sur panier réglable */}
+        <View style={styles.rimCard}>
+          <Text style={styles.rimTitle}>🎯 Panier réglable — travail de détente</Text>
+          <Text style={styles.homeIntro}>
+            Le saut avec cible bat le box jump : il déclenche une intention maximale
+            naturelle, avec transfert direct sur le jeu. À traiter comme de la plyo.
+          </Text>
+          {PERSONAL_RIM_WORK.map((d, i) => (
+            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
+              <View style={[styles.itemIcon, { backgroundColor: Colors.primary + '1E' }]}>
+                <Text style={[styles.homeMin, { color: Colors.primary }]}>{d.minutes}'</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>{d.name}</Text>
+                <Text style={styles.itemDetail}>{d.detail}</Text>
+              </View>
+            </View>
+          ))}
+          <View style={styles.shortBox}>
+            {PERSONAL_RIM_RULES.map((r, i) => (
+              <Text key={i} style={styles.shortItem}>⚠️ {r}</Text>
+            ))}
+          </View>
+        </View>
+
         {/* Règles */}
         <View style={styles.rulesCard}>
           <Text style={styles.rulesTitle}>⚡ Règles non négociables</Text>
@@ -172,6 +197,8 @@ const styles = StyleSheet.create({
   shortBox:  { marginHorizontal: Sp.md, marginTop: Sp.sm, padding: Sp.sm, borderRadius: 10, backgroundColor: Colors.surfaceElevated },
   shortTitle:{ fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: 4 },
   shortItem: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
+  rimCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
+  rimTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary, paddingHorizontal: Sp.md, paddingTop: Sp.md },
   rulesCard:  { backgroundColor: Colors.red + '0E', borderWidth: 1, borderColor: Colors.red + '30', borderRadius: R, padding: Sp.md, marginTop: Sp.sm },
   rulesTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.red, marginBottom: Sp.sm },
   ruleRow:    { flexDirection: 'row', gap: 6, marginBottom: 6 },
