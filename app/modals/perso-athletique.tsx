@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { PERSONAL_PHASES, PERSONAL_RULES, PERSONAL_HOME_ROUTINE, PERSONAL_HOME_SHORT, PERSONAL_RIM_WORK, PERSONAL_RIM_RULES, AthleticItem } from '../../constants/personal-program';
+import { PERSONAL_PHASES, PERSONAL_RULES, PERSONAL_HOME_ROUTINE, PERSONAL_HOME_SHORT, PERSONAL_RIM_WORK, PERSONAL_RIM_RULES, PERSONAL_MINIMUM, PERSONAL_PACES, AthleticItem } from '../../constants/personal-program';
 import { Colors, R, Sp, Fs, Fonts, tapSlop } from '../../constants/theme';
 
 // Écran PERSONNEL (bloc athlétique basket).
@@ -90,6 +90,42 @@ export default function PersoAthletiqueScreen() {
             })}
           </View>
         ))}
+
+        {/* Allures calibrées */}
+        <View style={styles.paceCard}>
+          <Text style={styles.paceTitle}>🏃 Mes allures (calibrées)</Text>
+          {PERSONAL_PACES.map((p, i) => (
+            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.paceHead}>
+                  <Text style={styles.itemName}>{p.zone}</Text>
+                  <Text style={styles.paceValue}>{p.pace}</Text>
+                </View>
+                <Text style={styles.itemDetail}>{p.usage}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Socle minimum — semaines chargées */}
+        <View style={styles.minCard}>
+          <Text style={styles.minTitle}>🛟 Socle minimum — semaines sans temps</Text>
+          <Text style={styles.homeIntro}>
+            ~2 h/semaine pour ne pas arriver « à froid » au camp d'août. Passer de
+            rien à tout d'un coup, c'est le schéma classique de la blessure.
+          </Text>
+          {PERSONAL_MINIMUM.map((d, i) => (
+            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
+              <View style={[styles.itemIcon, { backgroundColor: Colors.green + '1E' }]}>
+                <Text style={[styles.homeMin, { color: Colors.green }]}>{d.minutes}'</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>{d.name}</Text>
+                <Text style={styles.itemDetail}>{d.detail}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
 
         {/* Routine maison quotidienne (panier perso) */}
         <View style={styles.homeCard}>
@@ -197,6 +233,12 @@ const styles = StyleSheet.create({
   shortBox:  { marginHorizontal: Sp.md, marginTop: Sp.sm, padding: Sp.sm, borderRadius: 10, backgroundColor: Colors.surfaceElevated },
   shortTitle:{ fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: 4 },
   shortItem: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
+  paceCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.blue + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
+  paceTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.blue, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: Sp.xs },
+  paceHead:  { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Sp.sm },
+  paceValue: { fontSize: Fs.sm, fontFamily: Fonts.condensedBold, color: Colors.blue },
+  minCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.green + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
+  minTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.green, paddingHorizontal: Sp.md, paddingTop: Sp.md },
   rimCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
   rimTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary, paddingHorizontal: Sp.md, paddingTop: Sp.md },
   rulesCard:  { backgroundColor: Colors.red + '0E', borderWidth: 1, borderColor: Colors.red + '30', borderRadius: R, padding: Sp.md, marginTop: Sp.sm },
