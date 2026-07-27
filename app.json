@@ -67,6 +67,18 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "maxsas07",
+    "extra": {
+      "eas": {
+        "projectId": "15e4e073-c2e8-4496-8cbb-bad08ae4f3f1"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/15e4e073-c2e8-4496-8cbb-bad08ae4f3f1"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
