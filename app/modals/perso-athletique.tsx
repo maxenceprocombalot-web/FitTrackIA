@@ -101,6 +101,7 @@ export default function PersoAthletiqueScreen() {
                   <Text style={styles.itemName}>{p.zone}</Text>
                   <Text style={styles.paceValue}>{p.pace}</Text>
                 </View>
+                {p.hr && <Text style={styles.paceHr}>❤️ {p.hr}</Text>}
                 <Text style={styles.itemDetail}>{p.usage}</Text>
               </View>
             </View>
@@ -237,6 +238,7 @@ const styles = StyleSheet.create({
   paceTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.blue, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: Sp.xs },
   paceHead:  { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Sp.sm },
   paceValue: { fontSize: Fs.sm, fontFamily: Fonts.condensedBold, color: Colors.blue },
+  paceHr: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.red, marginTop: 2 },
   minCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.green + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
   minTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.green, paddingHorizontal: Sp.md, paddingTop: Sp.md },
   rimCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },

@@ -1,6 +1,20 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Purchases, { PurchasesPackage } from 'react-native-purchases';
+import type { PurchasesPackage } from 'react-native-purchases';
+
+// Chargement PARESSEUX du module natif : react-native-purchases n'existe pas
+// dans Expo Go. Un import statique ferait planter l'app au démarrage ; ici on
+// ne le charge que si une clé RevenueCat est configurée (build natif).
+let Purchases: typeof import('react-native-purchases').default | null = null;
+function loadPurchases() {
+  if (Purchases) return Purchases;
+  try {
+    Purchases = require('react-native-purchases').default;
+  } catch {
+    Purchases = null;   // Expo Go ou module absent → mode gratuit
+  }
+  return Purchases;
+}
 import { ENTITLEMENT_ID, OFFERING_ID } from '../constants/premium';
 
 // ─── Abonnement (RevenueCat) ──────────────────────────────────────────────────
@@ -26,7 +40,9 @@ export function isBillingConfigured(): boolean {
 export async function initPurchases(): Promise<void> {
   if (_configured || !API_KEY) return;
   try {
-    Purchases.configure({ apiKey: API_KEY });
+    const P = loadPurchases();
+    if (!P) return;                       // Expo Go : on reste en gratuit
+    P.configure({ apiKey: API_KEY });
     _configured = true;
   } catch {
     _configured = false;
@@ -38,7 +54,8 @@ export async function checkPremium(): Promise<boolean> {
   try {
     if ((await AsyncStorage.getItem(DEV_KEY)) === 'true') return true;
     if (!_configured) return false;
-    const info = await Purchases.getCustomerInfo();
+    const P = loadPurchases(); if (!P) return false;
+    const info = await P.getCustomerInfo();
     return info.entitlements.active[ENTITLEMENT_ID] !== undefined;
   } catch {
     return false;
@@ -49,7 +66,8 @@ export async function checkPremium(): Promise<boolean> {
 export async function getPackages(): Promise<PurchasesPackage[]> {
   try {
     if (!_configured) return [];
-    const offerings = await Purchases.getOfferings();
+    const P = loadPurchases(); if (!P) return [];
+    const offerings = await P.getOfferings();
     const current = offerings.all[OFFERING_ID] ?? offerings.current;
     return current?.availablePackages ?? [];
   } catch {
@@ -59,7 +77,9 @@ export async function getPackages(): Promise<PurchasesPackage[]> {
 
 /** Achat d'un package. Renvoie true si l'entitlement premium est actif après. */
 export async function purchase(pkg: PurchasesPackage): Promise<boolean> {
-  const { customerInfo } = await Purchases.purchasePackage(pkg);
+  const P = loadPurchases();
+  if (!P) throw new Error('Achats indisponibles sur cette version de l\'app.');
+  const { customerInfo } = await P.purchasePackage(pkg);
   return customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
 }
 
@@ -67,7 +87,8 @@ export async function purchase(pkg: PurchasesPackage): Promise<boolean> {
 export async function restore(): Promise<boolean> {
   try {
     if (!_configured) return false;
-    const info = await Purchases.restorePurchases();
+    const P = loadPurchases(); if (!P) return false;
+    const info = await P.restorePurchases();
     return info.entitlements.active[ENTITLEMENT_ID] !== undefined;
   } catch {
     return false;
