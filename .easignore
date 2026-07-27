@@ -1,0 +1,39 @@
+# Ce fichier remplace .gitignore pour décider quoi envoyer aux serveurs EAS.
+# Différence volontaire avec .gitignore : constants/personal-program.ts N'EST
+# PAS exclu ici — il doit être présent pour que le bundle JS se construise.
+# Il reste malgré tout hors de git/GitHub (voir .gitignore) et absent des
+# builds App Store (le profil « production » force EXPO_PUBLIC_PERSO=0).
+
+node_modules/
+
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+.metro-health-check*
+
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+.DS_Store
+*.pem
+
+.env*.local
+
+*.tsbuildinfo
+
+/ios
+/android
+
+# Dossiers de travail d'agents
+.claude/worktrees/
