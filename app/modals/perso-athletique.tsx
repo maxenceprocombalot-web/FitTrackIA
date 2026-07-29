@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -23,7 +23,12 @@ const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: 
 
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 const orderKey = (blocId: string) => `@fit_perso_order_${blocId}`;
-const POS_KEY = '@fit_perso_position';
+const POS_KEY   = '@fit_perso_position';
+const LOADS_KEY = '@fit_perso_loads';
+
+// Formate une charge : 82.5 → « 82,5 kg »
+const fmtKg = (n: number) =>
+  `${(Math.round(n * 10) / 10).toString().replace('.', ',')} kg`;
 
 // Position de départ : bloc « Effort max », semaine 2 (situation actuelle).
 // Ensuite l'app mémorise le dernier choix pour suivre la progression.
@@ -37,6 +42,10 @@ export default function PersoAthletiqueScreen() {
   const [order, setOrder]       = useState<number[]>([]);
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
   const [tab, setTab]           = useState<'semaine' | 'basket'>('semaine');
+  // Charges de base saisies par l'utilisateur : { [key]: kg }
+  const [bases, setBases]       = useState<Record<string, number>>({});
+  const [editing, setEditing]   = useState<{ key: string; name: string } | null>(null);
+  const [draft, setDraft]       = useState('');
 
   const bloc = PERSONAL_BLOCS[blocIdx];
 
@@ -57,6 +66,38 @@ export default function PersoAthletiqueScreen() {
     })();
     return () => { alive = false; };
   }, []);
+
+  // Charges de base mémorisées
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const raw = await getSecure(LOADS_KEY);
+        if (raw && alive) setBases(JSON.parse(raw));
+      } catch { /* aucune charge enregistrée */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const saveBase = useCallback(async (key: string, kg: number | null) => {
+    setBases(prev => {
+      const next = { ...prev };
+      if (kg === null || !Number.isFinite(kg) || kg <= 0) delete next[key];
+      else next[key] = kg;
+      setSecure(LOADS_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  /** Libellé affiché pour un exercice à la semaine courante. */
+  const loadLabel = useCallback((e: Exo): string | null => {
+    const base = e.key ? bases[e.key] : undefined;
+    if (base !== undefined) {
+      const inc = e.incKg?.[weekIdx] ?? 0;
+      return fmtKg(base + inc);
+    }
+    return e.loads?.[weekIdx] ?? e.load ?? null;
+  }, [bases, weekIdx]);
 
   // Ordre des jours mémorisé par bloc
   useEffect(() => {
@@ -226,10 +267,26 @@ export default function PersoAthletiqueScreen() {
                         </View>
                         {e.note && <Text style={styles.exoNote}>{e.note}</Text>}
                       </View>
-                      {(e.loads?.[weekIdx] || e.load) && (
-                        <View style={styles.loadBadge}>
-                          <Text style={styles.loadText}>{e.loads?.[weekIdx] ?? e.load}</Text>
-                        </View>
+                      {loadLabel(e) && (
+                        e.key ? (
+                          <TouchableOpacity
+                            style={[styles.loadBadge, bases[e.key] === undefined && styles.loadBadgeEmpty]}
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              setEditing({ key: e.key!, name: e.name });
+                              setDraft(bases[e.key!] !== undefined ? String(bases[e.key!]) : '');
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Définir la charge de base pour ${e.name}`}
+                          >
+                            <Text style={[styles.loadText, bases[e.key] === undefined && styles.loadTextEmpty]}>
+                              {loadLabel(e)}
+                            </Text>
+                            {bases[e.key] === undefined && <Ionicons name="pencil" size={10} color={Colors.primary} />}
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={styles.loadBadge}><Text style={styles.loadText}>{loadLabel(e)}</Text></View>
+                        )
                       )}
                     </View>
                   ))}
@@ -326,6 +383,55 @@ export default function PersoAthletiqueScreen() {
 
         <Text style={styles.privateNote}>🔒 Écran personnel — absent des builds App Store.</Text>
       </ScrollView>
+
+      {/* Saisie d'une charge de base */}
+      <Modal visible={editing !== null} transparent animationType="fade" onRequestClose={() => setEditing(null)}>
+        <View style={styles.overlayCenter}>
+          <View style={styles.loadSheet}>
+            <Text style={styles.sheetTitle}>{editing?.name}</Text>
+            <Text style={styles.sheetSub}>
+              Charge de base (semaine 1). Les semaines suivantes s'ajustent automatiquement.
+            </Text>
+            <View style={styles.loadInputRow}>
+              <TextInput
+                style={styles.loadInput}
+                value={draft}
+                onChangeText={setDraft}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={Colors.textMuted}
+                autoFocus
+                selectTextOnFocus
+                accessibilityLabel="Charge en kilogrammes"
+              />
+              <Text style={styles.loadUnit}>kg</Text>
+            </View>
+            <View style={styles.loadBtns}>
+              <TouchableOpacity
+                style={styles.loadClear}
+                onPress={() => { if (editing) saveBase(editing.key, null); setEditing(null); }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.loadClearText}>Effacer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.loadCancel} onPress={() => setEditing(null)} accessibilityRole="button">
+                <Text style={styles.sheetCancelText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loadSave}
+                onPress={() => {
+                  const v = parseFloat(draft.replace(',', '.'));
+                  if (editing && Number.isFinite(v) && v > 0) saveBase(editing.key, v);
+                  setEditing(null);
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.loadSaveText}>Enregistrer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Choix du jour de destination */}
       <Modal visible={swapFrom !== null} transparent animationType="fade" onRequestClose={() => setSwapFrom(null)}>
@@ -430,6 +536,19 @@ const styles = StyleSheet.create({
 
   privateNote: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: Sp.md },
 
+  loadBadgeEmpty: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.primary + '60', flexDirection: 'row', alignItems: 'center', gap: 4 },
+  loadTextEmpty:  { color: Colors.primary },
+  overlayCenter:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', padding: Sp.lg },
+  loadSheet:      { width: '100%', backgroundColor: Colors.surface, borderRadius: R * 1.5, borderWidth: 1, borderColor: Colors.border, padding: Sp.lg },
+  loadInputRow:   { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginVertical: Sp.md },
+  loadInput:      { fontSize: 42, fontFamily: Fonts.condensedHeavy, color: Colors.text, textAlign: 'center', minWidth: 120, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingVertical: Sp.sm, paddingHorizontal: Sp.md, borderWidth: 1, borderColor: Colors.border },
+  loadUnit:       { fontSize: Fs.lg, fontFamily: Fonts.semibold, color: Colors.textSecondary },
+  loadBtns:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
+  loadClear:      { paddingVertical: Sp.sm, paddingHorizontal: Sp.md },
+  loadClearText:  { fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.red },
+  loadCancel:     { flex: 1, alignItems: 'center', paddingVertical: Sp.sm },
+  loadSave:       { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, paddingHorizontal: Sp.lg },
+  loadSaveText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.onPrimary },
   overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: Sp.lg, paddingBottom: 40 },
   sheetTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
