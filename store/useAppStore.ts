@@ -6,7 +6,7 @@ import {
   FoodItem,
 } from '../types';
 import * as S from '../services/storage';
-import { writeWorkoutToHealth, writeWeightToHealth } from '../services/health';
+import { writeWorkoutToHealth, writeWeightToHealth, readLatestWeightFromHealth } from '../services/health';
 import { sumMeals } from '../services/metrics';
 import { initPurchases, checkPremium } from '../services/purchases';
 import { PREDEFINED_PLANS } from '../constants/predefined-plans';
@@ -163,6 +163,26 @@ export function useAppStore(watch?: readonly StateKey[]) {
   }, []);
 
   useEffect(() => { if (_state.loading) refresh(); }, [refresh]);
+
+  // Import du dernier poids Apple Santé (balance connectée) au démarrage.
+  // Fire-and-forget ; saveWeight direct (et non addWeight) pour ne pas
+  // réécrire la valeur vers Santé en doublon.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      readLatestWeightFromHealth().then(hw => {
+        if (!hw || _state.weights.some(w => w.date === hw.date)) return;
+        const entry = { date: hw.date, weight: hw.kg };
+        S.saveWeight(entry)
+          .then(() => {
+            const weights = [..._state.weights.filter(w => w.date !== entry.date), entry]
+              .sort((a, b) => a.date.localeCompare(b.date));
+            setState({ weights });
+          })
+          .catch(() => {});
+      });
+    }, 2500); // après le chargement initial, jamais sur le chemin critique
+    return () => clearTimeout(t);
+  }, []);
 
   // ─── Utilisateur ────────────────────────────────────────────────────────────
 

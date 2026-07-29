@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Politique de confidentialité — FitTrack IA</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0A0A0B; color: #F5F2EA; font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 1.7rem; color: #E8B84B; margin-bottom: 4px; }
+  .updated { color: #858072; font-size: .85rem; margin-bottom: 32px; }
+  h2 { font-size: 1.1rem; color: #E8B84B; margin: 32px 0 8px; }
+  p, li { color: #cfcabc; }
+  ul { padding-left: 20px; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #2a2a2e; color: #858072; font-size: .8rem; }
+  a { color: #E8B84B; }
+</style>
+</head>
+<body>
+<main>
+<h1>Politique de confidentialité</h1>
+<p class="updated">FitTrack IA — Dernière mise à jour : 30 juillet 2026</p>
+
+<h2>1. Responsable du traitement</h2>
+<p>FitTrack IA est une application indépendante développée à titre personnel. Les données que vous saisissez sont stockées exclusivement sur votre appareil — aucun compte utilisateur, aucun serveur, aucune base de données distante.</p>
+
+<h2>2. Données collectées</h2>
+<p>L'application collecte et stocke localement sur votre appareil :</p>
+<ul>
+<li>Profil : prénom, genre, âge, taille, poids, objectif</li>
+<li>Séances d'entraînement : exercices, séries, répétitions, poids utilisé</li>
+<li>Nutrition : repas, aliments, quantités, calories</li>
+<li>Hydratation : volume d'eau consommé par jour</li>
+<li>Poids corporel : historique de pesées</li>
+<li>Messages avec le coach IA (historique du chat)</li>
+<li>Photos de progression (stockées uniquement sur l'appareil)</li>
+</ul>
+<p>Si vous activez la synchronisation Apple Santé, l'app écrit vos séances et votre poids dans Santé et lit votre dernier poids. Ces échanges restent sur votre appareil, gérés par Apple (HealthKit) ; FitTrack IA ne transmet jamais les données Santé à un serveur.</p>
+
+<h2>3. Finalité du traitement</h2>
+<p>Les données sont utilisées uniquement pour afficher vos statistiques personnelles (calories, macros, progression), calculer votre TDEE et vos objectifs nutritionnels, alimenter le coach IA en contexte personnalisé et générer vos bilans mensuels.</p>
+
+<h2>4. Partage des données avec des tiers</h2>
+<p>Deux services tiers reçoivent des données dans des conditions strictement encadrées :</p>
+<p><strong>OpenAI (coach IA)</strong> : lorsque vous envoyez un message au coach, les informations suivantes sont transmises à l'API OpenAI via une connexion HTTPS sécurisée : prénom, objectif, données physiques (âge, taille, poids), macros cibles, résumé des 7 dernières séances et repas. Ces données ne sont jamais stockées côté FitTrack IA ; leur traitement par OpenAI est soumis à la <a href="https://openai.com/policies/privacy-policy">politique de confidentialité d'OpenAI</a>.</p>
+<p><strong>OpenAI (estimation de repas)</strong> : si vous utilisez l'estimation par description ou par photo, le texte saisi ou la photo du plat (réduite, sans métadonnées de localisation) est transmis à OpenAI pour analyse, puis le résultat est renvoyé. FitTrack IA ne stocke jamais ces photos.</p>
+<p><strong>Open Food Facts</strong> : les termes de recherche saisis dans l'onglet Nutrition sont transmis à l'API publique Open Food Facts sous forme de requêtes anonymes (aucune donnée personnelle n'est transmise).</p>
+<p>Aucune autre donnée n'est partagée avec des tiers. Il n'y a pas de publicité, pas d'analytique, pas de trackers.</p>
+
+<h2>5. Durée de conservation</h2>
+<p>Les données sont conservées sur votre appareil jusqu'à la désinstallation de l'application, ou l'utilisation de la fonction « Supprimer toutes mes données » dans les paramètres.</p>
+
+<h2>6. Vos droits (RGPD)</h2>
+<ul>
+<li><strong>Accès</strong> : toutes vos données sont visibles directement dans l'application</li>
+<li><strong>Rectification</strong> : vous pouvez modifier votre profil à tout moment</li>
+<li><strong>Effacement</strong> : « Supprimer toutes mes données » dans Profil → Paramètres</li>
+<li><strong>Portabilité</strong> : Réglages → « Exporter mes données » (fichier chiffré)</li>
+<li><strong>Opposition</strong> : cessez simplement d'utiliser l'application</li>
+</ul>
+
+<h2>7. Sécurité</h2>
+<p>Vos données sont chiffrées sur l'appareil (AES-256) ; la clé de chiffrement est conservée dans le Keychain iOS et n'est jamais incluse dans les sauvegardes iCloud. Vous pouvez exporter une sauvegarde chiffrée par un mot de passe que vous seul connaissez. Toutes les communications avec des services tiers utilisent exclusivement le protocole HTTPS.</p>
+
+<h2>8. Modifications</h2>
+<p>Cette politique peut être mise à jour lors de nouvelles versions de l'application. La date de dernière mise à jour figure en haut de cette page.</p>
+
+<h2>Contact</h2>
+<p>Pour toute question relative à vos données : <a href="mailto:maxencepro.combalot@gmail.com">maxencepro.combalot@gmail.com</a></p>
+
+<p class="footer">Données nutritionnelles : Table Ciqual 2020 © ANSES (licence Etalab) · Open Food Facts (licence ODbL).</p>
+</main>
+</body>
+</html>

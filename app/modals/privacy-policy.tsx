@@ -11,7 +11,7 @@ const SECTIONS = [
   },
   {
     title: '2. Données collectées',
-    body: "L'application collecte et stocke localement sur ton appareil :\n• Profil : prénom, genre, âge, taille, poids, objectif\n• Séances d'entraînement : exercices, séries, répétitions, poids utilisé\n• Nutrition : repas, aliments, quantités, calories\n• Hydratation : volume d'eau consommé par jour\n• Poids corporel : historique de pesées\n• Messages avec le coach IA (historique du chat)",
+    body: "L'application collecte et stocke localement sur ton appareil :\n• Profil : prénom, genre, âge, taille, poids, objectif\n• Séances d'entraînement : exercices, séries, répétitions, poids utilisé\n• Nutrition : repas, aliments, quantités, calories\n• Hydratation : volume d'eau consommé par jour\n• Poids corporel : historique de pesées\n• Messages avec le coach IA (historique du chat)\n• Photos de progression (stockées uniquement sur l'appareil)\n\nSi tu actives la synchronisation Apple Santé, l'app écrit tes séances et ton poids dans Santé et lit ton dernier poids. Ces échanges restent sur ton appareil, gérés par Apple (HealthKit) ; FitTrack IA ne transmet jamais les données Santé à un serveur.",
   },
   {
     title: '3. Finalité du traitement',
@@ -19,7 +19,7 @@ const SECTIONS = [
   },
   {
     title: '4. Partage des données avec des tiers',
-    body: "Deux services tiers reçoivent des données dans des conditions strictement encadrées :\n\n— OpenAI (coach IA) : lorsque tu envoies un message au coach, les informations suivantes sont transmises à l'API OpenAI via une connexion HTTPS sécurisée : ton prénom, objectif, données physiques (âge, taille, poids), macros cibles, résumé des 7 dernières séances et repas. Ces données ne sont jamais stockées côté FitTrack IA, et leur traitement par OpenAI est soumis à la politique de confidentialité d'OpenAI (openai.com/policies/privacy-policy).\n\n— OpenFoodFacts : les termes de recherche saisis dans l'onglet Nutrition sont transmis à l'API publique OpenFoodFacts sous forme de requêtes anonymes (aucune donnée personnelle n'est transmise).\n\nAucune autre donnée n'est partagée avec des tiers. Il n'y a pas de publicité, pas d'analytique, pas de trackers.",
+    body: "Deux services tiers reçoivent des données dans des conditions strictement encadrées :\n\n— OpenAI (coach IA) : lorsque tu envoies un message au coach, les informations suivantes sont transmises à l'API OpenAI via une connexion HTTPS sécurisée : ton prénom, objectif, données physiques (âge, taille, poids), macros cibles, résumé des 7 dernières séances et repas. Ces données ne sont jamais stockées côté FitTrack IA, et leur traitement par OpenAI est soumis à la politique de confidentialité d'OpenAI (openai.com/policies/privacy-policy).\n\n— OpenAI (estimation de repas) : si tu utilises l'estimation par description ou par photo, le texte saisi ou la photo du plat (réduite, sans métadonnées de localisation) est transmis à OpenAI pour analyse, puis le résultat est renvoyé. FitTrack IA ne stocke jamais ces photos.\n\n— OpenFoodFacts : les termes de recherche saisis dans l'onglet Nutrition sont transmis à l'API publique OpenFoodFacts sous forme de requêtes anonymes (aucune donnée personnelle n'est transmise).\n\nAucune autre donnée n'est partagée avec des tiers. Il n'y a pas de publicité, pas d'analytique, pas de trackers.",
   },
   {
     title: '5. Durée de conservation',
@@ -27,11 +27,11 @@ const SECTIONS = [
   },
   {
     title: '6. Tes droits (RGPD)',
-    body: "Conformément au Règlement Général sur la Protection des Données (RGPD), tu disposes des droits suivants :\n• Droit d'accès : toutes tes données sont visibles directement dans l'application\n• Droit de rectification : tu peux modifier ton profil à tout moment\n• Droit à l'effacement : utilise « Supprimer toutes mes données » dans Profil → Paramètres\n• Droit à la portabilité : non applicable (données locales uniquement)\n• Droit d'opposition : arrête simplement d'utiliser l'application",
+    body: "Conformément au Règlement Général sur la Protection des Données (RGPD), tu disposes des droits suivants :\n• Droit d'accès : toutes tes données sont visibles directement dans l'application\n• Droit de rectification : tu peux modifier ton profil à tout moment\n• Droit à l'effacement : utilise « Supprimer toutes mes données » dans Profil → Paramètres\n• Droit à la portabilité : Réglages → « Exporter mes données » (fichier chiffré)\n• Droit d'opposition : arrête simplement d'utiliser l'application",
   },
   {
     title: '7. Sécurité',
-    body: "Toutes les communications avec des services tiers (OpenAI, OpenFoodFacts) utilisent exclusivement le protocole HTTPS. La clé API OpenAI est configurée par l'utilisateur dans ses propres variables d'environnement et n'est jamais partagée.",
+    body: "Tes données sont chiffrées sur l'appareil (AES-256) ; la clé de chiffrement est conservée dans le Keychain iOS et n'est jamais incluse dans les sauvegardes iCloud. Tu peux exporter une sauvegarde chiffrée par un mot de passe que toi seul connais (Réglages → Exporter mes données). Toutes les communications avec des services tiers (OpenAI, OpenFoodFacts) utilisent exclusivement le protocole HTTPS.",
   },
   {
     title: '8. Modifications',
@@ -56,7 +56,7 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.title}>Politique de confidentialité</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.updated}>Dernière mise à jour : 8 juin 2026</Text>
+        <Text style={styles.updated}>Dernière mise à jour : 30 juillet 2026</Text>
         <Text style={styles.intro}>
           Cette politique explique quelles données FitTrack IA collecte, comment elles sont utilisées et tes droits en tant qu'utilisateur.
         </Text>

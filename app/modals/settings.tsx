@@ -153,7 +153,6 @@ export default function SettingsScreen() {
     isLockEnabled().then(setLockEnabledState);
     canUseLock().then(setLockAvailable);
     biometricLabel().then(setBioLabel);
-    AsyncStorage.getItem('@fit_health_sync').then(v => setHealthSync(v === 'true'));
     AsyncStorage.getItem('@fit_coach_persona').then(v => {
       if (v) { setPersona(v as CoachPersona); setCoachPersona(v as CoachPersona); }
     });
@@ -688,6 +687,10 @@ export default function SettingsScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerTitle}>FitTrack IA v1.0</Text>
           <Text style={styles.footerSub}>Fait avec ❤️ par Maxence</Text>
+          <Text style={styles.footerLegal}>
+            Données nutritionnelles : Table Ciqual 2020 © ANSES (licence Etalab){'\n'}
+            et Open Food Facts (licence ODbL) — openfoodfacts.org
+          </Text>
         </View>
 
       </ScrollView>
@@ -794,4 +797,5 @@ const styles = StyleSheet.create({
   footer:     { alignItems: 'center', paddingTop: Sp.xl, paddingBottom: Sp.md, gap: 4 },
   footerTitle: { fontSize: Fs.sm, color: Colors.textSecondary, fontFamily: Fonts.semibold },
   footerSub:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  footerLegal: { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: Sp.sm, lineHeight: 14, opacity: 0.8 },
 });

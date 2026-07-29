@@ -43,7 +43,9 @@ FitTrack IA réunit ta musculation ET ta nutrition dans une seule app — et un 
 • Calculateur de charge (disques par côté)
 
 **🥗 NUTRITION**
-• Scan de code-barres + recherche instantanée (base CIQUAL & OpenFoodFacts)
+• Scan de code-barres + recherche instantanée (2 265 aliments CIQUAL/ANSES + OpenFoodFacts)
+• 📸 Prends ton assiette en photo — l'IA identifie les aliments et estime les portions
+• Mode Restaurant : décris ton repas, l'IA le découpe en aliments
 • Suivi calories et macros en un geste
 • Plans de repas et meal-prep générés par l'IA
 • Jeûne intermittent, recettes, favoris
@@ -58,8 +60,11 @@ FitTrack IA réunit ta musculation ET ta nutrition dans une seule app — et un 
 • Mensurations, photos avant/après, badges
 • Score de forme hebdomadaire
 
+**🍎 APPLE SANTÉ**
+Tes séances et ton poids se synchronisent avec Santé (balance connectée comprise).
+
 **🔒 TES DONNÉES T'APPARTIENNENT**
-Tout est stocké sur ton téléphone. Export possible à tout moment. Conforme RGPD.
+Tout est stocké sur ton téléphone, chiffré (AES-256). Sauvegarde chiffrée exportable à tout moment. Pas de compte, pas de pub, pas de trackers. Conforme RGPD.
 
 Télécharge FitTrack IA et transforme-toi — un jour à la fois.
 
@@ -71,7 +76,9 @@ Télécharge FitTrack IA et transforme-toi — un jour à la fois.
 ```
 🎉 Première version de FitTrack IA !
 • Coach IA sport + nutrition
-• Scan de code-barres et suivi des macros
+• Photo de repas → calories estimées par l'IA
+• Scan de code-barres et 2 265 aliments français (CIQUAL)
+• Synchronisation Apple Santé
 • Surcharge progressive et records automatiques
 • Thème or & noir, 100 % en français
 Dis-nous ce que tu en penses ⭐
@@ -95,7 +102,18 @@ scrollent vite). Fond noir + accent or = cohérent avec l'icône.*
 ## Champs annexes
 - **Catégorie** : Forme et santé (primaire) · Style de vie (secondaire)
 - **Âge** : 4+ (aucun contenu sensible)
-- **Politique de confidentialité** : ⚠️ héberger une URL publique (obligatoire) —
-  reprendre le texte de `app/modals/privacy-policy.tsx`.
-- **Confidentialité (nutrition labels)** : « Données non collectées » si tout
-  reste on-device (à confirmer selon le proxy IA).
+- **Politique de confidentialité** : ⚠️ URL publique obligatoire — la page est
+  prête dans `docs/privacy.html`. À héberger (2 options gratuites) :
+  1. **Cloudflare Pages** (tu as déjà un compte pour le proxy) : dashboard →
+     Workers & Pages → Create → Pages → upload du fichier. URL en
+     `*.pages.dev` obtenue en 2 minutes.
+  2. **GitHub Pages** : nécessite un repo public — ne PAS utiliser le repo de
+     l'app (privé) ; créer un petit repo public dédié avec ce seul fichier.
+- **Confidentialité (nutrition labels App Store Connect)** — déclaration honnête :
+  - « Santé et forme » + « Autre contenu utilisateur » (messages coach, photos
+    de repas) → **collectées, NON liées à l'identité, PAS de tracking** :
+    elles transitent par OpenAI quand la fonction IA est utilisée.
+  - Ne PAS cocher « Données non collectées » : le coach IA envoie des données
+    hors de l'appareil, Apple vérifie ce point à la review.
+- **Autorisation HealthKit** : cocher la capability HealthKit dans App Store
+  Connect si demandé (l'entitlement est déjà dans le build).

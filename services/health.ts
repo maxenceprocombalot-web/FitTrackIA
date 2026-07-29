@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WorkoutSession, WorkoutType } from '../types';
+import { localISO } from './date';
 
 // Apple Santé (HealthKit) via @kingstinct/react-native-healthkit.
 // Le module est natif : chargé paresseusement pour que l'app reste
@@ -86,5 +87,27 @@ export async function writeWeightToHealth(kg: number, dateISO: string): Promise<
     await hk.saveQuantitySample('HKQuantityTypeIdentifierBodyMass', 'kg', kg, d, d);
   } catch {
     // silencieux
+  }
+}
+
+/**
+ * Dernier poids enregistré dans Apple Santé (balance connectée, saisie
+ * manuelle…). Retourne null si la sync est coupée ou sans donnée.
+ */
+export async function readLatestWeightFromHealth(): Promise<{ kg: number; date: string } | null> {
+  try {
+    const hk = getHK();
+    if (!hk || !(await isHealthSyncEnabled())) return null;
+    const samples = await hk.queryQuantitySamples('HKQuantityTypeIdentifierBodyMass', {
+      limit: 1, ascending: false, unit: 'kg',
+    });
+    const s = samples?.[0];
+    const kg = Number(s?.quantity);
+    if (!s || !Number.isFinite(kg) || kg < 20 || kg > 400) return null;
+    const d = new Date(s.startDate);
+    if (Number.isNaN(d.getTime())) return null;
+    return { kg: Math.round(kg * 10) / 10, date: localISO(d) };
+  } catch {
+    return null;
   }
 }
