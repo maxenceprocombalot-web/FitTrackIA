@@ -12,6 +12,8 @@ import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
 import { COMMON_FOODS } from '../../constants/foods';
 import { CIQUAL_FOODS } from '../../constants/ciqual';
 import { normSearch } from '../../constants/foods';
+import { estimateMealItems } from '../../services/openai';
+import { usePremiumGate } from '../../hooks/usePremiumGate';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
 import { Colors, R, Sp, Fs, Fw, Fonts, tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
@@ -66,8 +68,27 @@ export default function AddFoodModal() {
   const [searching,     setSearching]     = useState(false);
   const [hasSearched,   setHasSearched]   = useState(false);
   const [localResults,  setLocalResults]  = useState<FoodItem[]>([]);
-  const [resultSource,  setResultSource]  = useState<'ciqual' | 'off' | 'local' | ''>('');
+  const [resultSource,  setResultSource]  = useState<'ciqual' | 'off' | 'local' | 'ai' | ''>('');
   const [scanned,     setScanned]     = useState(false);
+  const { requirePremium } = usePremiumGate();
+
+  // Fallback IA quand ni CIQUAL ni OpenFoodFacts ne trouvent rien
+  const handleAiEstimate = useCallback(async () => {
+    if (!searchQ.trim() || !requirePremium()) return;
+    setSearching(true);
+    try {
+      const est = await estimateMealItems(searchQ.trim());
+      setSearchRes(est.map((it, i) => ({
+        id: `ai_${Date.now()}_${i}`, name: `🍽️ ${it.name}`, quantity: it.portionG,
+        caloriesPer100g: Math.round(it.caloriesPer100g), proteinPer100g: it.proteinPer100g,
+        carbsPer100g: it.carbsPer100g, fatPer100g: it.fatPer100g,
+      })));
+      setResultSource('ai');
+    } catch (e: any) {
+      Alert.alert('Estimation impossible', e?.message ?? 'Réessaie plus tard.');
+    }
+    setSearching(false);
+  }, [searchQ, requirePremium]);
   const [permission, requestPermission] = useCameraPermissions();
 
   // Champs saisie manuelle
@@ -333,14 +354,26 @@ export default function AddFoodModal() {
               ListHeaderComponent={
                 hasSearched && resultSource === 'off'
                   ? <Text style={styles.searchHint}>Résultats OpenFoodFacts</Text>
-                  : !hasSearched && instantResults.length > 0
-                    ? <Text style={styles.searchHint}>Appuie sur ↵ pour chercher aussi en ligne</Text>
-                    : null
+                  : hasSearched && resultSource === 'ai'
+                    ? <Text style={styles.searchHint}>✨ Estimation IA — vérifie les portions et valeurs</Text>
+                    : !hasSearched && instantResults.length > 0
+                      ? <Text style={styles.searchHint}>Appuie sur ↵ pour chercher aussi en ligne</Text>
+                      : null
               }
               ListEmptyComponent={
                 <View style={styles.emptyState}>
                   <Ionicons name="search-outline" size={40} color={Colors.textMuted} />
                   <Text style={styles.emptyText}>{hasSearched ? 'Aucun résultat' : 'Continue à taper ou appuie sur ↵'}</Text>
+                  {hasSearched ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      style={styles.aiEstimateBtn}
+                      onPress={handleAiEstimate}
+                    >
+                      <Ionicons name="sparkles" size={16} color={Colors.primary} />
+                      <Text style={styles.aiEstimateBtnText}>Estimer « {searchQ.trim().slice(0, 24)} » avec l'IA</Text>
+                    </TouchableOpacity>
+                  ) : null}
                   <Text style={styles.emptySubText}>Sinon, ajoute l'aliment manuellement (✏️ en haut)</Text>
                 </View>
               }
@@ -560,6 +593,8 @@ const styles = StyleSheet.create({
   // État vide
   emptyState: { alignItems: 'center', paddingVertical: 50, gap: 8 },
   emptyText: { fontSize: Fs.md, color: Colors.textSecondary, fontFamily: Fonts.medium },
+  aiEstimateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: Colors.primary + '50', backgroundColor: Colors.primary + '14', borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, marginTop: Sp.sm },
+  aiEstimateBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   emptySubText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
   // Recherche
   searchContainer: { flex: 1, padding: Sp.md },

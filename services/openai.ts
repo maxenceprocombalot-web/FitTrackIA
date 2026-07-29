@@ -361,43 +361,57 @@ export async function generateMonthlyMessage(user: import('../types').User, stat
 
 // ─── Estimation macros d'un plat (Mode Restaurant) ───────────────────────────
 
-export async function estimateDishMacros(dishName: string): Promise<{
+export interface EstimatedItem {
   name: string; portionG: number; caloriesPer100g: number;
   proteinPer100g: number; carbsPer100g: number; fatPer100g: number;
-} | null> {
+}
+
+/**
+ * Décompose un repas décrit en langage naturel ("burger frites coca") en
+ * aliments distincts avec portions réalistes. Utilisé par le mode Restaurant
+ * et le fallback IA de la recherche d'aliments.
+ */
+export async function estimateMealItems(description: string): Promise<EstimatedItem[]> {
   const client = getClient();
   if (!client) {
     await new Promise(r => setTimeout(r, 600));
-    return { name: dishName, portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 };
+    return [{ name: description, portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 }];
   }
-  try {
-    const res = await callAI(() => client.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: `Estime les macronutriments pour le plat suivant : "${dishName}". Réponds UNIQUEMENT en JSON avec ce format exact, sans aucun autre texte : {"name":"${dishName}","portionG":300,"caloriesPer100g":150,"proteinPer100g":12,"carbsPer100g":18,"fatPer100g":5}` }],
-      max_tokens: 150, temperature: 0.3,
-    }));
-    const text = res.choices[0]?.message?.content ?? '';
-    const jsonMatch = text.match(/\{[^}]+\}/);
-    if (!jsonMatch) return null;
-    const raw = JSON.parse(jsonMatch[0]);
+  const res = await callAI(() => client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{
+      role: 'user',
+      content: `Décompose ce repas en aliments distincts avec des portions réalistes (contexte : restaurant/fait maison en France) : "${description}".
+Réponds UNIQUEMENT avec un tableau JSON, sans autre texte, au format exact :
+[{"name":"Burger bœuf","portionG":250,"caloriesPer100g":250,"proteinPer100g":13,"carbsPer100g":20,"fatPer100g":13}]
+Maximum 6 aliments. Les macros sont pour 100 g.`,
+    }],
+    max_tokens: 500, temperature: 0.3,
+  }));
+  const text = res.choices[0]?.message?.content ?? '';
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) return [];
+  let raw: unknown;
+  try { raw = JSON.parse(jsonMatch[0]); } catch { return []; }
+  if (!Array.isArray(raw)) return [];
 
-    // Assainissement : ne jamais faire confiance à la sortie du modèle. On borne
-    // chaque nombre dans une plage plausible et on rejette les valeurs non finies,
-    // pour éviter d'injecter des macros aberrantes (NaN, négatif, démesuré) dans
-    // les données de l'utilisateur.
-    const num = (v: unknown, max: number): number => {
-      const n = Number(v);
-      return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0;
-    };
-    return {
-      name:           typeof raw.name === 'string' ? raw.name.slice(0, 80) : dishName,
-      portionG:       num(raw.portionG, 5000) || 100,
-      caloriesPer100g: num(raw.caloriesPer100g, 900),  // max physiologique ~900 (huiles)
-      proteinPer100g: num(raw.proteinPer100g, 100),
-      carbsPer100g:   num(raw.carbsPer100g, 100),
-      fatPer100g:     num(raw.fatPer100g, 100),
-    };
-  } catch { return null; }
+  // Même assainissement qu'estimateDishMacros : bornes plausibles, rien d'aberrant.
+  const num = (v: unknown, max: number): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0;
+  };
+  return raw.slice(0, 6).flatMap((it: any): EstimatedItem[] => {
+    const name = typeof it?.name === 'string' ? it.name.slice(0, 80).trim() : '';
+    if (!name) return [];
+    return [{
+      name,
+      portionG:        num(it.portionG, 5000) || 100,
+      caloriesPer100g: num(it.caloriesPer100g, 900),
+      proteinPer100g:  num(it.proteinPer100g, 100),
+      carbsPer100g:    num(it.carbsPer100g, 100),
+      fatPer100g:      num(it.fatPer100g, 100),
+    }];
+  });
 }
 
 // ─── Génération Meal Prep 7 jours + liste de courses ─────────────────────────

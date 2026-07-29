@@ -17,7 +17,7 @@ import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
 import { today, localISO } from '../../services/date';
-import { estimateDishMacros, generateMealPrepWithShopping } from '../../services/openai';
+import { estimateMealItems, EstimatedItem, generateMealPrepWithShopping } from '../../services/openai';
 import { PREDEFINED_RECIPES } from '../../constants/recipes';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
@@ -409,11 +409,11 @@ export default function NutritionScreen() {
     {showRestaurant && (
       <RestaurantModal
         onClose={() => setShowRestaurant(false)}
-        onAdd={(item: FoodItem) => {
+        onAdd={(newItems: FoodItem[]) => {
           const existing = selectedMeals.find(m => m.type === 'lunch');
           const meal: Meal = existing
-            ? { ...existing, items: [...existing.items, item] }
-            : { id: Date.now().toString(), date: selectedDate, type: 'lunch', items: [item] };
+            ? { ...existing, items: [...existing.items, ...newItems] }
+            : { id: Date.now().toString(), date: selectedDate, type: 'lunch', items: newItems };
           store.addMeal(meal);
           setShowRestaurant(false);
         }}
@@ -735,74 +735,106 @@ const fmStyles = StyleSheet.create({
 
 function RestaurantModal({ onClose, onAdd }: {
   onClose: () => void;
-  onAdd: (item: FoodItem) => void;
+  onAdd: (items: FoodItem[]) => void;
 }) {
   const [dish, setDish] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [items, setItems] = useState<EstimatedItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [portion, setPortion] = useState('');
+  const [error, setError] = useState('');
 
   const handleEstimate = async () => {
     if (!dish.trim()) return;
     setLoading(true);
-    const r = await estimateDishMacros(dish.trim());
-    if (r) { setResult(r); setPortion(String(r.portionG)); }
+    setError('');
+    setItems([]);
+    try {
+      const res = await estimateMealItems(dish.trim());
+      if (res.length === 0) setError("L'IA n'a pas réussi à estimer ce repas. Reformule ou détaille davantage.");
+      setItems(res);
+    } catch (e: any) {
+      setError(e?.message ?? 'Erreur lors de l\'estimation.');
+    }
     setLoading(false);
   };
 
-  const qty = parseFloat(portion) || 300;
-  const cal = result ? Math.round(result.caloriesPer100g * qty / 100) : 0;
+  const setPortion = (idx: number, v: string) => {
+    const g = parseFloat(v) || 0;
+    setItems(prev => prev.map((it, i) => i === idx ? { ...it, portionG: g } : it));
+  };
+  const removeItem = (idx: number) => setItems(prev => prev.filter((_, i) => i !== idx));
+
+  const totalCal = Math.round(items.reduce((s, it) => s + it.caloriesPer100g * it.portionG / 100, 0));
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', zIndex: 999 }}>
-      <View style={{ backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border }}>
+      <View style={{ backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Sp.lg, paddingBottom: 40, borderWidth: 1, borderColor: Colors.border, maxHeight: '85%' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.md }}>
           <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text }}>🍽️ Mode Restaurant</Text>
           <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={tapSlop}><Ionicons name="close" size={22} color={Colors.textMuted} /></TouchableOpacity>
         </View>
-        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton plat</Text>
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Décris ton repas — l'IA le découpe en aliments</Text>
         <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md }}>
           <TextInput
             style={{ flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border }}
             value={dish}
             onChangeText={setDish}
-            placeholder="Steak frites, Pizza margherita..."
+            placeholder="Burger frites + coca, tiramisu…"
             placeholderTextColor={Colors.textMuted}
             onSubmitEditing={handleEstimate}
           />
-          <TouchableOpacity style={{ backgroundColor: Colors.orange, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', minWidth: 48 }} onPress={handleEstimate} disabled={loading}>
-            {loading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="sparkles" size={18} color="#fff" />}
+          <TouchableOpacity
+            accessibilityRole="button" accessibilityLabel="Estimer avec l'IA"
+            style={{ backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', minWidth: 48 }}
+            onPress={handleEstimate} disabled={loading}
+          >
+            {loading ? <ActivityIndicator size="small" color={Colors.onPrimary} /> : <Ionicons name="sparkles" size={18} color={Colors.onPrimary} />}
           </TouchableOpacity>
         </View>
-        {result && (
+        {!!error && <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.red, marginBottom: Sp.sm }}>{error}</Text>}
+        {items.length > 0 && (
           <>
-            <View style={{ backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, marginBottom: Sp.sm, gap: Sp.xs }}>
-              <Text style={{ fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginBottom: 4 }}>{result.name}</Text>
-              <View style={{ flexDirection: 'row', gap: Sp.sm }}>
-                {[
-                  { label: 'kcal', value: cal, color: Colors.caloriesColor },
-                  { label: 'P', value: `${Math.round(result.proteinPer100g * qty / 100)}g`, color: Colors.proteinColor },
-                  { label: 'G', value: `${Math.round(result.carbsPer100g * qty / 100)}g`, color: Colors.carbsColor },
-                  { label: 'L', value: `${Math.round(result.fatPer100g * qty / 100)}g`, color: Colors.fatColor },
-                ].map(m => (
-                  <View key={m.label} style={{ flex: 1, alignItems: 'center', backgroundColor: m.color + '15', borderRadius: R, paddingVertical: 8 }}>
-                    <Text style={{ fontSize: Fs.md, fontFamily: Fonts.bold, color: m.color }}>{m.value}</Text>
-                    <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{m.label}</Text>
+            <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
+              {items.map((it, idx) => {
+                const cal = Math.round(it.caloriesPer100g * it.portionG / 100);
+                return (
+                  <View key={idx} style={{ backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.sm, marginBottom: Sp.xs, flexDirection: 'row', alignItems: 'center', gap: Sp.sm }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text }}>{it.name}</Text>
+                      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>
+                        {cal} kcal • P {Math.round(it.proteinPer100g * it.portionG / 100)}g • G {Math.round(it.carbsPer100g * it.portionG / 100)}g • L {Math.round(it.fatPer100g * it.portionG / 100)}g
+                      </Text>
+                    </View>
+                    <TextInput
+                      style={{ backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border, width: 62, textAlign: 'center' }}
+                      value={String(it.portionG || '')}
+                      onChangeText={v => setPortion(idx, v)}
+                      keyboardType="number-pad"
+                      accessibilityLabel={`Portion de ${it.name} en grammes`}
+                    />
+                    <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>g</Text>
+                    <TouchableOpacity onPress={() => removeItem(idx)} accessibilityRole="button" accessibilityLabel={`Retirer ${it.name}`} hitSlop={tapSlop}>
+                      <Ionicons name="trash-outline" size={16} color={Colors.textMuted} />
+                    </TouchableOpacity>
                   </View>
-                ))}
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginTop: 4 }}>
-                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary }}>Portion :</Text>
-                <TextInput style={{ backgroundColor: Colors.surface, borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 6, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border, width: 70, textAlign: 'center' }} value={portion} onChangeText={setPortion} keyboardType="number-pad" />
-                <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>g</Text>
-              </View>
-              <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, fontStyle: 'italic', marginTop: 4 }}>⚠️ Estimation IA — peut varier selon la portion réelle</Text>
-            </View>
-            <TouchableOpacity style={{ backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center' }} onPress={() => {
-              const item: FoodItem = { id: `rest_${Date.now()}`, name: `🍽️ ${result.name}`, quantity: qty, caloriesPer100g: result.caloriesPer100g, proteinPer100g: result.proteinPer100g, carbsPer100g: result.carbsPer100g, fatPer100g: result.fatPer100g };
-              onAdd(item);
-            }}>
-              <Text style={{ color: Colors.onPrimary, fontFamily: Fonts.bold }}>Ajouter à mon repas</Text>
+                );
+              })}
+            </ScrollView>
+            <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, fontStyle: 'italic', marginVertical: Sp.xs }}>⚠️ Estimation IA — ajuste les portions si besoin</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={{ backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center' }}
+              onPress={() => {
+                const foodItems: FoodItem[] = items.filter(it => it.portionG > 0).map((it, i) => ({
+                  id: `rest_${Date.now()}_${i}`, name: `🍽️ ${it.name}`, quantity: it.portionG,
+                  caloriesPer100g: it.caloriesPer100g, proteinPer100g: it.proteinPer100g,
+                  carbsPer100g: it.carbsPer100g, fatPer100g: it.fatPer100g,
+                }));
+                if (foodItems.length) onAdd(foodItems);
+              }}
+            >
+              <Text style={{ color: Colors.onPrimary, fontFamily: Fonts.bold }}>
+                Tout ajouter ({totalCal} kcal{items.length > 1 ? ` • ${items.length} aliments` : ''})
+              </Text>
             </TouchableOpacity>
           </>
         )}
