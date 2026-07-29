@@ -23,16 +23,40 @@ const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: 
 
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 const orderKey = (blocId: string) => `@fit_perso_order_${blocId}`;
+const POS_KEY = '@fit_perso_position';
+
+// Position de départ : bloc « Effort max », semaine 2 (situation actuelle).
+// Ensuite l'app mémorise le dernier choix pour suivre la progression.
+const DEFAULT_BLOC = 0;
+const DEFAULT_WEEK = 1;
 
 export default function PersoAthletiqueScreen() {
   const router = useRouter();
-  const [blocIdx, setBlocIdx]   = useState(0);
-  const [weekIdx, setWeekIdx]   = useState(0);
+  const [blocIdx, setBlocIdx]   = useState(DEFAULT_BLOC);
+  const [weekIdx, setWeekIdx]   = useState(DEFAULT_WEEK);
   const [order, setOrder]       = useState<number[]>([]);
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
   const [tab, setTab]           = useState<'semaine' | 'basket'>('semaine');
 
   const bloc = PERSONAL_BLOCS[blocIdx];
+
+  // Restaure la dernière position consultée
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const raw = await getSecure(POS_KEY);
+        if (!raw || !alive) return;
+        const p = JSON.parse(raw) as { bloc: number; week: number };
+        if (typeof p?.bloc === 'number' && PERSONAL_BLOCS[p.bloc]) {
+          setBlocIdx(p.bloc);
+          const max = PERSONAL_BLOCS[p.bloc].weeks - 1;
+          if (typeof p.week === 'number') setWeekIdx(Math.min(Math.max(p.week, 0), max));
+        }
+      } catch { /* valeurs par défaut */ }
+    })();
+    return () => { alive = false; };
+  }, []);
 
   // Ordre des jours mémorisé par bloc
   useEffect(() => {
@@ -69,6 +93,11 @@ export default function PersoAthletiqueScreen() {
     persist(next);
     setSwapFrom(null);
   }, [order, persist]);
+
+  // Mémorise la position (non bloquant)
+  useEffect(() => {
+    setSecure(POS_KEY, JSON.stringify({ bloc: blocIdx, week: weekIdx })).catch(() => {});
+  }, [blocIdx, weekIdx]);
 
   const isCustom = order.some((v, i) => v !== i);
 
@@ -137,6 +166,7 @@ export default function PersoAthletiqueScreen() {
                   accessibilityRole="button"
                 >
                   <Text style={[styles.chipText, i === weekIdx && styles.chipTextActive]}>{w}</Text>
+                  {i === weekIdx && <Text style={styles.chipSubActive}>en cours</Text>}
                 </TouchableOpacity>
               ))}
             </View>
@@ -349,6 +379,7 @@ const styles = StyleSheet.create({
   chipText:     { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
   chipSub:      { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
   chipTextActive: { color: Colors.onPrimary },
+  chipSubActive:  { fontSize: 9, fontFamily: Fonts.medium, color: Colors.onPrimary, opacity: 0.8, marginTop: 1 },
 
   focusCard:  { backgroundColor: Colors.primary + '0E', borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, padding: Sp.md, marginTop: Sp.xs },
   focusLabel: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.primary, letterSpacing: 0.5 },
