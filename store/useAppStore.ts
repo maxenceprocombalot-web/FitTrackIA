@@ -6,6 +6,7 @@ import {
   FoodItem,
 } from '../types';
 import * as S from '../services/storage';
+import { writeWorkoutToHealth, writeWeightToHealth } from '../services/health';
 import { sumMeals } from '../services/metrics';
 import { initPurchases, checkPremium } from '../services/purchases';
 import { PREDEFINED_PLANS } from '../constants/predefined-plans';
@@ -178,6 +179,7 @@ export function useAppStore(watch?: readonly StateKey[]) {
     const streak   = computeStreak(workouts, _state.streak);
     await S.saveStreak(streak);
     setState({ workouts, streak });
+    writeWorkoutToHealth(w); // best-effort, jamais bloquant
   }, []);
 
   const deleteWorkout = useCallback(async (id: string) => {
@@ -211,6 +213,7 @@ export function useAppStore(watch?: readonly StateKey[]) {
     await S.saveWeight(e);
     const next = [..._state.weights.filter(w => w.date !== e.date), e].sort((a, b) => a.date.localeCompare(b.date));
     setState({ weights: next });
+    writeWeightToHealth(e.weight, e.date); // best-effort, jamais bloquant
   }, []);
 
   // ─── Chat ────────────────────────────────────────────────────────────────────

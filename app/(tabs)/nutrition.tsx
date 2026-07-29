@@ -17,7 +17,9 @@ import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
 import { today, localISO } from '../../services/date';
-import { estimateMealItems, EstimatedItem, generateMealPrepWithShopping } from '../../services/openai';
+import { estimateMealItems, estimateMealFromPhoto, EstimatedItem, generateMealPrepWithShopping } from '../../services/openai';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { PREDEFINED_RECIPES } from '../../constants/recipes';
 
 const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; color: string }> = {
@@ -757,6 +759,48 @@ function RestaurantModal({ onClose, onAdd }: {
     setLoading(false);
   };
 
+  const handlePhoto = async (fromCamera: boolean) => {
+    const perm = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError(fromCamera ? "Autorise l'accès à l'appareil photo dans Réglages iOS." : "Autorise l'accès aux photos dans Réglages iOS.");
+      return;
+    }
+    const opts = { mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7 };
+    const picked = fromCamera
+      ? await ImagePicker.launchCameraAsync(opts)
+      : await ImagePicker.launchImageLibraryAsync(opts);
+    if (picked.canceled || !picked.assets?.[0]?.uri) return;
+
+    setLoading(true);
+    setError('');
+    setItems([]);
+    try {
+      // Redimensionne à 768px max : suffisant pour l'analyse, ~10x plus léger à envoyer
+      const small = await ImageManipulator.manipulateAsync(
+        picked.assets[0].uri,
+        [{ resize: { width: 768 } }],
+        { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      if (!small.base64) throw new Error('Impossible de préparer la photo.');
+      const res = await estimateMealFromPhoto(small.base64);
+      if (res.length === 0) setError("Aucun aliment reconnu sur la photo. Réessaie avec un meilleur angle ou décris le repas.");
+      setItems(res);
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de l'analyse de la photo.");
+    }
+    setLoading(false);
+  };
+
+  const askPhoto = () => {
+    Alert.alert('📸 Photo du repas', "L'IA identifie les aliments et estime les portions.", [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Galerie', onPress: () => handlePhoto(false) },
+      { text: 'Prendre une photo', onPress: () => handlePhoto(true) },
+    ]);
+  };
+
   const setPortion = (idx: number, v: string) => {
     const g = parseFloat(v) || 0;
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, portionG: g } : it));
@@ -778,10 +822,17 @@ function RestaurantModal({ onClose, onAdd }: {
             style={{ flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border }}
             value={dish}
             onChangeText={setDish}
-            placeholder="Burger frites + coca, tiramisu…"
+            placeholder="Décris… ou prends une photo 📸"
             placeholderTextColor={Colors.textMuted}
             onSubmitEditing={handleEstimate}
           />
+          <TouchableOpacity
+            accessibilityRole="button" accessibilityLabel="Analyser une photo du repas"
+            style={{ borderWidth: 1, borderColor: Colors.primary + '60', backgroundColor: Colors.primary + '14', borderRadius: R, paddingHorizontal: Sp.sm, justifyContent: 'center', alignItems: 'center', minWidth: 44 }}
+            onPress={askPhoto} disabled={loading}
+          >
+            <Ionicons name="camera-outline" size={18} color={Colors.primary} />
+          </TouchableOpacity>
           <TouchableOpacity
             accessibilityRole="button" accessibilityLabel="Estimer avec l'IA"
             style={{ backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', minWidth: 48 }}

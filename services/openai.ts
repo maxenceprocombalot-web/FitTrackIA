@@ -388,14 +388,16 @@ Maximum 6 aliments. Les macros sont pour 100 g.`,
     }],
     max_tokens: 500, temperature: 0.3,
   }));
-  const text = res.choices[0]?.message?.content ?? '';
+  return parseEstimatedItems(res.choices[0]?.message?.content ?? '');
+}
+
+/** Parse et assainit un tableau JSON d'aliments estimés — bornes plausibles, rien d'aberrant. */
+function parseEstimatedItems(text: string): EstimatedItem[] {
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) return [];
   let raw: unknown;
   try { raw = JSON.parse(jsonMatch[0]); } catch { return []; }
   if (!Array.isArray(raw)) return [];
-
-  // Même assainissement qu'estimateDishMacros : bornes plausibles, rien d'aberrant.
   const num = (v: unknown, max: number): number => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.min(Math.max(n, 0), max) : 0;
@@ -412,6 +414,36 @@ Maximum 6 aliments. Les macros sont pour 100 g.`,
       fatPer100g:      num(it.fatPer100g, 100),
     }];
   });
+}
+
+/**
+ * Analyse une PHOTO de repas (jpeg base64) et estime les aliments visibles
+ * avec leurs portions. Même contrat de sortie qu'estimateMealItems.
+ */
+export async function estimateMealFromPhoto(base64Jpeg: string): Promise<EstimatedItem[]> {
+  const client = getClient();
+  if (!client) {
+    await new Promise(r => setTimeout(r, 600));
+    return [{ name: 'Plat (démo — configure la clé IA)', portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 }];
+  }
+  const res = await callAI(() => client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `Identifie les aliments visibles sur cette photo de repas et estime la portion de chacun en te basant sur les proportions de l'assiette (contexte : France).
+Réponds UNIQUEMENT avec un tableau JSON, sans autre texte, au format exact :
+[{"name":"Poulet rôti","portionG":150,"caloriesPer100g":190,"proteinPer100g":27,"carbsPer100g":0,"fatPer100g":9}]
+Maximum 6 aliments. Les macros sont pour 100 g. Si aucune nourriture n'est visible, réponds [].`,
+        },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Jpeg}`, detail: 'low' } },
+      ],
+    }],
+    max_tokens: 500, temperature: 0.3,
+  }));
+  return parseEstimatedItems(res.choices[0]?.message?.content ?? '');
 }
 
 // ─── Génération Meal Prep 7 jours + liste de courses ─────────────────────────

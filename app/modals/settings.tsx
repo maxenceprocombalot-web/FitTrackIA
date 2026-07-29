@@ -10,6 +10,11 @@ import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, is
 import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
+import { createBackup, decryptBackup, restoreBackup } from '../../services/backup';
+import { isHealthAvailable, isHealthSyncEnabled, enableHealthSync, disableHealthSync } from '../../services/health';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { isLockEnabled, setLockEnabled, canUseLock, biometricLabel, authenticate } from '../../services/applock';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
@@ -140,6 +145,7 @@ export default function SettingsScreen() {
 
   // ── Apple Health ─────────────────────────────────────────────────────────
   const [healthSync, setHealthSync] = useState(false);
+  useEffect(() => { isHealthSyncEnabled().then(setHealthSync); }, []);
 
   useEffect(() => {
     loadApiKey().then(k => { if (k) setApiKey(k); });
@@ -221,18 +227,86 @@ export default function SettingsScreen() {
   }, [apiKey]);
 
   // ── Exporter les données ──────────────────────────────────────────────────
-  const handleExport = useCallback(async () => {
-    if (!user) return;
-    const data = JSON.stringify({
-      exportedAt: new Date().toISOString(),
-      user: { name: user.name, age: user.age, height: user.height, weight: user.weight, goal: user.goal, activityLevel: user.activityLevel },
-      workouts: store.workouts.slice(0, 300),
-      meals: store.meals.slice(0, 300),
-      weights: store.weights,
-      prs: store.prs,
-    }, null, 2);
-    await Share.share({ message: data, title: 'FitTrack IA — Export' });
-  }, [user, store]);
+  const handleExport = useCallback(() => {
+    Alert.prompt(
+      'Sauvegarde chiffrée',
+      'Choisis un mot de passe (8 caractères min). Il sera demandé pour restaurer — ne le perds pas, il n\'est stocké nulle part.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Exporter',
+          onPress: async (pass?: string) => {
+            if (!pass || pass.length < 8) {
+              Alert.alert('Mot de passe trop court', '8 caractères minimum.');
+              return;
+            }
+            try {
+              const { uri, entryCount } = await createBackup(pass);
+              if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(uri, { dialogTitle: 'Enregistrer la sauvegarde FitTrack IA' });
+              }
+              Alert.alert('✅ Sauvegarde créée', `${entryCount} catégories de données exportées.\n\nConserve le fichier dans iCloud Drive ou Fichiers.`);
+            } catch (e: any) {
+              Alert.alert('Export impossible', e?.message ?? 'Réessaie plus tard.');
+            }
+          },
+        },
+      ],
+      'secure-text',
+    );
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+    if (picked.canceled || !picked.assets?.[0]?.uri) return;
+    let content = '';
+    try {
+      content = await FileSystem.readAsStringAsync(picked.assets[0].uri);
+    } catch {
+      Alert.alert('Fichier illisible', 'Impossible de lire ce fichier.');
+      return;
+    }
+    Alert.prompt(
+      'Restaurer la sauvegarde',
+      'Mot de passe de la sauvegarde :',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Continuer',
+          onPress: (pass?: string) => {
+            if (!pass) return;
+            try {
+              const { info, data } = decryptBackup(content, pass);
+              const when = info.exportedAt ? new Date(info.exportedAt).toLocaleDateString('fr-FR') : 'date inconnue';
+              Alert.alert(
+                'Confirmer la restauration',
+                `Sauvegarde du ${when} — ${info.entryCount} catégories.\n\n⚠️ Les données actuelles de ces catégories seront remplacées.`,
+                [
+                  { text: 'Annuler', style: 'cancel' },
+                  {
+                    text: 'Restaurer',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await restoreBackup(data);
+                        await store.refresh();
+                        Alert.alert('✅ Données restaurées', 'Toutes tes données ont été rechargées.');
+                      } catch (e: any) {
+                        Alert.alert('Restauration impossible', e?.message ?? 'Réessaie plus tard.');
+                      }
+                    },
+                  },
+                ],
+              );
+            } catch (e: any) {
+              Alert.alert('Erreur', e?.message ?? 'Mot de passe incorrect.');
+            }
+          },
+        },
+      ],
+      'secure-text',
+    );
+  }, [store]);
 
   if (!user) return null;
 
@@ -494,8 +568,15 @@ export default function SettingsScreen() {
           <RowLink
             icon="download-outline"
             label="Exporter mes données"
-            sublabel="⚠️ Le fichier exporté n'est pas chiffré"
+            sublabel="Fichier chiffré (.fittrack) — à garder dans iCloud Drive"
             onPress={handleExport}
+          />
+          <View style={styles.divider} />
+          <RowLink
+            icon="cloud-download-outline"
+            label="Restaurer une sauvegarde"
+            sublabel="Depuis un fichier .fittrack exporté"
+            onPress={handleImport}
           />
           <View style={styles.divider} />
           <RowLink
@@ -576,17 +657,28 @@ export default function SettingsScreen() {
                 Alert.alert('Non disponible', 'La synchronisation Apple Santé est uniquement disponible sur iOS.');
                 return;
               }
-              setHealthSync(v);
-              await AsyncStorage.setItem('@fit_health_sync', v ? 'true' : 'false');
-              if (v) {
-                Alert.alert('Apple Santé', 'La synchronisation nécessite un build natif (pas disponible dans Expo Go). Elle sera activée lors du prochain build.', [{ text: 'Compris' }]);
+              if (!v) {
+                setHealthSync(false);
+                await disableHealthSync();
+                return;
+              }
+              if (!isHealthAvailable()) {
+                Alert.alert('Apple Santé', "Non disponible dans Expo Go — la synchronisation fonctionnera dans l'app installée (build natif).");
+                return;
+              }
+              const ok = await enableHealthSync();
+              setHealthSync(ok);
+              if (ok) {
+                Alert.alert('✅ Apple Santé activé', 'Tes prochaines séances et pesées seront écrites dans Santé.');
+              } else {
+                Alert.alert('Autorisation refusée', 'Tu peux la modifier dans Réglages iOS → Santé → Accès aux données.');
               }
             }}
           />
           {Platform.OS === 'ios' && healthSync && (
             <View style={{ paddingHorizontal: Sp.md, paddingBottom: Sp.sm }}>
               <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 }}>
-                ⚠️ Nécessite un build natif. Données synchronisées : poids, calories actives, séances d'entraînement.
+                Données écrites dans Santé : séances d'entraînement (durée, calories) et poids.
               </Text>
             </View>
           )}
