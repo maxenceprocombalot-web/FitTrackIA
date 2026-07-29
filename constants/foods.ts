@@ -1,5 +1,9 @@
 // 30 aliments courants avec valeurs nutritionnelles pour 100g
 
+/** Normalise pour la recherche : minuscules, sans accents, œ→oe ("creme" trouve "Crème", "oeuf" trouve "Œuf"). */
+export const normSearch = (str: string): string =>
+  str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/œ/g, 'oe').replace(/æ/g, 'ae');
+
 export interface FoodTemplate {
   id: string;
   name: string;

@@ -11,6 +11,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, FavoriteMeal } from '../../types';
 import { COMMON_FOODS } from '../../constants/foods';
 import { CIQUAL_FOODS } from '../../constants/ciqual';
+import { normSearch } from '../../constants/foods';
 import { searchFoods, searchByBarcode } from '../../services/openfoods';
 import { Colors, R, Sp, Fs, Fw, Fonts, tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
@@ -33,6 +34,17 @@ const COMMON_AS_FOOD_ITEMS: FoodItem[] = COMMON_FOODS.map(f => ({
   carbsPer100g: f.carbsPer100g,
   fatPer100g: f.fatPer100g,
 }));
+
+
+// Index de recherche pré-normalisé (construit une seule fois)
+const CIQUAL_INDEX = CIQUAL_FOODS.map(f => ({ f, n: normSearch(f.name) }));
+
+/** Recherche insensible aux accents, préfixes classés en premier. */
+function searchCiqual(q: string, limit: number) {
+  const hits = CIQUAL_INDEX.filter(e => e.n.includes(q));
+  hits.sort((a, b) => Number(b.n.startsWith(q)) - Number(a.n.startsWith(q)));
+  return hits.slice(0, limit).map(e => e.f);
+}
 
 export default function AddFoodModal() {
   const router     = useRouter();
@@ -137,11 +149,11 @@ export default function AddFoodModal() {
 
   // Résultats instantanés pendant la frappe (CIQUAL + courants, local)
   const instantResults = React.useMemo<FoodItem[]>(() => {
-    const q = searchQ.toLowerCase().trim();
+    const q = normSearch(searchQ.trim());
     if (q.length < 2) return [];
-    const ciqual = CIQUAL_FOODS.filter(f => f.name.toLowerCase().includes(q)).slice(0, 15)
+    const ciqual = searchCiqual(q, 15)
       .map<FoodItem>(f => ({ id: f.id, name: f.name, quantity: f.defaultPortion, caloriesPer100g: f.caloriesPer100g, proteinPer100g: f.proteinPer100g, carbsPer100g: f.carbsPer100g, fatPer100g: f.fatPer100g }));
-    const commons = COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q) && !ciqual.some(c => c.name === f.name));
+    const commons = COMMON_AS_FOOD_ITEMS.filter(f => normSearch(f.name).includes(q) && !ciqual.some(c => c.name === f.name));
     return [...ciqual, ...commons].slice(0, 20);
   }, [searchQ]);
 
@@ -153,12 +165,10 @@ export default function AddFoodModal() {
     setHasSearched(false);
     setResultSource('');
 
-    const q = searchQ.toLowerCase().trim();
+    const q = normSearch(searchQ.trim());
 
     // 1. Chercher dans CIQUAL (instantané, local)
-    const ciqualHits = CIQUAL_FOODS
-      .filter(f => f.name.toLowerCase().includes(q))
-      .slice(0, 20)
+    const ciqualHits = searchCiqual(q, 20)
       .map<FoodItem>(f => ({
         id: f.id,
         name: f.name,
@@ -184,7 +194,7 @@ export default function AddFoodModal() {
       setResultSource('off');
     } else {
       // 3. Fallback : aliments courants correspondants
-      const fallback = COMMON_AS_FOOD_ITEMS.filter(f => f.name.toLowerCase().includes(q));
+      const fallback = COMMON_AS_FOOD_ITEMS.filter(f => normSearch(f.name).includes(q));
       setLocalResults(fallback);
       setResultSource('local');
     }
