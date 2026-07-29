@@ -666,9 +666,6 @@ const styles = StyleSheet.create({
   objBtnsRow:     { flexDirection: 'row', gap: Sp.sm, padding: Sp.md },
   recalcBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '0A' },
   recalcBtnText:  { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.medium },
-  saveObjBtn:     { paddingHorizontal: Sp.md, paddingVertical: 10, borderRadius: R, backgroundColor: Colors.primary, minWidth: 100, alignItems: 'center' },
-  saveObjBtnSaved: { backgroundColor: Colors.green },
-  saveObjBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontFamily: Fonts.semibold },
 
   // Coach IA
   demoBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '18', borderRadius: R, margin: Sp.md, marginBottom: 0, padding: Sp.sm },
@@ -686,9 +683,6 @@ const styles = StyleSheet.create({
   apiKeyRow:      { flexDirection: 'row', alignItems: 'center', marginHorizontal: Sp.md, marginBottom: Sp.sm, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   apiKeyInput:    { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, paddingHorizontal: Sp.sm, paddingVertical: 11 },
   eyeBtn:         { padding: Sp.sm },
-  saveApiBtn:     { marginHorizontal: Sp.md, marginBottom: Sp.sm, paddingVertical: 10, borderRadius: R, backgroundColor: Colors.primary, alignItems: 'center' },
-  saveApiBtnSaved: { backgroundColor: Colors.green },
-  saveApiBtnText: { fontSize: Fs.sm, color: Colors.onPrimary, fontFamily: Fonts.semibold },
   apiKeyNote:     { flexDirection: 'row', alignItems: 'flex-start', gap: 6, margin: Sp.md, marginTop: 0 },
   apiKeyNoteText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
 

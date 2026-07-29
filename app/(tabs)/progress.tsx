@@ -26,256 +26,18 @@ import {
 import { today, thisMonth, daysAgo, localISO } from '../../services/date';
 import { projectWeight } from '../../services/metrics';
 import { BADGES } from '../../constants/badges';
+import { CHART_W, CHART_H, WeightChart, CaloriesChart, ExerciseChart } from '../../components/progress/Charts';
+import { ExoStat, ScoreRow, WBadge, BigStat } from '../../components/progress/Stats';
+import { getUnlockedBadges, getDefaultChallenges, getChallengeProgress } from '../../services/badges';
 
-const CHART_W = Dimensions.get('window').width - Sp.md * 2 - Sp.md * 2;
-const CHART_H = 160;
-const PAD     = { top: 16, bottom: 24, left: 30, right: 10 };
 
 type Period  = '30j' | '90j' | 'tout';
-// 4 groupes au lieu de 10 onglets : chaque groupe concatène les anciennes sections
 type ActiveTab = 'mesures' | 'sport' | 'nutrition' | 'recompenses';
+// 4 groupes au lieu de 10 onglets : chaque groupe concatène les anciennes sections
 
-// Régression linéaire
-function linearReg(ys: number[]): { slope: number; intercept: number } {
-  const n  = ys.length;
-  if (n < 2) return { slope: 0, intercept: ys[0] ?? 0 };
-  const xs  = Array.from({ length: n }, (_, i) => i);
-  const sX  = xs.reduce((a, b) => a + b, 0);
-  const sY  = ys.reduce((a, b) => a + b, 0);
-  const sXY = xs.reduce((a, x, i) => a + x * ys[i], 0);
-  const sX2 = xs.reduce((a, x) => a + x * x, 0);
-  const slope     = (n * sXY - sX * sY) / (n * sX2 - sX * sX);
-  const intercept = (sY - slope * sX) / n;
-  return { slope, intercept };
-}
-
-function buildPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return '';
-  return points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-    .join(' ');
-}
-
-function WeightChart({ entries }: { entries: WeightEntry[] }) {
-  if (entries.length < 2) return (
-    <View style={{ alignItems: 'center', paddingVertical: 30 }}>
-      <Ionicons name="analytics-outline" size={36} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm, fontFamily: Fonts.regular }}>Enregistre au moins 2 pesées</Text>
-    </View>
-  );
-
-  const ys   = entries.map(e => e.weight);
-  const minY = Math.min(...ys) - 1;
-  const maxY = Math.max(...ys) + 1;
-  const w    = CHART_W - PAD.left - PAD.right;
-  const h    = CHART_H - PAD.top  - PAD.bottom;
-
-  const toX = (i: number) => PAD.left + (i / (entries.length - 1)) * w;
-  const toY = (v: number) => PAD.top  + (1 - (v - minY) / (maxY - minY)) * h;
-
-  const realPoints = entries.map((e, i) => ({ x: toX(i), y: toY(e.weight) }));
-  const reg = linearReg(ys);
-  const t0  = reg.intercept;
-  const t1  = reg.intercept + reg.slope * (entries.length - 1);
-  const trendPoints = [
-    { x: toX(0), y: toY(Math.min(Math.max(t0, minY), maxY)) },
-    { x: toX(entries.length - 1), y: toY(Math.min(Math.max(t1, minY), maxY)) },
-  ];
-  const yLabels = [minY + 0.5, (minY + maxY) / 2, maxY - 0.5];
-
-  const first = entries[0].weight, last = entries[entries.length - 1].weight;
-  const delta = Math.round((last - first) * 10) / 10;
-  return (
-    <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={`Courbe de poids : ${entries.length} pesées, de ${first} à ${last} kilos (${delta > 0 ? '+' : ''}${delta} kilos)`}
-    >
-    <Svg width={CHART_W} height={CHART_H}>
-      {yLabels.map((v, i) => (
-        <Line key={i}
-          x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)}
-          stroke="rgba(255,255,255,0.05)" strokeWidth={1}
-        />
-      ))}
-      {yLabels.map((v, i) => (
-        <SvgText key={i} x={PAD.left - 4} y={toY(v) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">
-          {v.toFixed(1)}
-        </SvgText>
-      ))}
-      <Path d={buildPath(trendPoints)} stroke={Colors.primary} strokeWidth={1.5} strokeDasharray="4,3" fill="none" opacity={0.6} />
-      <Path d={buildPath(realPoints)} stroke={Colors.green} strokeWidth={2} fill="none" />
-      {realPoints.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y} r={3} fill={Colors.green} />
-      ))}
-      {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
-        <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {entries[i].date.slice(5).replace('-', '/')}
-        </SvgText>
-      ))}
-    </Svg>
-    </View>
-  );
-}
-
-// ─── Graphique calories 30 jours ──────────────────────────────────────────────
-
-function CaloriesChart({ entries, target }: {
-  entries: { date: string; calories: number }[];
-  target: number;
-}) {
-  if (entries.length < 2) return (
-    <View style={{ alignItems: 'center', paddingVertical: 30 }}>
-      <Ionicons name="analytics-outline" size={36} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textMuted, marginTop: 8, fontSize: Fs.sm, fontFamily: Fonts.regular }}>
-        Enregistre au moins 2 jours de repas
-      </Text>
-    </View>
-  );
-
-  const cals = entries.map(e => e.calories);
-  const rawMin = Math.min(...cals, target * 0.7);
-  const rawMax = Math.max(...cals, target * 1.3);
-  const minY = Math.floor(rawMin / 100) * 100;
-  const maxY = Math.ceil(rawMax  / 100) * 100;
-  const w = CHART_W - PAD.left - PAD.right;
-  const h = CHART_H - PAD.top  - PAD.bottom;
-
-  const toX = (i: number) => PAD.left + (i / (entries.length - 1)) * w;
-  const toY = (v: number) => PAD.top + (1 - (v - minY) / (maxY - minY)) * h;
-
-  const points = entries.map((e, i) => ({ x: toX(i), y: toY(e.calories), cal: e.calories }));
-  const targetY = toY(target);
-  const linePath = buildPath(points);
-  const yLabels  = [minY, Math.round((minY + maxY) / 2), maxY];
-
-  return (
-    <Svg width={CHART_W} height={CHART_H}>
-      {yLabels.map((v, i) => (
-        <Line key={i}
-          x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)}
-          stroke="rgba(255,255,255,0.05)" strokeWidth={1}
-        />
-      ))}
-      {yLabels.map((v, i) => (
-        <SvgText key={i} x={PAD.left - 4} y={toY(v) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">
-          {v}
-        </SvgText>
-      ))}
-      <Line
-        x1={PAD.left} y1={targetY} x2={CHART_W - PAD.right} y2={targetY}
-        stroke={Colors.primary} strokeWidth={1.5} strokeDasharray="5,4" opacity={0.8}
-      />
-      <SvgText x={CHART_W - PAD.right + 2} y={targetY + 4} fontSize={8} fill={Colors.primary}>obj</SvgText>
-      <Path d={linePath} stroke={Colors.green} strokeWidth={2} fill="none" />
-      {points.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y} r={3} fill={p.cal > target ? Colors.red : Colors.green} />
-      ))}
-      {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
-        <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {entries[i].date.slice(5).replace('-', '/')}
-        </SvgText>
-      ))}
-    </Svg>
-  );
-}
-
-// ─── Badges helper ────────────────────────────────────────────────────────────
-
-function getUnlockedBadges(store: ReturnType<typeof useAppStore>): Set<string> {
-  const unlocked = new Set<string>();
-  const { workouts, meals, weights, prs, streak, chat, user } = store;
-
-  if (workouts.length >= 1)   unlocked.add('b01');
-  if (streak.best >= 7)       unlocked.add('b02');
-  if (prs.length >= 1)        unlocked.add('b03');
-  if (prs.length >= 10)       unlocked.add('b04');
-
-  const mealDays = new Set(meals.map(m => m.date)).size;
-  if (mealDays >= 30)         unlocked.add('b05');
-  if (workouts.length >= 100) unlocked.add('b06');
-
-  if (user) {
-    let streak7 = 0;
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const ds = localISO(d);
-      const dayMeals = meals.filter(m => m.date === ds);
-      if (!dayMeals.length) { streak7 = 0; continue; }
-      const cal = dayMeals.flatMap(m => m.items).reduce((s, item) => s + item.caloriesPer100g * item.quantity / 100, 0);
-      if (cal >= user.targetCalories * 0.9 && cal <= user.targetCalories * 1.1) streak7++;
-      else streak7 = 0;
-      if (streak7 >= 7) { unlocked.add('b07'); break; }
-    }
-  }
-
-  const workoutTypes = new Set(workouts.map(w => w.type)).size;
-  if (workoutTypes >= 5) unlocked.add('b09');
-
-  if (user?.createdAt) {
-    const days = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / 86400000);
-    if (days >= 365) unlocked.add('b10');
-  }
-
-  const cardioW = workouts.filter(w => w.type === 'cardio' || w.type === 'running').length;
-  if (cardioW >= 10) unlocked.add('b11');
-  if (cardioW >= 50) unlocked.add('b20');
-
-  if (meals.length >= 100) unlocked.add('b12');
-  if (weights.length >= 7) unlocked.add('b13');
-
-  const totalVolume = workouts.reduce((sv, w) => sv + w.exercises.reduce((se, e) => se + e.sets.reduce((ss, s) => ss + s.reps * s.weight, 0), 0), 0);
-  if (totalVolume >= 10000) unlocked.add('b14');
-
-  if (chat.filter(m => m.role === 'user').length >= 20) unlocked.add('b17');
-
-  if (unlocked.size >= 10) unlocked.add('b18');
-
-  if (user && weights.length >= 2) {
-    const startW = weights[0].weight;
-    const lastW  = weights[weights.length - 1].weight;
-    if (Math.abs(lastW - startW) >= 5) unlocked.add('b19');
-  }
-
-  return unlocked;
-}
-
-// ─── Helpers défis ────────────────────────────────────────────────────────────
-
-function getDefaultChallenges(weekKey: string, user: ReturnType<typeof useAppStore>['user']): WeeklyChallenge[] {
-  return [
-    { id: 'ch1', weekKey, emoji: '💪', title: '4 séances cette semaine', description: 'Réalise 4 séances d\'entraînement', type: 'workouts', target: 4, completed: false },
-    { id: 'ch2', weekKey, emoji: '🎯', title: 'Objectif calorique 5 jours', description: `Reste dans ±10% de ${user?.targetCalories ?? 2000} kcal pendant 5 jours`, type: 'cal_days', target: 5, completed: false },
-    { id: 'ch3', weekKey, emoji: '🏃', title: '2 séances de cardio', description: 'Réalise 2 séances cardio ou course', type: 'cardio', target: 2, completed: false },
-  ];
-}
-
-function getChallengeProgress(challenge: WeeklyChallenge, weekKey: string, store: ReturnType<typeof useAppStore>): number {
-  const mon = new Date(weekKey + 'T12:00:00');
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  const since = weekKey;
-  const until = localISO(sun);
-
-  switch (challenge.type) {
-    case 'workouts':
-      return store.workouts.filter((w: any) => w.date >= since && w.date <= until).length;
-    case 'cal_days': {
-      const target = store.user?.targetCalories ?? 2000;
-      const dm: Record<string, number> = {};
-      store.meals.filter((m: any) => m.date >= since && m.date <= until).forEach((m: any) => {
-        const c = m.items.reduce((s: number, i: any) => s + i.caloriesPer100g * i.quantity / 100, 0);
-        dm[m.date] = (dm[m.date] ?? 0) + c;
-      });
-      return Object.values(dm).filter((v: number) => v >= target * 0.9 && v <= target * 1.1).length;
-    }
-    case 'cardio':
-      return store.workouts.filter((w: any) => w.date >= since && w.date <= until && (w.type === 'cardio' || w.type === 'running')).length;
-    default: return 0;
-  }
-}
 
 export default function ProgressScreen() {
-  const store  = useAppStore();
+  const store  = useAppStore(['user', 'workouts', 'meals', 'weights', 'water', 'prs', 'savedPlans', 'loading']);
   const router = useRouter();
   const [period,        setPeriod]        = useState<Period>('30j');
   const [activeTab,     setActiveTab]     = useState<ActiveTab>('mesures');
@@ -284,6 +46,10 @@ export default function ProgressScreen() {
   // Photos de progression
   const [photos, setPhotos] = useState<{ id: string; uri: string; date: string }[]>([]);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  // Les photos sont des images : les monter toutes d'un coup consomme beaucoup
+  // de mémoire. On n'affiche que les plus récentes, avec un bouton pour voir tout.
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const PHOTOS_VISIBLE = 12;
   const [showBeforeAfter, setShowBeforeAfter] = useState(false);
 
   useEffect(() => {
@@ -953,7 +719,7 @@ export default function ProgressScreen() {
             </View>
           ) : (
             <View style={styles.photosGrid}>
-              {photos.map(photo => {
+              {(showAllPhotos ? photos : photos.slice(-PHOTOS_VISIBLE)).map(photo => {
                 const isSelected = selectedPhotos.includes(photo.id);
                 return (
                   <TouchableOpacity
@@ -987,7 +753,18 @@ export default function ProgressScreen() {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            
+              {!showAllPhotos && photos.length > PHOTOS_VISIBLE && (
+                <TouchableOpacity
+                  style={styles.morePhotosBtn}
+                  onPress={() => setShowAllPhotos(true)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.morePhotosText}>+{photos.length - PHOTOS_VISIBLE}</Text>
+                  <Text style={styles.morePhotosSub}>voir tout</Text>
+                </TouchableOpacity>
+              )}
+</View>
           )}
 
           {showBeforeAfter && selectedPhotos.length === 2 && (() => {
@@ -1114,117 +891,7 @@ Généré par FitTrack IA · ${new Date().toLocaleDateString('fr-FR')}`;
 
 // ─── Graphique progression exercice ──────────────────────────────────────────
 
-function ExerciseChart({ data }: { data: { date: string; maxWeight: number }[] }) {
-  if (data.length < 2) {
-    return (
-      <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-        <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular }}>
-          {data.length === 0 ? 'Aucune donnée sur 30 jours' : 'Enregistre au moins 2 séances pour voir la courbe'}
-        </Text>
-      </View>
-    );
-  }
 
-  const ys   = data.map(d => d.maxWeight);
-  const minY = Math.min(...ys) - 2.5;
-  const maxY = Math.max(...ys) + 2.5;
-  const w    = CHART_W - PAD.left - PAD.right;
-  const h    = CHART_H - PAD.top  - PAD.bottom;
-
-  const toX = (i: number) => PAD.left + (i / (data.length - 1)) * w;
-  const toY = (v: number) => PAD.top  + (1 - (v - minY) / (maxY - minY)) * h;
-
-  const points   = data.map((d, i) => ({ x: toX(i), y: toY(d.maxWeight) }));
-  const pathStr  = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const yLabels  = [minY + 2, (minY + maxY) / 2, maxY - 2];
-  const xIndices = [...new Set([0, Math.floor((data.length - 1) / 2), data.length - 1])];
-
-  return (
-    <Svg width={CHART_W} height={CHART_H} style={{ marginTop: 8 }}>
-      {yLabels.map((v, i) => (
-        <React.Fragment key={i}>
-          <Line x1={PAD.left} y1={toY(v)} x2={CHART_W - PAD.right} y2={toY(v)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-          <SvgText x={PAD.left - 4} y={toY(v) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">{v.toFixed(1)}</SvgText>
-        </React.Fragment>
-      ))}
-      <Path d={pathStr} stroke={Colors.yellow} strokeWidth={2} fill="none" />
-      {points.map((p, i) => <Circle key={i} cx={p.x} cy={p.y} r={3} fill={Colors.yellow} />)}
-      {xIndices.map(i => (
-        <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {data[i].date.slice(5).replace('-', '/')}
-        </SvgText>
-      ))}
-    </Svg>
-  );
-}
-
-function ExoStat({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <View style={exoStyles.stat}>
-      <Text style={[exoStyles.value, { color }]}>{value}</Text>
-      <Text style={exoStyles.label}>{label}</Text>
-    </View>
-  );
-}
-const exoStyles = StyleSheet.create({
-  stat:  { flex: 1, alignItems: 'center', paddingVertical: 6, backgroundColor: Colors.surfaceElevated, borderRadius: R },
-  value: { fontSize: Fs.lg, fontFamily: Fonts.bold },
-  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
-});
-
-// ─── Carte plan ───────────────────────────────────────────────────────────────
-
-// ─── Sous-composants ──────────────────────────────────────────────────────────
-
-function ScoreRow({ label, pts, max, color }: { label: string; pts: number; max: number; color: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, width: 52 }}>{label}</Text>
-      <View style={{ width: 60, height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-        <View style={{ height: '100%', width: `${(pts/max)*100}%`, backgroundColor: color, borderRadius: 2 }} />
-      </View>
-      <Text style={{ fontSize: Fs.xs, color, fontFamily: Fonts.semibold }}>{pts}/{max}</Text>
-    </View>
-  );
-}
-
-function WBadge({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <View style={{ alignItems: 'center', flex: 1 }}>
-      <Text style={[{ fontSize: Fs.lg, fontFamily: Fonts.bold, color }]}>{value}</Text>
-      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{label}</Text>
-    </View>
-  );
-}
-
-function BigStat({ value, label, color }: { value: string; label: string; color: string }) {
-  const numericVal = parseFloat(value.replace(/[^\d.]/g, ''));
-  const isNumeric  = !isNaN(numericVal) && numericVal > 0;
-
-  const anim = useRef(new Animated.Value(0)).current;
-  const [displayed, setDisplayed] = useState<string | number>(isNumeric ? 0 : value);
-
-  useEffect(() => {
-    if (!isNumeric) return;
-    Animated.timing(anim, { toValue: numericVal, duration: 900, useNativeDriver: false }).start();
-    const id = anim.addListener(({ value: v }) => {
-      setDisplayed(value.includes('.') ? v.toFixed(1) : String(Math.round(v)));
-    });
-    return () => anim.removeListener(id);
-  }, [numericVal]);
-
-  return (
-    <View style={bsStyles.card}>
-      <Text style={[bsStyles.value, { color }]}>{displayed}</Text>
-      <Text style={bsStyles.label}>{label}</Text>
-    </View>
-  );
-}
-const bsStyles = StyleSheet.create({
-  card: { flex: 1, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md, alignItems: 'center' },
-  value: { fontSize: Fs.xxl, fontFamily: Fonts.heavy },
-  label: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: 2 },
-});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
@@ -1244,8 +911,6 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.sm },
   weightInputRow: { flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.md },
   weightInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
-  saveBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingHorizontal: Sp.md, justifyContent: 'center', alignItems: 'center', paddingVertical: 10 },
-  saveBtnText: { color: '#fff', fontFamily: Fonts.semibold },
   weightSummary: { flexDirection: 'row' },
   periodRow: { flexDirection: 'row', gap: Sp.xs },
   periodBtn: { flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface, alignItems: 'center' },
@@ -1309,6 +974,9 @@ const styles = StyleSheet.create({
   addPhotoBtnText: { fontSize: Fs.md, color: Colors.primary, fontFamily: Fonts.semibold },
   beforeAfterBtn: { backgroundColor: Colors.green, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm },
   beforeAfterBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.sm },
+  morePhotosBtn:  { width: 96, height: 96, borderRadius: R, borderWidth: 1, borderColor: Colors.borderStrong, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
+  morePhotosText: { fontSize: Fs.lg, fontFamily: Fonts.condensedBold, color: Colors.primary },
+  morePhotosSub:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs },
   photoThumb: { width: '31.5%', aspectRatio: 1, borderRadius: R, overflow: 'hidden', position: 'relative' },
   photoThumbSelected: { borderWidth: 2, borderColor: Colors.primary },

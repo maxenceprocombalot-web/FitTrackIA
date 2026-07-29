@@ -122,15 +122,13 @@ export default function ProgramDetailScreen() {
       )}
 
       {/* ── Bouton démarrer le programme ─────────────────────────────────── */}
-      <TouchableOpacity
-        style={[styles.startBtn, isActive && styles.startBtnActive]}
+      <Button
+        title={isActive ? 'Programme actif ✓' : 'Démarrer ce programme'}
+        icon={isActive ? 'checkmark-circle' : 'rocket-outline'}
+        variant={isActive ? 'secondary' : 'primary'}
         onPress={handleStart}
-      >
-        <Ionicons name={isActive ? 'checkmark-circle' : 'rocket-outline'} size={20} color="#fff" />
-        <Text style={styles.startBtnText}>
-          {isActive ? 'Programme actif ✓' : 'Démarrer ce programme'}
-        </Text>
-      </TouchableOpacity>
+        size="lg"
+      />
 
       {/* ── Plan des séances ─────────────────────────────────────────────── */}
       <Text style={styles.planTitle}>Plan des séances</Text>
@@ -216,6 +214,8 @@ function ExRow({ ex }: { ex: ProgramExercise }) {
 }
 
 const scStyles = StyleSheet.create({
+  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Sp.sm, marginTop: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.primary },
+  startBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   card: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', marginBottom: Sp.xs },
   cardToday: { borderColor: Colors.primary + '50' },
   header: { flexDirection: 'row', alignItems: 'center', padding: Sp.md, gap: Sp.sm },
@@ -232,8 +232,6 @@ const scStyles = StyleSheet.create({
   exName: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text },
   exNotes: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 },
   exVal: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' },
-  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border },
-  startBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
 });
 
 // ─── Sous-composants de la page ───────────────────────────────────────────────
@@ -267,14 +265,9 @@ const styles = StyleSheet.create({
   todayHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   todayTitle: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.semibold },
   todayName: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
-  startSessionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm },
-  startSessionBtnText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: '#fff' },
   restCard: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   restText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Bouton démarrer
-  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md },
-  startBtnActive: { backgroundColor: Colors.green },
-  startBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
   // Plan
   planTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text, marginTop: Sp.xs },
 });

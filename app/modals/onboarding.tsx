@@ -527,8 +527,6 @@ const styles = StyleSheet.create({
   welcomeFeatureTitle: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
   welcomeFeatureSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
   welcomeActions: { gap: Sp.md, alignItems: 'center', paddingBottom: Sp.lg },
-  startBtn: { backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 16, paddingHorizontal: 48, alignSelf: 'center' },
-  startBtnText: { color: Colors.onPrimary, fontSize: Fs.lg, fontFamily: Fonts.bold },
   legalText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', textDecorationLine: 'underline' },
 
   // Steps
@@ -599,7 +597,4 @@ const styles = StyleSheet.create({
   navRow: { flexDirection: 'row', gap: Sp.sm, marginTop: Sp.xl },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Sp.md, paddingVertical: 14, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   backBtnText: { fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
-  nextBtnDisabled: { opacity: 0.38 },
-  nextBtnText: { color: Colors.onPrimary, fontSize: Fs.md, fontFamily: Fonts.bold },
 });

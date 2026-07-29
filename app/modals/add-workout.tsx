@@ -581,8 +581,6 @@ const styles = StyleSheet.create({
   // Flash PR doré
   prFlash: { position: 'absolute', right: 28, top: 0, bottom: 0, justifyContent: 'center' },
   prFlashText: { fontSize: 18, fontFamily: Fonts.regular },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Sp.sm, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, marginTop: Sp.lg },
-  saveBtnText: { color: '#fff', fontSize: Fs.md, fontFamily: Fonts.bold },
   // Picker d'exercices
   pickerHeader: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   searchInput: { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: 10, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
@@ -733,9 +731,9 @@ const smStyles = StyleSheet.create({
   prVal:       { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.yellow },
   btns:        { flexDirection: 'row', gap: Sp.sm, width: '100%', marginTop: 4 },
   shareBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Sp.sm, paddingHorizontal: Sp.lg, borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '50' },
-  shareBtnText:{ fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
   continueBtn: { flex: 1, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm, alignItems: 'center', justifyContent: 'center' },
   continueBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
+  shareBtnText:{ fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
 });
 
 // ─── Mode Focus ───────────────────────────────────────────────────────────────

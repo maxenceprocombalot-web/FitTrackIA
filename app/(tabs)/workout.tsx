@@ -34,7 +34,7 @@ type Filter = WorkoutType | 'all';
 
 export default function WorkoutScreen() {
   const router = useRouter();
-  const store  = useAppStore();
+  const store  = useAppStore(['workouts', 'loading']);
   const [filter, setFilter] = useState<Filter>('all');
 
   const todayWorkouts = store.workouts.filter(w => w.date === storage.today());

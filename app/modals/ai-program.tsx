@@ -226,6 +226,4 @@ const styles = StyleSheet.create({
   },
   newBtn: { paddingHorizontal: Sp.lg, paddingVertical: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   newBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  saveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: Sp.sm },
-  saveBtnText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.onPrimary },
 });

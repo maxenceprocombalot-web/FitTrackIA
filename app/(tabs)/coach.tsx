@@ -123,7 +123,7 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export default function CoachScreen() {
-  const store     = useAppStore();
+  const store     = useAppStore(['user', 'chat', 'workouts', 'meals', 'prs', 'savedPlans', 'isPremium']);
   const { requirePremium } = usePremiumGate();
   const scrollRef = useRef<ScrollView>(null);
   const [input,              setInput]             = useState('');
@@ -630,8 +630,6 @@ const styles = StyleSheet.create({
   welcomeText:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md, marginBottom: Sp.lg },
   demoWarning:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '15', borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: Sp.xs, marginBottom: Sp.md },
   demoText:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.orange, flex: 1 },
-  weeklyBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8 },
-  weeklyBtnText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: '#fff' },
   mealPlanBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 8, borderWidth: 1, borderColor: Colors.green + '40' },
   mealPlanBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.green },
   nutritionAnalysisBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.yellow + '20', borderRadius: R, padding: Sp.sm, width: '100%', marginBottom: 12, borderWidth: 1, borderColor: Colors.yellow + '40' },

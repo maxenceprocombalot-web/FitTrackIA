@@ -258,7 +258,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Sp.xs },
 
   shareBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green, borderRadius: R, paddingVertical: 14 },
-  repeatBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14 },
   repeatBtnText: { color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.md },
 
   deleteBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '40', backgroundColor: Colors.red + '0A' },

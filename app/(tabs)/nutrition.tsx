@@ -54,7 +54,7 @@ function fmtDate(dateStr: string, todayStr: string): string {
 
 export default function NutritionScreen() {
   const router = useRouter();
-  const store  = useAppStore();
+  const store  = useAppStore(['user', 'meals', 'favorites', 'recentFoods', 'isPremium']);
   const { requirePremium } = usePremiumGate();
   const user   = store.user;
 

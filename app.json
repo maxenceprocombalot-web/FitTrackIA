@@ -64,7 +64,42 @@
           "faceIDPermission": "FitTrackIA utilise Face ID pour protéger l'accès à tes données d'entraînement."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {},
+          "iosActions": [
+            {
+              "id": "workout",
+              "title": "Nouvelle séance",
+              "subtitle": "Démarrer un entraînement",
+              "icon": "symbol:figure.strengthtraining.traditional",
+              "params": {
+                "href": "/modals/add-workout"
+              }
+            },
+            {
+              "id": "food",
+              "title": "Ajouter un repas",
+              "subtitle": "Scanner ou rechercher",
+              "icon": "symbol:fork.knife",
+              "params": {
+                "href": "/modals/add-food"
+              }
+            },
+            {
+              "id": "coach",
+              "title": "Coach IA",
+              "subtitle": "Poser une question",
+              "icon": "symbol:sparkles",
+              "params": {
+                "href": "/(tabs)/coach"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

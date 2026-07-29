@@ -21,7 +21,7 @@ const GOAL_FILTERS: (ProgramGoal | 'all')[] = ['all', 'Force', 'Hypertrophie', '
 
 export default function ProgramsScreen() {
   const router = useRouter();
-  const store  = useAppStore();
+  const store  = useAppStore(['activeProgram', 'savedPlans']);
 
   const [daysFilter,  setDaysFilter]  = useState<number | 'all'>('all');
   const [levelFilter, setLevelFilter] = useState<ProgramLevel | 'all'>('all');

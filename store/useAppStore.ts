@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   User, WorkoutSession, Meal, WeightEntry, ChatMessage,
   PersonalRecord, MacroTotals, ActiveProgram,
@@ -75,13 +75,40 @@ function computeStreak(workouts: WorkoutSession[], stored: StreakData): StreakDa
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useAppStore() {
+// ─── Abonnement sélectif ──────────────────────────────────────────────────────
+// Auparavant chaque composant se re-rendait à CHAQUE changement d'état : ajouter
+// 250 ml d'eau re-rendait l'écran Progrès entier. Un composant peut désormais
+// déclarer les champs qui l'intéressent — il n'est réveillé que si l'un d'eux
+// change réellement.
+
+type StateKey = keyof AppState;
+
+function shallowEqualOn(a: AppState, b: AppState, keys: readonly StateKey[]): boolean {
+  return keys.every(k => a[k] === b[k]);
+}
+
+/**
+ * @param watch  Champs observés. Par défaut : tous (comportement historique).
+ *               Ex. useAppStore(['water', 'user']) ne re-rend que sur ces champs.
+ */
+export function useAppStore(watch?: readonly StateKey[]) {
   const [, tick] = useState(0);
+  const snapshot = useRef(_state);
 
   useEffect(() => {
-    const fn = () => tick(n => n + 1);
+    const fn = () => {
+      if (watch && shallowEqualOn(snapshot.current, _state, watch)) {
+        snapshot.current = _state;      // rien d'observé n'a changé : pas de rendu
+        return;
+      }
+      snapshot.current = _state;
+      tick(n => n + 1);
+    };
     _listeners.add(fn);
     return () => { _listeners.delete(fn); };
+    // `watch` est un littéral stable côté appelant ; on l'ignore volontairement
+    // pour ne pas recréer l'abonnement à chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Chargement initial de toutes les données

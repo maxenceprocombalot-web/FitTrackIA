@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { User, WorkoutSession, Meal, ChatMessage, MacroTotals } from '../types';
+import * as Network from 'expo-network';
 import { daysAgo } from './date';
 
 // Clé lue depuis les variables d'environnement Expo (préfixe EXPO_PUBLIC_)
@@ -43,6 +44,42 @@ function getClient(): OpenAI | null {
   if (!key) return null;
   if (!_client) _client = new OpenAI({ apiKey: key, dangerouslyAllowBrowser: true });
   return _client;
+}
+
+// ─── Appels IA : gestion centralisée des erreurs ─────────────────────────────
+// Sans ceci, une coupure réseau produisait une promesse rejetée non gérée et
+// l'écran restait bloqué sur son indicateur de chargement, sans explication.
+
+export class AIError extends Error {
+  constructor(message: string) { super(message); this.name = 'AIError'; }
+}
+
+async function isOnline(): Promise<boolean> {
+  try {
+    const st = await Network.getNetworkStateAsync();
+    return st.isConnected !== false && st.isInternetReachable !== false;
+  } catch {
+    return true;   // en cas de doute, on tente l'appel
+  }
+}
+
+/** Enveloppe tout appel à l'API : vérifie la connexion et traduit les erreurs. */
+async function callAI<T>(fn: () => Promise<T>): Promise<T> {
+  if (!(await isOnline())) {
+    throw new AIError("Pas de connexion internet. Tes données restent enregistrées — réessaie une fois connecté.");
+  }
+  try {
+    return await fn();
+  } catch (e: any) {
+    const status = e?.status ?? e?.response?.status;
+    if (status === 401) throw new AIError("Clé API refusée. Vérifie-la dans Réglages → Coach IA → Options avancées.");
+    if (status === 429) throw new AIError("Trop de requêtes ou quota dépassé. Réessaie dans quelques minutes.");
+    if (status >= 500)  throw new AIError("Le service IA est momentanément indisponible. Réessaie plus tard.");
+    if (e?.name === 'AbortError' || /timeout|network/i.test(e?.message ?? '')) {
+      throw new AIError("La connexion a été interrompue. Vérifie ton réseau et réessaie.");
+    }
+    throw new AIError("Le coach n'a pas pu répondre. Réessaie dans un instant.");
+  }
 }
 
 // ─── Personas du Coach IA ─────────────────────────────────────────────────────
@@ -155,12 +192,12 @@ export async function sendCoachMessage(
     { role: 'user', content: userMessage },
   ];
 
-  const res = await client.chat.completions.create({
+  const res = await callAI(() => client.chat.completions.create({
     model: 'gpt-4o',
     messages,
     max_tokens: 400,
     temperature: 0.75,
-  });
+  }));
 
   return res.choices[0]?.message?.content ?? "Désolé, je n'ai pas pu répondre.";
 }
@@ -238,12 +275,12 @@ Total jour : 1640kcal
 [Aperçu — active le coach IA dans Réglages → Coach IA pour un plan personnalisé selon tes objectifs]`;
   }
 
-  const res = await client.chat.completions.create({
+  const res = await callAI(() => client.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 1500,
     temperature: 0.7,
-  });
+  }));
   return res.choices[0]?.message?.content ?? 'Erreur lors de la génération.';
 }
 
@@ -288,12 +325,12 @@ JOUR 1 — Full Body A
 [Aperçu — active le coach IA dans Réglages → Coach IA pour un programme entièrement personnalisé]`;
   }
 
-  const res = await client.chat.completions.create({
+  const res = await callAI(() => client.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 2000,
     temperature: 0.75,
-  });
+  }));
   return res.choices[0]?.message?.content ?? 'Erreur lors de la génération.';
 }
 
@@ -310,7 +347,7 @@ export async function generateMonthlyMessage(user: import('../types').User, stat
     return `Beau travail ce mois-ci ${user.name} ! ${stats.totalWorkouts} séances complétées, ${Math.round(stats.avgCalories)}kcal en moyenne par jour. Poids ${trend}. Continue sur cette lancée ! 💪`;
   }
 
-  const res = await client.chat.completions.create({
+  const res = await callAI(() => client.chat.completions.create({
     model: 'gpt-4o',
     messages: [{
       role: 'user',
@@ -318,7 +355,7 @@ export async function generateMonthlyMessage(user: import('../types').User, stat
     }],
     max_tokens: 100,
     temperature: 0.8,
-  });
+  }));
   return res.choices[0]?.message?.content ?? 'Excellent travail ce mois-ci !';
 }
 
@@ -334,11 +371,11 @@ export async function estimateDishMacros(dishName: string): Promise<{
     return { name: dishName, portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 };
   }
   try {
-    const res = await client.chat.completions.create({
+    const res = await callAI(() => client.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: `Estime les macronutriments pour le plat suivant : "${dishName}". Réponds UNIQUEMENT en JSON avec ce format exact, sans aucun autre texte : {"name":"${dishName}","portionG":300,"caloriesPer100g":150,"proteinPer100g":12,"carbsPer100g":18,"fatPer100g":5}` }],
       max_tokens: 150, temperature: 0.3,
-    });
+    }));
     const text = res.choices[0]?.message?.content ?? '';
     const jsonMatch = text.match(/\{[^}]+\}/);
     if (!jsonMatch) return null;
@@ -396,7 +433,7 @@ FRUITS : bananes, pommes
 DIVERS : amandes, huile d'olive`,
     };
   }
-  const res = await client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 });
+  const res = await callAI(() => client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 }));
   const content = res.choices[0]?.message?.content ?? '';
   const shoppingIdx = content.toLowerCase().indexOf('liste de courses');
   if (shoppingIdx > -1) {
@@ -450,13 +487,13 @@ export async function analyzeNutritionDeficiencies(
   const avgFat  = Math.round(days.reduce((s, d) => s + d.fat, 0) / days.length);
   const lowCalDays = days.filter(d => d.cal < 1200).length;
 
-  const res = await client.chat.completions.create({
+  const res = await callAI(() => client.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: `Analyse ces données nutritionnelles de 7 jours pour ${user.name} (objectif : ${user.targetCalories} kcal/j, ${user.targetProtein}g prot, ${user.targetCarbs}g glucides, ${user.targetFat}g lipides) :
 Moyennes : ${avgCal} kcal/j, ${avgProt}g prot/j, ${avgCarb}g glucides/j, ${avgFat}g lipides/j. Jours < 1200 kcal : ${lowCalDays}.
 
 Structure ta réponse avec : ✅ Points positifs, ⚠️ Points à améliorer, 💡 Recommandations concrètes. Max 200 mots. Réponds en français.` }],
     max_tokens: 300, temperature: 0.6,
-  });
+  }));
   return res.choices[0]?.message?.content ?? 'Impossible d\'analyser.';
 }

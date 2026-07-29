@@ -12,6 +12,8 @@ import {
 } from '@expo-google-fonts/barlow-condensed';
 import { Colors, Fonts } from '../constants/theme';
 import AppLockGate from '../components/ui/AppLockGate';
+import * as QuickActions from 'expo-quick-actions';
+import { useQuickActionRouting } from 'expo-quick-actions/router';
 import { requestNotificationPermissions, scheduleAllReminders } from '../services/notifications';
 import { loadApiKey, loadNotifPrefs } from '../services/storage';
 import { setRuntimeApiKey } from '../services/openai';
@@ -20,6 +22,9 @@ import { setRuntimeApiKey } from '../services/openai';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  // Raccourcis d'écran d'accueil (appui long sur l'icône) → navigation directe
+  useQuickActionRouting();
+
   const [fontsLoaded, fontsError] = useFonts({
     Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold,
     Barlow_700Bold, Barlow_800ExtraBold,
