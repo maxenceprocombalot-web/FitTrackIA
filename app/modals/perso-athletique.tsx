@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { getSecure, setSecure } from '../../services/storage';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { PERSONAL_PHASES, PERSONAL_RULES, PERSONAL_HOME_ROUTINE, PERSONAL_HOME_SHORT, PERSONAL_RIM_WORK, PERSONAL_RIM_RULES, PERSONAL_MINIMUM, PERSONAL_PACES, AthleticItem } from '../../constants/personal-program';
+import { getSecure, setSecure } from '../../services/storage';
+import {
+  PERSONAL_BLOCS, PERSONAL_RULES, PERSONAL_HOME_ROUTINE,
+  PERSONAL_RIM_WORK, PERSONAL_PACES, AthleticItem, Exo,
+} from '../../constants/personal-program';
 import { Colors, R, Sp, Fs, Fonts, tapSlop } from '../../constants/theme';
 
-// Écran PERSONNEL (bloc athlétique basket).
-// Accessible uniquement en développement — voir la garde __DEV__ dans l'onglet
-// Sport : il n'apparaît dans aucun build de production destiné à l'App Store.
+// Écran PERSONNEL : programme de force complet + travail basket intégré.
+// Visible seulement si SHOW_PERSO (dev ou build « perso ») — voir workout.tsx.
 
 const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = {
   plyo:       { color: Colors.primary, icon: 'flash' },
@@ -19,35 +21,29 @@ const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: 
   interdit:   { color: Colors.red,     icon: 'ban' },
 };
 
-// Créneaux fixes de la semaine. Le CONTENU des séances peut être déplacé d'un
-// créneau à l'autre (la vie ne suit pas toujours le plan) ; l'ordre choisi est
-// mémorisé par phase.
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-const orderKey = (phaseId: string) => `@fit_perso_order_${phaseId}`;
+const orderKey = (blocId: string) => `@fit_perso_order_${blocId}`;
 
 export default function PersoAthletiqueScreen() {
   const router = useRouter();
-  const [phaseIdx, setPhaseIdx] = useState(0);
-  // order[i] = index de la séance affichée dans le créneau i
+  const [blocIdx, setBlocIdx]   = useState(0);
+  const [weekIdx, setWeekIdx]   = useState(0);
   const [order, setOrder]       = useState<number[]>([]);
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
+  const [tab, setTab]           = useState<'semaine' | 'basket'>('semaine');
 
-  // Les hooks doivent être appelés inconditionnellement : le cas « aucun
-  // programme » est traité APRÈS, au rendu.
-  const phase = PERSONAL_PHASES[phaseIdx];
+  const bloc = PERSONAL_BLOCS[blocIdx];
 
-  // Charge l'ordre mémorisé à chaque changement de phase
+  // Ordre des jours mémorisé par bloc
   useEffect(() => {
     let alive = true;
     (async () => {
-      const identity = (phase?.week ?? []).map((_, i) => i);
+      const identity = (bloc?.semaine ?? []).map((_, i) => i);
       try {
-        if (!phase) { if (alive) setOrder([]); return; }
-        const raw = await getSecure(orderKey(phase.id));
+        if (!bloc) { if (alive) setOrder([]); return; }
+        const raw = await getSecure(orderKey(bloc.id));
         const saved = raw ? (JSON.parse(raw) as number[]) : null;
-        // Validation : on n'accepte qu'une permutation complète et cohérente
-        const valid = Array.isArray(saved)
-          && saved.length === identity.length
+        const valid = Array.isArray(saved) && saved.length === identity.length
           && [...saved].sort((a, b) => a - b).every((v, i) => v === i);
         if (alive) setOrder(valid ? saved! : identity);
       } catch {
@@ -55,15 +51,17 @@ export default function PersoAthletiqueScreen() {
       }
     })();
     return () => { alive = false; };
-  }, [phase?.id]);
+  }, [bloc?.id]);
+
+  // La semaine sélectionnée doit rester valide en changeant de bloc
+  useEffect(() => { setWeekIdx(w => Math.min(w, (bloc?.weeks ?? 1) - 1)); }, [bloc?.id]);
 
   const persist = useCallback(async (next: number[]) => {
     setOrder(next);
-    if (!phase) return;
-    try { await setSecure(orderKey(phase.id), JSON.stringify(next)); } catch { /* non bloquant */ }
-  }, [phase?.id]);
+    if (!bloc) return;
+    try { await setSecure(orderKey(bloc.id), JSON.stringify(next)); } catch { /* non bloquant */ }
+  }, [bloc?.id]);
 
-  // Échange le contenu de deux créneaux
   const swap = useCallback((a: number, b: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const next = [...order];
@@ -72,21 +70,13 @@ export default function PersoAthletiqueScreen() {
     setSwapFrom(null);
   }, [order, persist]);
 
-  const resetOrder = useCallback(() => {
-    Haptics.selectionAsync();
-    persist((phase?.week ?? []).map((_, i) => i));
-  }, [phase?.week, persist]);
-
   const isCustom = order.some((v, i) => v !== i);
 
-  if (!phase) {
+  if (!bloc) {
     return (
-      <View style={[styles.container, { alignItems: 'center', justifyContent: 'center', padding: Sp.lg }]}>
+      <View style={[styles.container, styles.center]}>
         <Ionicons name="lock-closed-outline" size={44} color={Colors.textMuted} />
-        <Text style={styles.emptyText}>
-          Aucun programme personnel chargé.{'\n'}
-          Copie `personal-program.example.ts` en `personal-program.ts`.
-        </Text>
+        <Text style={styles.emptyText}>Aucun programme personnel chargé.</Text>
       </View>
     );
   }
@@ -97,187 +87,214 @@ export default function PersoAthletiqueScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Retour" hitSlop={tapSlop}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🏀 Mon bloc athlétique</Text>
+        <Text style={styles.headerTitle}>Mon programme</Text>
+      </View>
+
+      {/* Onglets */}
+      <View style={styles.tabs}>
+        {(['semaine', 'basket'] as const).map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tab, tab === t && styles.tabActive]}
+            onPress={() => { Haptics.selectionAsync(); setTab(t); }}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+              {t === 'semaine' ? '📅 Ma semaine' : '🏀 Basket & allures'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Sélecteur de phase */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.phaseRow}>
-          {PERSONAL_PHASES.map((p, i) => (
-            <TouchableOpacity
-              key={p.id}
-              style={[styles.phaseChip, i === phaseIdx && styles.phaseChipActive]}
-              onPress={() => { Haptics.selectionAsync(); setPhaseIdx(i); }}
-              accessibilityRole="button"
-            >
-              <Text style={[styles.phaseChipText, i === phaseIdx && styles.phaseChipTextActive]}>{p.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Contexte de la phase */}
-        <View style={styles.goalCard}>
-          <Text style={styles.blockLabel}>{phase.block}</Text>
-          <Text style={styles.goalText}>{phase.goal}</Text>
-        </View>
-
-        {/* Astuce + réinitialisation */}
-        <View style={styles.reorderHint}>
-          <Ionicons name="swap-vertical" size={14} color={Colors.textSecondary} />
-          <Text style={styles.reorderHintText}>
-            Touche ⇅ sur un jour pour déplacer sa séance vers un autre jour.
-          </Text>
-          {isCustom && (
-            <TouchableOpacity onPress={resetOrder} hitSlop={tapSlop} accessibilityRole="button">
-              <Text style={styles.resetLink}>Réinitialiser</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Semaine — créneaux fixes, contenu déplaçable */}
-        {order.map((sessionIdx, slot) => {
-          const d = phase.week[sessionIdx];
-          if (!d) return null;
-          const moved = sessionIdx !== slot;
-          return (
-          <View key={`${slot}_${sessionIdx}`} style={[styles.dayCard, moved && styles.dayCardMoved]}>
-            <View style={styles.dayHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.dayName}>{WEEKDAYS[slot]}</Text>
-                {moved && <Text style={styles.movedTag}>déplacé depuis {WEEKDAYS[sessionIdx]}</Text>}
-              </View>
-              <Text style={styles.dayMuscu}>{d.muscu}</Text>
-              <TouchableOpacity
-                onPress={() => { Haptics.selectionAsync(); setSwapFrom(slot); }}
-                style={styles.swapBtn}
-                hitSlop={tapSlop}
-                accessibilityRole="button"
-                accessibilityLabel={`Déplacer la séance de ${WEEKDAYS[slot]} vers un autre jour`}
-              >
-                <Ionicons name="swap-vertical" size={17} color={Colors.primary} />
-              </TouchableOpacity>
+        {tab === 'semaine' ? (
+          <>
+            {/* Bloc */}
+            <Text style={styles.label}>Bloc</Text>
+            <View style={styles.chipRow}>
+              {PERSONAL_BLOCS.map((b, i) => (
+                <TouchableOpacity
+                  key={b.id}
+                  style={[styles.chip, i === blocIdx && styles.chipActive]}
+                  onPress={() => { Haptics.selectionAsync(); setBlocIdx(i); }}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.chipText, i === blocIdx && styles.chipTextActive]}>{b.title}</Text>
+                  <Text style={[styles.chipSub, i === blocIdx && styles.chipTextActive]}>{b.weeks} sem.</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            {d.items.map((it, i) => {
-              const meta = it.tag ? TAG_META[it.tag] : null;
+
+            {/* Semaine */}
+            <Text style={styles.label}>Semaine en cours</Text>
+            <View style={styles.chipRow}>
+              {bloc.weekLabels.map((w, i) => (
+                <TouchableOpacity
+                  key={w}
+                  style={[styles.weekChip, i === weekIdx && styles.chipActive]}
+                  onPress={() => { Haptics.selectionAsync(); setWeekIdx(i); }}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.chipText, i === weekIdx && styles.chipTextActive]}>{w}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.focusCard}>
+              <Text style={styles.focusLabel}>💪 FORCE</Text>
+              <Text style={styles.focusText}>{bloc.focus}</Text>
+              <Text style={[styles.focusLabel, { marginTop: Sp.sm }]}>🏀 BASKET</Text>
+              <Text style={styles.focusText}>{bloc.athleticGoal}</Text>
+            </View>
+
+            <View style={styles.hintRow}>
+              <Ionicons name="swap-vertical" size={13} color={Colors.textSecondary} />
+              <Text style={styles.hintText}>Touche ⇅ pour déplacer une journée.</Text>
+              {isCustom && (
+                <TouchableOpacity onPress={() => persist(bloc.semaine.map((_, i) => i))} hitSlop={tapSlop} accessibilityRole="button">
+                  <Text style={styles.resetLink}>Réinitialiser</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Journées */}
+            {order.map((jIdx, slot) => {
+              const j = bloc.semaine[jIdx];
+              if (!j) return null;
+              const moved = jIdx !== slot;
               return (
-                <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
-                  <View style={[styles.itemIcon, { backgroundColor: (meta?.color ?? Colors.textMuted) + '1E' }]}>
-                    <Ionicons name={meta?.icon ?? 'ellipse'} size={15} color={meta?.color ?? Colors.textMuted} />
+                <View key={`${slot}_${jIdx}`} style={[styles.dayCard, moved && styles.dayCardMoved]}>
+                  <View style={styles.dayHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.dayName}>{WEEKDAYS[slot]}</Text>
+                      <Text style={styles.daySeance}>{j.seance ?? 'Pas de muscu'}</Text>
+                      {moved && <Text style={styles.movedTag}>déplacé depuis {WEEKDAYS[jIdx]}</Text>}
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => { Haptics.selectionAsync(); setSwapFrom(slot); }}
+                      style={styles.swapBtn} hitSlop={tapSlop}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Déplacer la journée de ${WEEKDAYS[slot]}`}
+                    >
+                      <Ionicons name="swap-vertical" size={17} color={Colors.primary} />
+                    </TouchableOpacity>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemName, it.tag === 'interdit' && { color: Colors.red }]}>{it.name}</Text>
-                    <Text style={styles.itemDetail}>{it.detail}</Text>
-                  </View>
+
+                  {/* Exercices de force */}
+                  {j.exos.map((e: Exo, i) => (
+                    <View key={i} style={styles.exoRow}>
+                      <Text style={styles.exoNum}>{i + 1}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.exoName}>{e.name}</Text>
+                        <View style={styles.exoMeta}>
+                          <Text style={styles.exoMetaText}>{e.series} séries</Text>
+                          <Text style={styles.exoDot}>·</Text>
+                          <Text style={styles.exoMetaText}>{e.reps}</Text>
+                          <Text style={styles.exoDot}>·</Text>
+                          <Text style={styles.exoMetaText}>repos {e.rest}</Text>
+                        </View>
+                        {e.note && <Text style={styles.exoNote}>{e.note}</Text>}
+                      </View>
+                      {(e.loads?.[weekIdx] || e.load) && (
+                        <View style={styles.loadBadge}>
+                          <Text style={styles.loadText}>{e.loads?.[weekIdx] ?? e.load}</Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  {/* Travail basket du jour */}
+                  {j.athletic.map((it, i) => {
+                    const meta = it.tag ? TAG_META[it.tag] : null;
+                    return (
+                      <View key={`a${i}`} style={[styles.athRow, i === 0 && j.exos.length > 0 && styles.athFirst]}>
+                        <View style={[styles.athIcon, { backgroundColor: (meta?.color ?? Colors.textMuted) + '1E' }]}>
+                          <Ionicons name={meta?.icon ?? 'ellipse'} size={14} color={meta?.color ?? Colors.textMuted} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.athName, it.tag === 'interdit' && { color: Colors.red }]}>{it.name}</Text>
+                          <Text style={styles.athDetail}>{it.detail}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
               );
             })}
-          </View>
-          );
-        })}
 
-        {/* Allures calibrées */}
-        <View style={styles.paceCard}>
-          <Text style={styles.paceTitle}>🏃 Mes allures (calibrées)</Text>
-          {PERSONAL_PACES.map((p, i) => (
-            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
-              <View style={{ flex: 1 }}>
-                <View style={styles.paceHead}>
-                  <Text style={styles.itemName}>{p.zone}</Text>
-                  <Text style={styles.paceValue}>{p.pace}</Text>
+            <View style={styles.rulesCard}>
+              <Text style={styles.rulesTitle}>⚡ Règles non négociables</Text>
+              {PERSONAL_RULES.map((r, i) => (
+                <View key={i} style={styles.ruleRow}>
+                  <Text style={styles.ruleDot}>•</Text>
+                  <Text style={styles.ruleText}>{r}</Text>
                 </View>
-                {p.hr && <Text style={styles.paceHr}>❤️ {p.hr}</Text>}
-                <Text style={styles.itemDetail}>{p.usage}</Text>
-              </View>
+              ))}
             </View>
-          ))}
-        </View>
-
-        {/* Socle minimum — semaines chargées */}
-        <View style={styles.minCard}>
-          <Text style={styles.minTitle}>🛟 Socle minimum — semaines sans temps</Text>
-          <Text style={styles.homeIntro}>
-            ~2 h/semaine pour ne pas arriver « à froid » au camp d'août. Passer de
-            rien à tout d'un coup, c'est le schéma classique de la blessure.
-          </Text>
-          {PERSONAL_MINIMUM.map((d, i) => (
-            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
-              <View style={[styles.itemIcon, { backgroundColor: Colors.green + '1E' }]}>
-                <Text style={[styles.homeMin, { color: Colors.green }]}>{d.minutes}'</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>{d.name}</Text>
-                <Text style={styles.itemDetail}>{d.detail}</Text>
-              </View>
+          </>
+        ) : (
+          <>
+            {/* Routine maison */}
+            <View style={styles.blockCard}>
+              <Text style={[styles.blockTitle, { color: Colors.orange }]}>🏠 Routine maison — quotidienne</Text>
+              <Text style={styles.blockIntro}>
+                Le tir progresse par la FRÉQUENCE : 100 tirs chaque jour valent mieux que
+                700 une fois par semaine. Ton panier à domicile est ton meilleur atout.
+              </Text>
+              {PERSONAL_HOME_ROUTINE.map((d, i) => (
+                <View key={i} style={styles.drillRow}>
+                  <View style={[styles.athIcon, { backgroundColor: Colors.orange + '1E' }]}>
+                    <Text style={[styles.minText, { color: Colors.orange }]}>{d.minutes}'</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.athName}>{d.name}</Text>
+                    <Text style={styles.athDetail}>{d.detail}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        {/* Routine maison quotidienne (panier perso) */}
-        <View style={styles.homeCard}>
-          <Text style={styles.homeTitle}>🏠 Routine maison — quotidienne</Text>
-          <Text style={styles.homeIntro}>
-            Le tir progresse par la FRÉQUENCE : 100 tirs chaque jour valent mieux que
-            700 une fois par semaine. Ton panier à domicile est ton meilleur atout.
-          </Text>
-          {PERSONAL_HOME_ROUTINE.map((d, i) => (
-            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
-              <View style={[styles.itemIcon, { backgroundColor: Colors.orange + '1E' }]}>
-                <Text style={styles.homeMin}>{d.minutes}'</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>{d.name}</Text>
-                <Text style={styles.itemDetail}>{d.detail}</Text>
-              </View>
+            {/* Panier réglable */}
+            <View style={styles.blockCard}>
+              <Text style={[styles.blockTitle, { color: Colors.primary }]}>🎯 Panier réglable — détente</Text>
+              <Text style={styles.blockIntro}>
+                Le saut avec cible bat le box jump : intention maximale naturelle, transfert
+                direct sur le jeu. À traiter comme de la plyo (jamais jeudi/vendredi).
+              </Text>
+              {PERSONAL_RIM_WORK.map((d, i) => (
+                <View key={i} style={styles.drillRow}>
+                  <View style={[styles.athIcon, { backgroundColor: Colors.primary + '1E' }]}>
+                    <Text style={[styles.minText, { color: Colors.primary }]}>{d.minutes}'</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.athName}>{d.name}</Text>
+                    <Text style={styles.athDetail}>{d.detail}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
-          <View style={styles.shortBox}>
-            <Text style={styles.shortTitle}>Version courte (jeudi/vendredi, ~12 min — zéro saut)</Text>
-            {PERSONAL_HOME_SHORT.map((d, i) => (
-              <Text key={i} style={styles.shortItem}>• {d.name} — {d.detail}</Text>
-            ))}
-          </View>
-        </View>
 
-        {/* Travail sur panier réglable */}
-        <View style={styles.rimCard}>
-          <Text style={styles.rimTitle}>🎯 Panier réglable — travail de détente</Text>
-          <Text style={styles.homeIntro}>
-            Le saut avec cible bat le box jump : il déclenche une intention maximale
-            naturelle, avec transfert direct sur le jeu. À traiter comme de la plyo.
-          </Text>
-          {PERSONAL_RIM_WORK.map((d, i) => (
-            <View key={i} style={[styles.item, i > 0 && styles.itemBorder]}>
-              <View style={[styles.itemIcon, { backgroundColor: Colors.primary + '1E' }]}>
-                <Text style={[styles.homeMin, { color: Colors.primary }]}>{d.minutes}'</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>{d.name}</Text>
-                <Text style={styles.itemDetail}>{d.detail}</Text>
-              </View>
+            {/* Allures */}
+            <View style={styles.blockCard}>
+              <Text style={[styles.blockTitle, { color: Colors.blue }]}>🏃 Mes allures</Text>
+              {PERSONAL_PACES.map((p, i) => (
+                <View key={i} style={styles.drillRow}>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.paceHead}>
+                      <Text style={styles.athName}>{p.zone}</Text>
+                      <Text style={styles.paceValue}>{p.pace}</Text>
+                    </View>
+                    {p.hr && <Text style={styles.paceHr}>❤️ {p.hr}</Text>}
+                    <Text style={styles.athDetail}>{p.usage}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
-          <View style={styles.shortBox}>
-            {PERSONAL_RIM_RULES.map((r, i) => (
-              <Text key={i} style={styles.shortItem}>⚠️ {r}</Text>
-            ))}
-          </View>
-        </View>
+          </>
+        )}
 
-        {/* Règles */}
-        <View style={styles.rulesCard}>
-          <Text style={styles.rulesTitle}>⚡ Règles non négociables</Text>
-          {PERSONAL_RULES.map((r, i) => (
-            <View key={i} style={styles.ruleRow}>
-              <Text style={styles.ruleDot}>•</Text>
-              <Text style={styles.ruleText}>{r}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.privateNote}>
-          🔒 Écran personnel — absent des builds de production, contenu jamais commité.
-        </Text>
+        <Text style={styles.privateNote}>🔒 Écran personnel — absent des builds App Store.</Text>
       </ScrollView>
 
       {/* Choix du jour de destination */}
@@ -285,16 +302,16 @@ export default function PersoAthletiqueScreen() {
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSwapFrom(null)}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>
-              Déplacer la séance de {swapFrom !== null ? WEEKDAYS[swapFrom] : ''} vers…
+              Déplacer {swapFrom !== null ? WEEKDAYS[swapFrom] : ''} vers…
             </Text>
             <Text style={styles.sheetSub}>Les deux journées seront échangées.</Text>
             {WEEKDAYS.map((wd, i) => {
               if (i === swapFrom) return null;
-              const target = phase.week[order[i]];
+              const target = bloc.semaine[order[i]];
               return (
                 <TouchableOpacity key={wd} style={styles.sheetRow} onPress={() => swap(swapFrom!, i)} accessibilityRole="button">
                   <Text style={styles.sheetDay}>{wd}</Text>
-                  <Text style={styles.sheetMuscu} numberOfLines={1}>{target?.muscu ?? ''}</Text>
+                  <Text style={styles.sheetMuscu} numberOfLines={1}>{target?.seance ?? 'Pas de muscu'}</Text>
                   <Ionicons name="swap-horizontal" size={16} color={Colors.primary} />
                 </TouchableOpacity>
               );
@@ -311,49 +328,79 @@ export default function PersoAthletiqueScreen() {
 
 const styles = StyleSheet.create({
   container:   { flex: 1, backgroundColor: Colors.bg },
+  center:      { alignItems: 'center', justifyContent: 'center', padding: Sp.lg },
   header:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { padding: 4 },
   headerTitle: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
   content:     { padding: Sp.md, paddingBottom: Sp.xxl, gap: Sp.sm },
-  emptyText:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', marginTop: Sp.md, lineHeight: 20 },
+  emptyText:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', marginTop: Sp.md },
 
-  phaseRow:      { gap: Sp.xs, paddingBottom: Sp.xs },
-  phaseChip:     { paddingHorizontal: Sp.md, paddingVertical: 8, borderRadius: 99, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
-  phaseChipActive:{ backgroundColor: Colors.primary, borderColor: Colors.primary },
-  phaseChipText: { fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.textSecondary },
-  phaseChipTextActive: { color: Colors.onPrimary, fontFamily: Fonts.bold },
+  tabs:         { flexDirection: 'row', gap: Sp.xs, padding: Sp.md, paddingBottom: 0 },
+  tab:          { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  tabActive:    { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  tabText:      { fontSize: Fs.sm, fontFamily: Fonts.medium, color: Colors.textSecondary },
+  tabTextActive:{ color: Colors.onPrimary, fontFamily: Fonts.bold },
 
-  goalCard:   { backgroundColor: Colors.primary + '10', borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, padding: Sp.md },
-  blockLabel: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  goalText:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20, marginTop: 5 },
+  label:    { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Sp.xs },
+  chipRow:  { flexDirection: 'row', gap: Sp.xs },
+  chip:     { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  weekChip: { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: R, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  chipActive:   { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  chipText:     { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
+  chipSub:      { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 1 },
+  chipTextActive: { color: Colors.onPrimary },
 
-  dayCard:   { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: R, overflow: 'hidden' },
-  dayHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: Sp.md, paddingVertical: Sp.sm, backgroundColor: Colors.surfaceElevated },
-  dayName:   { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
-  dayMuscu:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, flexShrink: 1, textAlign: 'right', marginLeft: Sp.sm },
+  focusCard:  { backgroundColor: Colors.primary + '0E', borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, padding: Sp.md, marginTop: Sp.xs },
+  focusLabel: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.primary, letterSpacing: 0.5 },
+  focusText:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18, marginTop: 3 },
 
-  item:       { flexDirection: 'row', gap: Sp.sm, padding: Sp.md, alignItems: 'flex-start' },
-  itemBorder: { borderTopWidth: 1, borderTopColor: Colors.border },
-  itemIcon:   { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  itemName:   { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
-  itemDetail: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18, marginTop: 3 },
+  hintRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Sp.xs },
+  hintText:  { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  resetLink: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.primary },
 
-  homeCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.orange + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
-  homeTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.orange, paddingHorizontal: Sp.md, paddingTop: Sp.md },
-  homeIntro: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18, paddingHorizontal: Sp.md, paddingVertical: Sp.sm },
-  homeMin:   { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.orange },
-  shortBox:  { marginHorizontal: Sp.md, marginTop: Sp.sm, padding: Sp.sm, borderRadius: 10, backgroundColor: Colors.surfaceElevated },
-  shortTitle:{ fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: 4 },
-  shortItem: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, lineHeight: 17 },
-  reorderHint:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, marginBottom: 2 },
-  reorderHintText: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 16 },
-  resetLink:       { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.primary },
-  dayCardMoved:    { borderColor: Colors.primary + '55' },
-  movedTag:        { fontSize: 10, fontFamily: Fonts.medium, color: Colors.primary, marginTop: 1 },
-  swapBtn:         { padding: 6, marginLeft: 4 },
+  dayCard:      { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: R, overflow: 'hidden' },
+  dayCardMoved: { borderColor: Colors.primary + '55' },
+  dayHeader:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.md, paddingVertical: Sp.sm, backgroundColor: Colors.surfaceElevated },
+  dayName:      { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  daySeance:    { fontSize: Fs.xs, fontFamily: Fonts.medium, color: Colors.primary, marginTop: 1 },
+  movedTag:     { fontSize: 10, fontFamily: Fonts.medium, color: Colors.primary, marginTop: 1 },
+  swapBtn:      { padding: 6 },
+
+  exoRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.border },
+  exoNum:      { fontSize: Fs.xs, fontFamily: Fonts.condensedBold, color: Colors.textMuted, width: 14, marginTop: 2 },
+  exoName:     { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
+  exoMeta:     { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2 },
+  exoMetaText: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  exoDot:      { fontSize: Fs.xs, color: Colors.textMuted },
+  exoNote:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 3, lineHeight: 16, fontStyle: 'italic' },
+  loadBadge:   { backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 },
+  loadText:    { fontSize: Fs.sm, fontFamily: Fonts.condensedBold, color: Colors.onPrimary },
+
+  athRow:    { flexDirection: 'row', gap: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 9, alignItems: 'flex-start' },
+  athFirst:  { borderTopWidth: 1, borderTopColor: Colors.borderStrong, marginTop: 2, paddingTop: 11 },
+  athIcon:   { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  athName:   { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
+  athDetail: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 17, marginTop: 2 },
+  minText:   { fontSize: Fs.xs, fontFamily: Fonts.bold },
+
+  blockCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: R, padding: Sp.md, gap: 2 },
+  blockTitle: { fontSize: Fs.md, fontFamily: Fonts.bold },
+  blockIntro: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 17, marginBottom: Sp.sm },
+  drillRow:   { flexDirection: 'row', gap: Sp.sm, paddingVertical: 8, alignItems: 'flex-start' },
+  paceHead:   { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Sp.sm },
+  paceValue:  { fontSize: Fs.sm, fontFamily: Fonts.condensedBold, color: Colors.blue },
+  paceHr:     { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.red, marginTop: 2 },
+
+  rulesCard:  { backgroundColor: Colors.red + '0E', borderWidth: 1, borderColor: Colors.red + '30', borderRadius: R, padding: Sp.md, marginTop: Sp.sm },
+  rulesTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.red, marginBottom: Sp.sm },
+  ruleRow:    { flexDirection: 'row', gap: 6, marginBottom: 6 },
+  ruleDot:    { color: Colors.red, fontSize: Fs.sm },
+  ruleText:   { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 17 },
+
+  privateNote: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: Sp.md },
 
   overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: Sp.lg, paddingBottom: 40, gap: 2 },
+  sheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: Sp.lg, paddingBottom: 40 },
   sheetTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   sheetSub:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginBottom: Sp.sm },
   sheetRow:   { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: Colors.border },
@@ -361,20 +408,4 @@ const styles = StyleSheet.create({
   sheetMuscu: { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
   sheetCancel:{ alignItems: 'center', paddingVertical: Sp.md, marginTop: Sp.sm },
   sheetCancelText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.textSecondary },
-  paceCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.blue + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
-  paceTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.blue, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: Sp.xs },
-  paceHead:  { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Sp.sm },
-  paceValue: { fontSize: Fs.sm, fontFamily: Fonts.condensedBold, color: Colors.blue },
-  paceHr: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.red, marginTop: 2 },
-  minCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.green + '35', borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
-  minTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.green, paddingHorizontal: Sp.md, paddingTop: Sp.md },
-  rimCard:  { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: R, overflow: 'hidden', marginTop: Sp.sm, paddingBottom: Sp.sm },
-  rimTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary, paddingHorizontal: Sp.md, paddingTop: Sp.md },
-  rulesCard:  { backgroundColor: Colors.red + '0E', borderWidth: 1, borderColor: Colors.red + '30', borderRadius: R, padding: Sp.md, marginTop: Sp.sm },
-  rulesTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.red, marginBottom: Sp.sm },
-  ruleRow:    { flexDirection: 'row', gap: 6, marginBottom: 6 },
-  ruleDot:    { color: Colors.red, fontSize: Fs.sm },
-  ruleText:   { flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18 },
-
-  privateNote:{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', marginTop: Sp.md },
 });
