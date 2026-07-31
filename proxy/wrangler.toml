@@ -1,0 +1,7 @@
+name = "fittrackia-proxy"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# Les secrets ne vont PAS ici — ils se posent avec `wrangler secret put` :
+#   OPENAI_API_KEY  (ta clé OpenAI sk-...)
+#   APP_TOKEN       (jeton applicatif, généré avec : openssl rand -hex 32)

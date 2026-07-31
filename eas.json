@@ -19,7 +19,9 @@
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_PERSO": "0"
+        "EXPO_PUBLIC_PERSO": "0",
+        "EXPO_PUBLIC_PROXY_URL": "",
+        "EXPO_PUBLIC_APP_TOKEN": ""
       }
     },
     "perso": {

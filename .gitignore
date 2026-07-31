@@ -42,3 +42,5 @@ yarn-error.*
 
 # Programme athlétique personnel — NE JAMAIS COMMITER (contenu privé)
 constants/personal-program.ts
+.dev.vars
+.wrangler/
