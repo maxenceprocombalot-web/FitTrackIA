@@ -14,6 +14,11 @@ const PROXY_URL = process.env.EXPO_PUBLIC_PROXY_URL ?? '';   // ex : https://fit
 const APP_TOKEN = process.env.EXPO_PUBLIC_APP_TOKEN ?? '';
 const PROXY_ON  = !!(PROXY_URL && APP_TOKEN);
 
+// Modèle utilisé quand l'app parle en direct au fournisseur (clé perso dans
+// les réglages). En mode proxy, le worker impose son propre modèle : changer
+// de fournisseur ne demande donc aucun rebuild de l'app.
+const MODEL = process.env.EXPO_PUBLIC_AI_MODEL ?? 'gpt-4o';
+
 let _runtimeKey = '';
 let _client: OpenAI | null = null;
 
@@ -193,7 +198,7 @@ export async function sendCoachMessage(
   ];
 
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages,
     max_tokens: 400,
     temperature: 0.75,
@@ -276,7 +281,7 @@ Total jour : 1640kcal
   }
 
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 1500,
     temperature: 0.7,
@@ -326,7 +331,7 @@ JOUR 1 — Full Body A
   }
 
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 2000,
     temperature: 0.75,
@@ -348,7 +353,7 @@ export async function generateMonthlyMessage(user: import('../types').User, stat
   }
 
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{
       role: 'user',
       content: `Message de bilan mensuel motivant pour ${user.name} (objectif : ${user.goal}). Stats : ${stats.totalWorkouts} séances, ${Math.round(stats.avgCalories)}kcal/j en moyenne, poids ${stats.weightChange !== undefined ? `${stats.weightChange > 0 ? '+' : ''}${stats.weightChange.toFixed(1)}kg` : 'non renseigné'}. 2 phrases max, direct et positif.`,
@@ -378,7 +383,7 @@ export async function estimateMealItems(description: string): Promise<EstimatedI
     return [{ name: description, portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 }];
   }
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{
       role: 'user',
       content: `Décompose ce repas en aliments distincts avec des portions réalistes (contexte : restaurant/fait maison en France) : "${description}".
@@ -427,7 +432,7 @@ export async function estimateMealFromPhoto(base64Jpeg: string): Promise<Estimat
     return [{ name: 'Plat (démo — configure la clé IA)', portionG: 300, caloriesPer100g: 150, proteinPer100g: 12, carbsPer100g: 18, fatPer100g: 5 }];
   }
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{
       role: 'user',
       content: [
@@ -479,7 +484,7 @@ FRUITS : bananes, pommes
 DIVERS : amandes, huile d'olive`,
     };
   }
-  const res = await callAI(() => client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 }));
+  const res = await callAI(() => client.chat.completions.create({ model: MODEL, messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 }));
   const content = res.choices[0]?.message?.content ?? '';
   const shoppingIdx = content.toLowerCase().indexOf('liste de courses');
   if (shoppingIdx > -1) {
@@ -534,7 +539,7 @@ export async function analyzeNutritionDeficiencies(
   const lowCalDays = days.filter(d => d.cal < 1200).length;
 
   const res = await callAI(() => client.chat.completions.create({
-    model: 'gpt-4o',
+    model: MODEL,
     messages: [{ role: 'user', content: `Analyse ces données nutritionnelles de 7 jours pour ${user.name} (objectif : ${user.targetCalories} kcal/j, ${user.targetProtein}g prot, ${user.targetCarbs}g glucides, ${user.targetFat}g lipides) :
 Moyennes : ${avgCal} kcal/j, ${avgProt}g prot/j, ${avgCarb}g glucides/j, ${avgFat}g lipides/j. Jours < 1200 kcal : ${lowCalDays}.
 
