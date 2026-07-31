@@ -57,7 +57,7 @@ export async function disableHealthSync(): Promise<void> {
 
 const ACTIVITY_MAP: Record<WorkoutType, number> = {
   strength: 50, // traditionalStrengthTraining
-  cardio:   52, // walking (générique cardio doux)
+  cardio:   73, // mixedCardio
   hiit:     63, // highIntensityIntervalTraining
   yoga:     57, // yoga
   running:  37, // running

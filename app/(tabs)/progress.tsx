@@ -26,7 +26,7 @@ import {
 import { today, thisMonth, daysAgo, localISO } from '../../services/date';
 import { projectWeight } from '../../services/metrics';
 import { BADGES } from '../../constants/badges';
-import { CHART_W, CHART_H, WeightChart, CaloriesChart, ExerciseChart } from '../../components/progress/Charts';
+import { WeightChart, CaloriesChart, ExerciseChart } from '../../components/progress/Charts';
 import { ExoStat, ScoreRow, WBadge, BigStat } from '../../components/progress/Stats';
 import { getUnlockedBadges, getDefaultChallenges, getChallengeProgress } from '../../services/badges';
 

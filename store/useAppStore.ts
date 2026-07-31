@@ -92,6 +92,8 @@ function shallowEqualOn(a: AppState, b: AppState, keys: readonly StateKey[]): bo
  * @param watch  Champs observés. Par défaut : tous (comportement historique).
  *               Ex. useAppStore(['water', 'user']) ne re-rend que sur ces champs.
  */
+let _healthWeightImported = false;
+
 export function useAppStore(watch?: readonly StateKey[]) {
   const [, tick] = useState(0);
   const snapshot = useRef(_state);
@@ -169,6 +171,8 @@ export function useAppStore(watch?: readonly StateKey[]) {
   // réécrire la valeur vers Santé en doublon.
   useEffect(() => {
     const t = setTimeout(() => {
+      if (_healthWeightImported) return; // une seule fois par lancement, pas par écran
+      _healthWeightImported = true;
       readLatestWeightFromHealth().then(hw => {
         if (!hw || _state.weights.some(w => w.date === hw.date)) return;
         const entry = { date: hw.date, weight: hw.kg };
