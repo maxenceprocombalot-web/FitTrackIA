@@ -317,7 +317,9 @@ export default function PersoAthletiqueScreen() {
                           <Ionicons name={meta?.icon ?? 'ellipse'} size={14} color={meta?.color ?? Colors.textMuted} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.athName, it.tag === 'interdit' && { color: Colors.red }]}>{it.name}</Text>
+                          <Text style={[styles.athName, it.tag === 'interdit' && { color: Colors.red }]}>
+                            {it.slot ? <Text style={styles.athSlot}>{it.slot} · </Text> : null}{it.name}
+                          </Text>
                           <Text style={styles.athDetail}>{it.detail}</Text>
                         </View>
                       </View>
@@ -534,6 +536,7 @@ const styles = StyleSheet.create({
   athFirst:  { borderTopWidth: 1, borderTopColor: Colors.borderStrong, marginTop: 2, paddingTop: 11 },
   athIcon:   { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   athName:   { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
+  athSlot: { fontFamily: Fonts.bold, color: Colors.primary, fontSize: Fs.xs },
   athDetail: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 17, marginTop: 2 },
   minText:   { fontSize: Fs.xs, fontFamily: Fonts.bold },
 
