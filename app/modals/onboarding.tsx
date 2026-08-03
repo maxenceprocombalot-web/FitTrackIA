@@ -11,7 +11,7 @@ import { computeTDEE, computeTargetCalories, computeMacros } from '../../service
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 4;
 const SCREEN_W    = Dimensions.get('window').width;
 
 // ─── Données de configuration ─────────────────────────────────────────────────
@@ -139,8 +139,7 @@ export default function OnboardingModal() {
     if (step === 0) return true;
     if (step === 1) return name.trim().length > 0;
     if (step === 2) return age >= 15 && height >= 140 && weight >= 40;
-    if (step === 3 || step === 4) return true;
-    if (step === 5) return gdprAccepted;
+    if (step === 3) return gdprAccepted;
     return true;
   };
 
@@ -272,6 +271,23 @@ export default function OnboardingModal() {
                   <GenderBtn value="male"   label="Homme" emoji="👨" active={gender === 'male'}   onPress={() => setGender('male')} />
                   <GenderBtn value="female" label="Femme"  emoji="👩" active={gender === 'female'} onPress={() => setGender('female')} />
                 </View>
+                <Text style={styles.subLabel}>Ton objectif</Text>
+            <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
+              {GOALS.map(g => (
+                <TouchableOpacity
+                  key={g.value}
+                  style={[styles.goalCard, goal === g.value && styles.goalCardActive]}
+                  onPress={() => setGoal(g.value)}
+                >
+                  <Text style={styles.goalEmoji}>{g.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.goalLabel, goal === g.value && styles.goalLabelActive]}>{g.label}</Text>
+                    <Text style={styles.goalDesc}>{g.desc}</Text>
+                  </View>
+                  {goal === g.value && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
               </View>
             </View>
           )}
@@ -286,59 +302,31 @@ export default function OnboardingModal() {
                 <SliderInput label="Taille" value={height} onChange={setHeight} min={140} max={220} unit="cm"  step={1}   />
                 <SliderInput label="Poids"  value={weight} onChange={setWeight} min={40} max={150} unit="kg"  step={0.5} />
               </View>
+              <Text style={[styles.subLabel, { marginTop: Sp.lg }]}>Entraînements par semaine</Text>
+            <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
+              {ACTIVITIES.map(a => (
+                <TouchableOpacity
+                  key={a.value}
+                  style={[styles.actCard, activity === a.value && styles.actCardActive]}
+                  onPress={() => setActivity(a.value)}
+                >
+                  <Text style={styles.actEmoji}>{a.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.actLabel, activity === a.value && styles.actLabelActive]}>{a.label}</Text>
+                    <Text style={styles.actDesc}>{a.desc}</Text>
+                  </View>
+                  {activity === a.value && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
             </View>
           )}
 
-          {/* ── Step 3 : Objectif ───────────────────────────────────────── */}
-          {step === 3 && (
-            <View style={styles.stepContainer}>
-              <Text style={styles.stepTitle}>Quel est ton objectif ?</Text>
-              <Text style={styles.stepSubtitle}>On adapte tes calories en conséquence</Text>
-              <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
-                {GOALS.map(g => (
-                  <TouchableOpacity
-                    key={g.value}
-                    style={[styles.goalCard, goal === g.value && styles.goalCardActive]}
-                    onPress={() => setGoal(g.value)}
-                  >
-                    <Text style={styles.goalEmoji}>{g.emoji}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.goalLabel, goal === g.value && styles.goalLabelActive]}>{g.label}</Text>
-                      <Text style={styles.goalDesc}>{g.desc}</Text>
-                    </View>
-                    {goal === g.value && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
 
           {/* ── Step 4 : Activité ───────────────────────────────────────── */}
-          {step === 4 && (
-            <View style={styles.stepContainer}>
-              <Text style={styles.stepTitle}>Ton niveau d'activité</Text>
-              <Text style={styles.stepSubtitle}>Entraînements par semaine hors travail</Text>
-              <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
-                {ACTIVITIES.map(a => (
-                  <TouchableOpacity
-                    key={a.value}
-                    style={[styles.actCard, activity === a.value && styles.actCardActive]}
-                    onPress={() => setActivity(a.value)}
-                  >
-                    <Text style={styles.actEmoji}>{a.emoji}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.actLabel, activity === a.value && styles.actLabelActive]}>{a.label}</Text>
-                      <Text style={styles.actDesc}>{a.desc}</Text>
-                    </View>
-                    {activity === a.value && <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
 
-          {/* ── Step 5 : Récapitulatif + RGPD ──────────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 3 : Récapitulatif + RGPD ──────────────────────────── */}
+          {step === 3 && (
             <View style={styles.stepContainer}>
               <Text style={styles.stepTitle}>Ton plan personnalisé 🔥</Text>
               <Text style={styles.stepSubtitle}>Calculé avec Harris-Benedict</Text>

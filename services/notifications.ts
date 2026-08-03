@@ -92,8 +92,8 @@ export async function scheduleStreakBrokenNotification(): Promise<void> {
   tomorrow.setHours(9, 0, 0, 0);
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Tu n'as pas fait de séance hier 😔",
-      body: 'Reprends aujourd\'hui et relance ton streak 💪',
+      title: 'Ton tapis t\'attend 💪',
+      body: 'Une séance aujourd\'hui et ton streak repart. Même 20 min comptent.',
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: tomorrow },
   });

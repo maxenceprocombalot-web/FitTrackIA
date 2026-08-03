@@ -258,6 +258,10 @@ export default function DashboardScreen() {
   const waterPct    = Math.min(store.water.ml / waterGoal, 1);
   const waterColor  = waterPct >= 1 ? Colors.primary : waterPct >= 0.6 ? Colors.blue : waterPct >= 0.3 ? Colors.orange : Colors.red;
   const streak      = store.streak.current;
+
+  // Premier lancement : aucune donnée saisie, toutes catégories confondues.
+  // Un tableau de bord entièrement à zéro décourage — on montre une seule action.
+  const isFirstRun = store.meals.length === 0 && store.workouts.length === 0 && store.weights.length === 0;
   const jokerMonth  = storage.thisMonth();
   const jokerAvail  = store.streak.jokerUsedMonth !== jokerMonth;
 
@@ -336,6 +340,32 @@ export default function DashboardScreen() {
         </View>
       </View>
 
+      {/* ── Premier lancement : une seule action, pas un tableau de zéros ──── */}
+      {isFirstRun && (
+        <Card style={styles.firstRunCard}>
+          <Text style={styles.firstRunEmoji}>👋</Text>
+          <Text style={styles.firstRunTitle}>Bienvenue {user.name} !</Text>
+          <Text style={styles.firstRunSub}>
+            Ton tableau de bord se remplira au fur et à mesure. Commence par une seule chose :
+          </Text>
+          <TouchableOpacity
+            style={styles.firstRunCta}
+            accessibilityRole="button"
+            onPress={() => router.push('/modals/add-food')}
+          >
+            <Ionicons name="restaurant" size={18} color={Colors.onPrimary} />
+            <Text style={styles.firstRunCtaText}>Ajouter mon premier repas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.firstRunAlt}
+            accessibilityRole="button"
+            onPress={() => router.push('/modals/add-workout')}
+          >
+            <Text style={styles.firstRunAltText}>ou enregistrer une séance →</Text>
+          </TouchableOpacity>
+        </Card>
+      )}
+
       {/* ── Streak ──────────────────────────────────────────────────────────── */}
       {streak > 0 && (
         <Card style={[styles.streakCard, streak > 7 && styles.streakCardFire]}>
@@ -362,6 +392,7 @@ export default function DashboardScreen() {
       )}
 
       {/* ── Anneau calories ─────────────────────────────────────────────────── */}
+      {!isFirstRun && (
       <Card style={styles.ringCard}>
         <View style={styles.ringRow}>
           <AnimatedRing consumed={macros.calories} burned={burned} goal={user.targetCalories} size={155} />
@@ -378,14 +409,17 @@ export default function DashboardScreen() {
           </Text>
         )}
       </Card>
+      )}
 
       {/* ── Macros ──────────────────────────────────────────────────────────── */}
+      {!isFirstRun && (
       <Card>
         <Text style={styles.sectionTitle}>Macronutriments</Text>
         <MacroBar label="Protéines" current={macros.protein} goal={user.targetProtein} color={Colors.proteinColor} />
         <MacroBar label="Glucides"  current={macros.carbs}   goal={user.targetCarbs}   color={Colors.carbsColor} />
         <MacroBar label="Lipides"   current={macros.fat}     goal={user.targetFat}      color={Colors.fatColor} />
       </Card>
+      )}
 
       {/* ── Objectif de poids (après macros) ───────────────────────────────── */}
       {targetWeight && latestWeight && (
@@ -701,6 +735,14 @@ const scStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  firstRunCard:   { alignItems: 'center', gap: Sp.xs, paddingVertical: Sp.lg },
+  firstRunEmoji:  { fontSize: 40 },
+  firstRunTitle:  { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  firstRunSub:    { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: Sp.md, lineHeight: 20, marginBottom: Sp.sm },
+  firstRunCta:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 14, paddingHorizontal: Sp.lg, alignSelf: 'stretch', marginHorizontal: Sp.md },
+  firstRunCtaText:{ fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
+  firstRunAlt:    { paddingVertical: Sp.sm },
+  firstRunAltText:{ fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   container: { flex: 1, backgroundColor: Colors.bg },
   dataAlert: { flexDirection: 'row', alignItems: 'flex-start', gap: Sp.sm, backgroundColor: Colors.red + '14', borderWidth: 1, borderColor: Colors.red + '40', borderRadius: R, padding: Sp.md, marginBottom: Sp.md },
   dataAlertTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.red },
