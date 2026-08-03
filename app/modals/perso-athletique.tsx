@@ -19,6 +19,8 @@ const TAG_META: Record<NonNullable<AthleticItem['tag']>, { color: string; icon: 
   skills:     { color: Colors.orange,  icon: 'basketball' },
   prevention: { color: Colors.green,   icon: 'shield-checkmark' },
   interdit:   { color: Colors.red,     icon: 'ban' },
+  test:       { color: Colors.yellow,  icon: 'clipboard' },
+  contact:    { color: '#b983ff',      icon: 'people' },
 };
 
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -292,7 +294,7 @@ export default function PersoAthletiqueScreen() {
                   ))}
 
                   {/* Travail basket du jour */}
-                  {j.athletic.map((it, i) => {
+                  {j.athletic.filter(it => it.week === undefined || it.week === weekIdx).map((it, i) => {
                     const meta = it.tag ? TAG_META[it.tag] : null;
                     return (
                       <View key={`a${i}`} style={[styles.athRow, i === 0 && j.exos.length > 0 && styles.athFirst]}>
