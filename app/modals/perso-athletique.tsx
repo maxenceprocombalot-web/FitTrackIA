@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getSecure, setSecure } from '../../services/storage';
+import { today } from '../../services/date';
 import {
   PERSONAL_BLOCS, PERSONAL_RULES, PERSONAL_HOME_ROUTINE,
   PERSONAL_RIM_WORK, PERSONAL_PACES, AthleticItem, Exo,
@@ -37,10 +38,21 @@ const fmtKg = (n: number) =>
 const DEFAULT_BLOC = 0;
 const DEFAULT_WEEK = 1;
 
+// Le bloc « Retour terrain » est calé sur des dates réelles (S14 : 3-9 août,
+// S15 : 10-16 août 2026) : on ouvre donc la semaine correspondant à aujourd'hui
+// plutôt qu'une valeur fixe, sinon on affiche la mauvaise semaine.
+function retourWeekFromToday(): number {
+  const d = today(); // 'YYYY-MM-DD' en heure locale
+  if (d < '2026-08-10') return 0;
+  return 1;
+}
+
 export default function PersoAthletiqueScreen() {
   const router = useRouter();
   const [blocIdx, setBlocIdx]   = useState(DEFAULT_BLOC);
-  const [weekIdx, setWeekIdx]   = useState(DEFAULT_WEEK);
+  const [weekIdx, setWeekIdx]   = useState(
+    PERSONAL_BLOCS[DEFAULT_BLOC]?.id === 'retour' ? retourWeekFromToday() : DEFAULT_WEEK,
+  );
   const [order, setOrder]       = useState<number[]>([]);
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
   const [tab, setTab]           = useState<'semaine' | 'basket'>('semaine');
@@ -121,7 +133,10 @@ export default function PersoAthletiqueScreen() {
   }, [bloc?.id]);
 
   // La semaine sélectionnée doit rester valide en changeant de bloc
-  useEffect(() => { setWeekIdx(w => Math.min(w, (bloc?.weeks ?? 1) - 1)); }, [bloc?.id]);
+  useEffect(() => {
+    if (bloc?.id === 'retour') { setWeekIdx(retourWeekFromToday()); return; }
+    setWeekIdx(w => Math.min(w, (bloc?.weeks ?? 1) - 1));
+  }, [bloc?.id]);
 
   const persist = useCallback(async (next: number[]) => {
     setOrder(next);
