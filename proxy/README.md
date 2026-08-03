@@ -95,7 +95,10 @@ npx wrangler deploy
 
 ## 7. Brancher l'app
 
-Dans `eas.json`, profils `production` **et** `perso` (⚠️ garder le `/v1` final) :
+Dans `eas.json`, profils `production` **et** `perso` — ⚠️ garder le `/v1` final, et
+**ne jamais laisser ces clés avec une valeur vide** : EAS refuse de démarrer un
+build (`"env.EXPO_PUBLIC_PROXY_URL" is not allowed to be empty`). Soit tu mets
+la vraie valeur, soit tu n'ajoutes pas la ligne du tout.
 
 ```json
 "env": {
