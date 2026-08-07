@@ -123,12 +123,22 @@ export default function OnboardingModal() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   // Welcome emoji scale
   const emojiScale = useRef(new Animated.Value(0.5)).current;
+  // Progression animée (glisse au lieu de sauter entre les étapes)
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (step === 0) {
       Animated.spring(emojiScale, { toValue: 1.0, useNativeDriver: true, tension: 80, friction: 8 }).start();
     }
   }, []);
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: step === 0 ? 0 : step / (TOTAL_STEPS - 1),
+      duration: 350,
+      useNativeDriver: false,
+    }).start();
+  }, [step]);
 
   // Calculs TDEE affichés à l'étape 5
   const tdee = computeTDEE(gender, weight, height, age, activity);
@@ -187,14 +197,20 @@ export default function OnboardingModal() {
     router.replace('/(tabs)');
   };
 
-  const progressWidth = step === 0 ? 0 : (step / (TOTAL_STEPS - 1)) * 100;
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View style={styles.container}>
-      {/* Barre de progression (masquée sur step 0) */}
+      {/* En-tête de progression : compteur + barre animée (masqué sur step 0) */}
       {step > 0 && (
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progressWidth}%` }]} />
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>Étape {step} / {TOTAL_STEPS - 1}</Text>
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+          </View>
         </View>
       )}
 
@@ -499,7 +515,9 @@ const gbStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
-  progressTrack: { height: 3, backgroundColor: Colors.border },
+  progressHeader: { paddingHorizontal: Sp.lg, paddingTop: Sp.md, paddingBottom: Sp.xs, gap: 6 },
+  progressLabel: { alignSelf: 'flex-end', fontSize: Fs.xs, color: Colors.textMuted, fontWeight: Fw.medium, letterSpacing: 0.4 },
+  progressTrack: { height: 5, backgroundColor: Colors.borderStrong, borderRadius: 99, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 99 },
   scroll: { padding: Sp.lg, paddingBottom: Sp.xxl, flexGrow: 1 },
 
