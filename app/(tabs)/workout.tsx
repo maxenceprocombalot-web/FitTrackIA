@@ -51,7 +51,7 @@ export default function WorkoutScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Carte Programmes ───────────────────────────────────────────── */}
-        <TouchableOpacity style={styles.programsCard} onPress={() => router.push('/(tabs)/programs')} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.programsCard} onPress={() => router.push('/(tabs)/programs')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Ouvrir les programmes d'entraînement">
           <View style={styles.programsIconBox}>
             <Text style={styles.programsEmoji}>📋</Text>
           </View>
@@ -95,6 +95,9 @@ export default function WorkoutScreen() {
           <TouchableOpacity
             style={styles.repeatBtn}
             onPress={() => router.push({ pathname: '/modals/add-workout', params: { repeatWorkoutId: lastWorkout.id } })}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Reprendre la dernière séance : ${lastWorkout.name}`}
           >
             <Ionicons name="flash" size={18} color={Colors.orange} />
             <View style={{ flex: 1 }}>
@@ -127,8 +130,21 @@ export default function WorkoutScreen() {
         </ScrollView>
 
         {/* ── Liste des séances ──────────────────────────────────────────── */}
+        {store.workouts.length > 0 && (
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsTitle}>Mes séances</Text>
+            <View style={styles.resultCountPill}>
+              <Text style={styles.resultCountText}>{filtered.length}</Text>
+            </View>
+          </View>
+        )}
+
         {filtered.length === 0 ? (
-          <EmptyWorkout onAdd={() => router.push('/modals/add-workout')} />
+          filter === 'all' ? (
+            <EmptyWorkout onAdd={() => router.push('/modals/add-workout')} />
+          ) : (
+            <NoWorkoutMatch label={TYPE_META[filter].label} onReset={() => setFilter('all')} />
+          )
         ) : (
           filtered.map((w, idx) => (
             <SwipeableWorkoutCard
@@ -142,7 +158,12 @@ export default function WorkoutScreen() {
       </ScrollView>
 
       {/* ── FAB ──────────────────────────────────────────────────────────── */}
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/modals/add-workout')}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/modals/add-workout')}
+        accessibilityRole="button"
+        accessibilityLabel="Ajouter une séance"
+      >
         <Ionicons name="add" size={28} color={Colors.onPrimary} />
       </TouchableOpacity>
     </AnimatedScreen>
@@ -294,11 +315,36 @@ function FilterChip({ label, active, color = Colors.primary, onPress }: { label:
 
 function EmptyWorkout({ onAdd }: { onAdd: () => void }) {
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 60, gap: 12 }}>
-      <Ionicons name="barbell-outline" size={56} color={Colors.textMuted} />
-      <Text style={{ color: Colors.textSecondary, fontSize: Fs.lg, fontFamily: Fonts.semibold }}>Aucune séance</Text>
-      <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular, textAlign: 'center' }}>Commence à enregistrer tes entraînements</Text>
+    <View style={styles.empty}>
+      <View style={styles.emptyIconBox}>
+        <Ionicons name="barbell-outline" size={30} color={Colors.textMuted} />
+      </View>
+      <Text style={styles.emptyTitle}>Aucune séance</Text>
+      <Text style={styles.emptySub}>Commence à enregistrer tes entraînements</Text>
       <Button title="+ Ma première séance" onPress={onAdd} fullWidth={false} style={{ marginTop: 8, paddingHorizontal: 20 }} />
+    </View>
+  );
+}
+
+// Aucun résultat pour le filtre actif (≠ « aucune séance enregistrée »)
+function NoWorkoutMatch({ label, onReset }: { label: string; onReset: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyIconBox}>
+        <Ionicons name="search-outline" size={30} color={Colors.textMuted} />
+      </View>
+      <Text style={styles.emptyTitle}>Aucune séance « {label} »</Text>
+      <Text style={styles.emptySub}>Aucune séance ne correspond à ce filtre.</Text>
+      <TouchableOpacity
+        style={styles.emptyBtn}
+        onPress={onReset}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Afficher toutes les séances"
+      >
+        <Ionicons name="refresh-outline" size={16} color={Colors.primary} />
+        <Text style={styles.emptyBtnText}>Afficher tout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -343,6 +389,18 @@ const styles = StyleSheet.create({
   toolTitle: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.text },
   toolSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: Sp.sm },
+  // En-tête de liste
+  resultsHeader: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginTop: Sp.sm, marginBottom: 2 },
+  resultsTitle: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
+  resultCountPill: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceHighlight },
+  resultCountText: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary },
+  // États vides
+  empty: { alignItems: 'center', paddingVertical: 48, gap: Sp.sm },
+  emptyIconBox: { width: 64, height: 64, borderRadius: 20, backgroundColor: Colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle: { fontSize: Fs.lg, fontFamily: Fonts.semibold, color: Colors.textSecondary, textAlign: 'center' },
+  emptySub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: Sp.lg },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 8, borderRadius: 99, borderWidth: 1, borderColor: Colors.primary + '40', backgroundColor: Colors.primary + '12' },
+  emptyBtnText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   filterScroll: { marginHorizontal: -Sp.md },
   filterContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
   chip: { borderRadius: 99, paddingHorizontal: Sp.md, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
