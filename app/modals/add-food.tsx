@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   // Listes
   listContent: { padding: Sp.md, paddingBottom: 60 },
   foodRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 10 },
-  foodEmoji: { fontSize: 22, fontFamily: Fonts.regular },
+  foodEmoji: { fontSize: 22 },
   foodInfo: { flex: 1 },
   foodName: { fontSize: Fs.md, color: Colors.text, fontFamily: Fonts.medium },
   foodBrand: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary, marginTop: 1 },

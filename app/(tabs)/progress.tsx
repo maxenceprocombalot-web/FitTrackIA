@@ -814,7 +814,7 @@ export default function ProgressScreen() {
               return (
                 <View key={ch.id} style={{ marginBottom: Sp.md, backgroundColor: Colors.surfaceElevated, borderRadius: R, borderWidth: 1, borderColor: done ? Colors.green + '50' : Colors.border, padding: Sp.md }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, marginBottom: Sp.sm }}>
-                    <Text style={{ fontSize: 24, fontFamily: Fonts.regular }}>{ch.emoji}</Text>
+                    <Text style={{ fontSize: 24 }}>{ch.emoji}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: Fs.md, fontFamily: Fonts.semibold, color: done ? Colors.green : Colors.text }}>{ch.title}</Text>
                       <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 2 }}>{ch.description}</Text>
@@ -941,7 +941,7 @@ const styles = StyleSheet.create({
   inRangeText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   streakCard: { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  streakEmoji: { fontSize: 28, fontFamily: Fonts.regular },
+  streakEmoji: { fontSize: 28 },
   streakTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   streakSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   exoScroll:        { marginHorizontal: -Sp.md },
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
   badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   badgeCard: { width: '30%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '40', padding: Sp.sm, alignItems: 'center', gap: 3 },
   badgeCardLocked: { borderColor: Colors.border, opacity: 0.5 },
-  badgeEmoji: { fontSize: 28, fontFamily: Fonts.regular },
+  badgeEmoji: { fontSize: 28 },
   badgeEmojiLocked: { opacity: 0.4 },
   badgeTitle: { fontSize: Fs.xs, fontFamily: Fonts.bold, color: Colors.text, textAlign: 'center' },
   badgeTitleLocked: { color: Colors.textMuted },

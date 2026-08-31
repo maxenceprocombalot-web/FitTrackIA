@@ -506,7 +506,7 @@ function GenderBtn({ label, emoji, active, onPress }: { value: Gender; label: st
 const gbStyles = StyleSheet.create({
   btn: { flex: 1, alignItems: 'center', paddingVertical: Sp.lg, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, gap: 6 },
   active: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  emoji: { fontSize: 48, fontFamily: Fonts.regular },
+  emoji: { fontSize: 48 },
   label: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.textSecondary },
   labelActive: { color: Colors.primary },
 });
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   // Welcome
   welcomeContainer: { flex: 1, justifyContent: 'space-between', minHeight: 500, paddingTop: Sp.xxl },
   welcomeContent: { alignItems: 'center', gap: Sp.lg },
-  welcomeEmoji: { fontSize: 80, fontFamily: Fonts.regular },
+  welcomeEmoji: { fontSize: 80 },
   welcomeTitle: { fontSize: 36, fontFamily: Fonts.heavy, color: Colors.text, textAlign: 'center', lineHeight: 44 },
   welcomeTagline: { fontSize: 16, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   welcomeFeatures: { alignSelf: 'stretch', gap: Sp.sm, marginTop: Sp.md },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   // Goals
   goalCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.border, gap: Sp.md },
   goalCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  goalEmoji: { fontSize: 56, fontFamily: Fonts.regular },
+  goalEmoji: { fontSize: 56 },
   goalLabel: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 2 },
   goalLabelActive: { color: Colors.primary },
   goalDesc: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   // Activities
   actCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surfaceElevated, borderRadius: R, padding: Sp.md, borderWidth: 1, borderColor: Colors.border, gap: Sp.md },
   actCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  actEmoji: { fontSize: 28, fontFamily: Fonts.regular },
+  actEmoji: { fontSize: 28 },
   actLabel: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 2 },
   actLabelActive: { color: Colors.primary },
   actDesc: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },

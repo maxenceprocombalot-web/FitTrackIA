@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   messages:        { flex: 1 },
   messagesContent: { padding: Sp.md, paddingBottom: Sp.lg },
   welcome:         { alignItems: 'center', paddingVertical: Sp.xl },
-  welcomeEmoji:    { fontSize: 48, fontFamily: Fonts.regular, marginBottom: Sp.md },
+  welcomeEmoji:    { fontSize: 48, marginBottom: Sp.md },
   welcomeTitle:    { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text, marginBottom: Sp.xs },
   welcomeText:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md, marginBottom: Sp.lg },
   demoWarning:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.orange + '15', borderRadius: R, paddingHorizontal: Sp.md, paddingVertical: Sp.xs, marginBottom: Sp.md },

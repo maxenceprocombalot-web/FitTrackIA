@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
   actScrollContent:  { paddingHorizontal: Sp.md, paddingBottom: Sp.sm, gap: Sp.xs },
   actChip:           { alignItems: 'center', gap: 3, paddingHorizontal: Sp.sm, paddingVertical: 7, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated, minWidth: 62 },
   actChipActive:     { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  actChipEmoji:      { fontSize: 18, fontFamily: Fonts.regular },
+  actChipEmoji:      { fontSize: 18 },
   actChipText:       { fontSize: Fs.xs, color: Colors.textSecondary, fontFamily: Fonts.medium },
   actChipTextActive: { color: Colors.primary },
   objBtnsRow:     { flexDirection: 'row', gap: Sp.sm, padding: Sp.md },
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   langRow:      { flexDirection: 'row', gap: Sp.sm, padding: Sp.md },
   langBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 11, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceElevated },
   langBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '12' },
-  langEmoji:    { fontSize: 18, fontFamily: Fonts.regular },
+  langEmoji:    { fontSize: 18 },
   langLabel:    { flex: 1, fontSize: Fs.sm, color: Colors.text, fontFamily: Fonts.medium },
   langSoon:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, backgroundColor: Colors.surfaceHighlight, borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2 },
 

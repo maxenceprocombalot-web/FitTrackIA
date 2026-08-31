@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   closeLink: { marginTop: Sp.md },
   // Hero
   hero: { alignItems: 'center', paddingVertical: Sp.xl, gap: 6 },
-  heroEmoji: { fontSize: 56, fontFamily: Fonts.regular },
+  heroEmoji: { fontSize: 56 },
   heroTitle: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text, textTransform: 'capitalize' },
   heroSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Grid
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     borderRadius: R, borderWidth: 1, borderColor: Colors.yellow + '30',
     padding: Sp.md,
   },
-  prEmoji: { fontSize: 32, fontFamily: Fonts.regular },
+  prEmoji: { fontSize: 32 },
   prLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
   prExercise: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text, marginTop: 2 },
   prValue: { fontSize: Fs.sm, color: Colors.yellow, fontFamily: Fonts.semibold, marginTop: 2 },

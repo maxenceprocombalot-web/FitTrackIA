@@ -718,7 +718,7 @@ const smStyles = StyleSheet.create({
     borderRadius: 24, borderWidth: 1, borderColor: Colors.border,
     padding: Sp.lg, alignItems: 'center', gap: Sp.sm,
   },
-  emoji:       { fontSize: 52, fontFamily: Fonts.regular },
+  emoji:       { fontSize: 52 },
   title:       { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text },
   name:        { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: -4 },
   statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.xs, justifyContent: 'center', marginTop: 4 },

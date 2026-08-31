@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   content: { padding: Sp.md, gap: Sp.sm },
   // Héro
   hero: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.lg, gap: Sp.sm },
-  emoji: { fontSize: 48, fontFamily: Fonts.regular },
+  emoji: { fontSize: 48 },
   name: { fontSize: Fs.xxl, fontFamily: Fonts.heavy, color: Colors.text },
   desc: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

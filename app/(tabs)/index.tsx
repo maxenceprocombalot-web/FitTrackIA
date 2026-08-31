@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   streakCard:     { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakCardFire: { borderColor: Colors.red + '60', backgroundColor: Colors.red + '10' },
   streakRow:      { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  streakEmoji:    { fontSize: 32, fontFamily: Fonts.regular },
+  streakEmoji:    { fontSize: 32 },
   streakTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   streakTitle:    { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   fireBadge:      { backgroundColor: Colors.red + '25', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 },
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   // Actions rapides
   quickActionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   quickActionBtn: { width: '48%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, padding: Sp.md, gap: 4 },
-  quickActionEmoji: { fontSize: 24, fontFamily: Fonts.regular },
+  quickActionEmoji: { fontSize: 24 },
   quickActionLabel: { fontSize: Fs.sm, fontFamily: Fonts.bold },
   quickActionSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
 });

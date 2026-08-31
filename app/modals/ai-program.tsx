@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, gap: Sp.lg, paddingBottom: Sp.xxl },
   hero: { alignItems: 'center', paddingVertical: Sp.lg, gap: 8 },
-  heroEmoji: { fontSize: 52, fontFamily: Fonts.regular },
+  heroEmoji: { fontSize: 52 },
   heroTitle: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },
   heroSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: Sp.md },
   section: { gap: Sp.sm },

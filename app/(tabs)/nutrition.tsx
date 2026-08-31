@@ -695,7 +695,7 @@ const recipeStyles = StyleSheet.create({
   title:     { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },
   card:      { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   row:       { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
-  emoji:     { fontSize: 32, fontFamily: Fonts.regular },
+  emoji:     { fontSize: 32 },
   name:      { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text, marginBottom: 3 },
   macroRow:  { flexDirection: 'row', gap: Sp.sm, alignItems: 'center', marginBottom: 2 },
   calText:   { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.caloriesColor },

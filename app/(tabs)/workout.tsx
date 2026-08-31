@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + '22',
     alignItems: 'center', justifyContent: 'center',
   },
-  programsEmoji: { fontSize: 22, fontFamily: Fonts.regular },
+  programsEmoji: { fontSize: 22 },
   programsText: { flex: 1 },
   programsTitle: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   programsSub: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
