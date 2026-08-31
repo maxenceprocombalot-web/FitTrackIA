@@ -25,7 +25,7 @@ export default function ProgramDetailScreen() {
   const { id }  = useLocalSearchParams<{ id: string }>();
   const router  = useRouter();
   const store   = useAppStore();
-  const program = PROGRAMS.find(p => p.id === id);
+  const program = [...store.aiPrograms, ...PROGRAMS].find(p => p.id === id);
 
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -159,7 +159,7 @@ function SessionCard({ session, expanded, isToday, onToggle, onStart }: {
 }) {
   return (
     <View style={[scStyles.card, isToday && scStyles.cardToday]}>
-      <TouchableOpacity style={scStyles.header} onPress={onToggle}>
+      <TouchableOpacity accessibilityRole="button" style={scStyles.header} onPress={onToggle}>
         <View style={[scStyles.dayPill, isToday && scStyles.dayPillToday]}>
           <Text style={[scStyles.dayText, isToday && scStyles.dayTextToday]}>
             {session.dayLabel.slice(0, 3)}
@@ -189,7 +189,7 @@ function SessionCard({ session, expanded, isToday, onToggle, onStart }: {
             <ExRow key={i} ex={ex} />
           ))}
           {/* Bouton commencer */}
-          <TouchableOpacity style={scStyles.startBtn} onPress={onStart}>
+          <TouchableOpacity accessibilityRole="button" style={scStyles.startBtn} onPress={onStart}>
             <Ionicons name="play-circle-outline" size={16} color={Colors.primary} />
             <Text style={scStyles.startBtnText}>Commencer la séance</Text>
           </TouchableOpacity>

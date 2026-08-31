@@ -147,7 +147,7 @@ export default function WorkoutDetailScreen() {
               return (
                 <View key={ex.id} style={[styles.exSection, exIdx > 0 && styles.exSectionBorder]}>
                   <View style={styles.exHeader}>
-                    <TouchableOpacity onPress={() => router.push({ pathname: '/modals/exercise-history', params: { name: ex.name } })}>
+                    <TouchableOpacity accessibilityRole="button" onPress={() => router.push({ pathname: '/modals/exercise-history', params: { name: ex.name } })}>
                       <Text style={[styles.exName, { color: Colors.primary }]}>{ex.name}</Text>
                     </TouchableOpacity>
                     {isPR && <Text style={styles.prBadge}>🏆 PR</Text>}

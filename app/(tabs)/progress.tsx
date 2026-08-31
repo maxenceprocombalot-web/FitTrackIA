@@ -298,7 +298,7 @@ export default function ProgressScreen() {
       {/* ── Onglets ──────────────────────────────────────────────────────── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContent}>
         {(['mesures', 'sport', 'nutrition', 'recompenses'] as ActiveTab[]).map(tab => (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
             onPress={() => setActiveTab(tab)}
@@ -330,7 +330,7 @@ export default function ProgressScreen() {
           </Card>
           <View style={styles.periodRow}>
             {(['30j', '90j', 'tout'] as Period[]).map(p => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={p}
                 style={[styles.periodBtn, period === p && styles.periodBtnActive]}
                 onPress={() => setPeriod(p)}
@@ -442,7 +442,7 @@ export default function ProgressScreen() {
               <Text style={styles.sectionLabel}>Progression par exercice</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.exoScroll} contentContainerStyle={styles.exoScrollContent}>
                 {exerciseNames.map(name => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={name}
                     style={[styles.exoChip, (effectiveExo === name) && styles.exoChipActive]}
                     onPress={() => setSelectedExo(name)}
@@ -684,7 +684,7 @@ export default function ProgressScreen() {
       {/* ── Onglet Photos ────────────────────────────────────────────────── */}
       {activeTab === 'mesures' && (
         <>
-          <TouchableOpacity style={styles.addPhotoBtn} onPress={async () => {
+          <TouchableOpacity accessibilityRole="button" style={styles.addPhotoBtn} onPress={async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') { Alert.alert('Permission refusée', 'Active l\'accès à la photothèque dans les réglages.'); return; }
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
@@ -704,7 +704,7 @@ export default function ProgressScreen() {
           </TouchableOpacity>
 
           {selectedPhotos.length === 2 && (
-            <TouchableOpacity style={styles.beforeAfterBtn} onPress={() => setShowBeforeAfter(true)}>
+            <TouchableOpacity accessibilityRole="button" style={styles.beforeAfterBtn} onPress={() => setShowBeforeAfter(true)}>
               <Text style={styles.beforeAfterBtnText}>Voir Before / After</Text>
             </TouchableOpacity>
           )}
@@ -722,7 +722,7 @@ export default function ProgressScreen() {
               {(showAllPhotos ? photos : photos.slice(-PHOTOS_VISIBLE)).map(photo => {
                 const isSelected = selectedPhotos.includes(photo.id);
                 return (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     key={photo.id}
                     style={[styles.photoThumb, isSelected && styles.photoThumbSelected]}
                     onPress={() => {
@@ -773,7 +773,7 @@ export default function ProgressScreen() {
             return p1 && p2 ? (
               <Modal visible animationType="fade" onRequestClose={() => setShowBeforeAfter(false)}>
                 <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }}>
-                  <TouchableOpacity onPress={() => setShowBeforeAfter(false)} style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fermer la comparaison" onPress={() => setShowBeforeAfter(false)} style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}>
                     <Ionicons name="close" size={28} color="#fff" />
                   </TouchableOpacity>
                   <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}>
@@ -786,7 +786,7 @@ export default function ProgressScreen() {
                       <Image source={{ uri: p2.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
                     </View>
                   </View>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={{ margin: 20, backgroundColor: Colors.primary, borderRadius: R, padding: 14, alignItems: 'center' }}
                     onPress={() => Share.share({ message: `Ma transformation : de ${p1.date} à ${p2.date} 💪` + shareFooter() })}
                   >
@@ -835,7 +835,7 @@ export default function ProgressScreen() {
       )}
 
       {/* ── Rapport mensuel (visible depuis tous les onglets) ─────────────── */}
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={styles.reportBtn}
         onPress={() => {
           const month = new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' });

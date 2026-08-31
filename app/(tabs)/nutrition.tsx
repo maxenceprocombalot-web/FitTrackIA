@@ -226,7 +226,7 @@ export default function NutritionScreen() {
         <TouchableOpacity style={styles.dateArrow} onPress={goToPrev} accessibilityRole="button" accessibilityLabel="Jour précédent" hitSlop={tapSlop}>
           <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.7}
           onPress={() => router.push({ pathname: '/modals/nutrition-detail', params: { date: selectedDate } })}
           style={styles.dateLabelWrap}
@@ -234,7 +234,7 @@ export default function NutritionScreen() {
           <Text style={styles.dateLabel}>{fmtDate(selectedDate, TODAY)}</Text>
           <Text style={styles.dateLabelHint}>Voir le détail →</Text>
           {!isToday && (
-            <TouchableOpacity onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
               <Text style={styles.todayLinkText}>Revenir à aujourd'hui</Text>
             </TouchableOpacity>
           )}
@@ -279,19 +279,19 @@ export default function NutritionScreen() {
 
       {/* ── Outils (rangée défilante compacte) ───────────────────────────── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: Sp.sm }}>
-        <TouchableOpacity style={styles.fastBtn} onPress={() => setShowFastingModal(true)}>
+        <TouchableOpacity accessibilityRole="button" style={styles.fastBtn} onPress={() => setShowFastingModal(true)}>
           <Ionicons name="time-outline" size={15} color={Colors.yellow} />
           <Text style={styles.fastBtnText}>⏱ Jeûne</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recipesBtn} onPress={() => setShowRecipes(true)}>
+        <TouchableOpacity accessibilityRole="button" style={styles.recipesBtn} onPress={() => setShowRecipes(true)}>
           <Ionicons name="restaurant-outline" size={16} color={Colors.primary} />
           <Text style={styles.recipesBtnText}>Recettes</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowRestaurant(true); }}>
+        <TouchableOpacity accessibilityRole="button" style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowRestaurant(true); }}>
           <Ionicons name="fast-food-outline" size={16} color={Colors.orange} />
           <Text style={[styles.recipesBtnText, { color: Colors.orange }]}>Restaurant</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowMealPrep(true); }}>
+        <TouchableOpacity accessibilityRole="button" style={styles.recipesBtn} onPress={() => { if (requirePremium()) setShowMealPrep(true); }}>
           <Ionicons name="clipboard-outline" size={16} color={Colors.green} />
           <Text style={[styles.recipesBtnText, { color: Colors.green }]}>Meal Prep</Text>
         </TouchableOpacity>
@@ -320,7 +320,7 @@ export default function NutritionScreen() {
 
       {/* ── Bouton copier depuis le jour précédent ───────────────────────── */}
       {prevMeals.length > 0 && (
-        <TouchableOpacity style={styles.copyBtn} onPress={handleCopyFromPrev}>
+        <TouchableOpacity accessibilityRole="button" style={styles.copyBtn} onPress={handleCopyFromPrev}>
           <Ionicons name="copy-outline" size={14} color={Colors.primary} />
           <Text style={styles.copyBtnText}>
             Copier depuis {fmtDate(prevDateStr, TODAY)} ({prevMeals.length} repas)
@@ -366,10 +366,10 @@ export default function NutritionScreen() {
               </View>
               <Text style={styles.mealLabel}>{meta.label}</Text>
               <Text style={styles.mealCal}>{Math.round(totals.cal)} kcal</Text>
-              <TouchableOpacity style={styles.favBtn} onPress={() => handleSaveFavorite(type, meals)}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Sauvegarder ${meta.label} comme favori`} style={styles.favBtn} onPress={() => handleSaveFavorite(type, meals)}>
                 <Ionicons name="star-outline" size={16} color={Colors.yellow} />
               </TouchableOpacity>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Ajouter un aliment à ${meta.label}`}
                 style={[styles.addBtn, { backgroundColor: meta.color + '18' }]}
                 onPress={() => router.push({
                   pathname: '/modals/add-food',
@@ -662,7 +662,7 @@ function RecipesModal({ onClose, onAddRecipe }: {
             </View>
             <Text style={recipeStyles.servings}>Pour {item.servings} portion{item.servings > 1 ? 's' : ''}</Text>
           </View>
-          <TouchableOpacity style={recipeStyles.addBtn} onPress={() => onAddRecipe(item)}>
+          <TouchableOpacity accessibilityRole="button" style={recipeStyles.addBtn} onPress={() => onAddRecipe(item)}>
             <Text style={recipeStyles.addBtnText}>Ajouter</Text>
           </TouchableOpacity>
         </View>
@@ -675,7 +675,7 @@ function RecipesModal({ onClose, onAddRecipe }: {
       <View style={{ flex: 1, backgroundColor: Colors.bg }}>
         <View style={recipeStyles.header}>
           <Text style={recipeStyles.title}>🥘 Recettes</Text>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose}>
             <Ionicons name="close" size={22} color={Colors.text} />
           </TouchableOpacity>
         </View>
@@ -728,7 +728,7 @@ function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, on
         <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.sm }}>Protocole</Text>
         <View style={{ flexDirection: 'row', gap: Sp.xs, marginBottom: Sp.md }}>
           {([16,18,20,24] as const).map(p => (
-            <TouchableOpacity key={p} style={{ flex: 1, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: protocol === p ? Colors.yellow : Colors.border, backgroundColor: protocol === p ? Colors.yellow + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onProtocol(p)}>
+            <TouchableOpacity accessibilityRole="button" key={p} style={{ flex: 1, paddingVertical: 10, borderRadius: R, borderWidth: 1, borderColor: protocol === p ? Colors.yellow : Colors.border, backgroundColor: protocol === p ? Colors.yellow + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onProtocol(p)}>
               <Text style={{ fontSize: Fs.sm, color: protocol === p ? Colors.yellow : Colors.textSecondary, fontFamily: Fonts.semibold }}>{p}h/{24-p}h</Text>
             </TouchableOpacity>
           ))}
@@ -737,7 +737,7 @@ function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, on
         <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: Sp.xs }}>Début du jeûne</Text>
         <View style={{ flexDirection: 'row', gap: Sp.sm, marginBottom: Sp.lg }}>
           {['18:00','19:00','20:00','21:00','22:00'].map(t => (
-            <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: startTime === t ? Colors.primary : Colors.border, backgroundColor: startTime === t ? Colors.primary + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onStartTime(t)}>
+            <TouchableOpacity accessibilityRole="button" key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: startTime === t ? Colors.primary : Colors.border, backgroundColor: startTime === t ? Colors.primary + '18' : Colors.surfaceElevated, alignItems: 'center' }} onPress={() => onStartTime(t)}>
               <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: startTime === t ? Colors.primary : Colors.textMuted }}>{t}</Text>
             </TouchableOpacity>
           ))}
@@ -747,11 +747,11 @@ function FastingModal({ config, protocol, startTime, onProtocol, onStartTime, on
           Fenêtre alimentaire : {startTime} + {protocol}h = {`${(parseInt(startTime.split(':')[0]) + protocol) % 24}:${startTime.split(':')[1]}`} → {`${(parseInt(startTime.split(':')[0]) + protocol + (24 - protocol)) % 24}:00`}
         </Text>
 
-        <TouchableOpacity style={{ backgroundColor: Colors.yellow, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm }} onPress={onSave}>
+        <TouchableOpacity accessibilityRole="button" style={{ backgroundColor: Colors.yellow, borderRadius: R, paddingVertical: 12, alignItems: 'center', marginBottom: Sp.sm }} onPress={onSave}>
           <Text style={{ color: '#000', fontFamily: Fonts.bold }}>Démarrer le jeûne</Text>
         </TouchableOpacity>
         {config?.active && (
-          <TouchableOpacity style={{ borderRadius: R, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.red + '50' }} onPress={onStop}>
+          <TouchableOpacity accessibilityRole="button" style={{ borderRadius: R, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.red + '50' }} onPress={onStop}>
             <Text style={{ color: Colors.red, fontFamily: Fonts.medium }}>Arrêter le jeûne</Text>
           </TouchableOpacity>
         )}
@@ -961,7 +961,7 @@ function MealPrepModal({ user, onClose, onSave }: { user: any; onClose: () => vo
         <>
           <View style={{ flexDirection: 'row', padding: Sp.sm, gap: Sp.xs }}>
             {(['plan', 'shopping'] as const).map(t => (
-              <TouchableOpacity key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: tab === t ? Colors.primary : Colors.border, backgroundColor: tab === t ? Colors.primary + '18' : Colors.surface, alignItems: 'center' }} onPress={() => setTab(t)}>
+              <TouchableOpacity accessibilityRole="button" key={t} style={{ flex: 1, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: tab === t ? Colors.primary : Colors.border, backgroundColor: tab === t ? Colors.primary + '18' : Colors.surface, alignItems: 'center' }} onPress={() => setTab(t)}>
                 <Text style={{ fontSize: Fs.sm, color: tab === t ? Colors.primary : Colors.textSecondary, fontFamily: Fonts.semibold }}>{t === 'plan' ? '📅 Plan repas' : '🛒 Courses'}</Text>
               </TouchableOpacity>
             ))}

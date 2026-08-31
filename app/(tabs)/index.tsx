@@ -7,6 +7,7 @@ import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimatedRing from '../../components/ui/AnimatedRing';
 import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
@@ -74,6 +75,8 @@ function motivationMessage(avgCal: number, target: number, workouts: number): st
   if (workouts === 0) return "Cette semaine a été calme côté sport — aucun problème ! Reprends cette semaine, une séance suffit pour relancer la machine.";
   return `${workouts} séance${workouts > 1 ? 's' : ''} cette semaine, bien joué ! Essaie d'en ajouter une de plus la semaine prochaine.`;
 }
+
+const PREMIUM_NUDGE_KEY = '@fit_premium_nudge_seen';
 
 export default function DashboardScreen() {
   const router  = useRouter();
@@ -271,6 +274,25 @@ export default function DashboardScreen() {
   // Premier lancement : aucune donnée saisie, toutes catégories confondues.
   // Un tableau de bord entièrement à zéro décourage — on montre une seule action.
   const isFirstRun = store.meals.length === 0 && store.workouts.length === 0 && store.weights.length === 0;
+
+  // Moment de conversion hors IA : sans lui, un utilisateur qui suit ses séances
+  // et ses repas sans jamais toucher à l'IA ne voit jamais le paywall.
+  // Déclenché sur un signal d'engagement réel, affiché une seule fois, refusable.
+  const [showPremiumNudge, setShowPremiumNudge] = useState(false);
+  useEffect(() => {
+    if (store.isPremium || store.loading) return;
+    const daysTracked = new Set([
+      ...store.workouts.map(w => w.date),
+      ...store.meals.map(m => m.date),
+    ]).size;
+    if (daysTracked < 7 && store.streak.current < 5) return;
+    AsyncStorage.getItem(PREMIUM_NUDGE_KEY).then((v: string | null) => { if (v !== 'true') setShowPremiumNudge(true); });
+  }, [store.isPremium, store.loading, store.workouts.length, store.meals.length, store.streak.current]);
+
+  const dismissNudge = useCallback(() => {
+    setShowPremiumNudge(false);
+    AsyncStorage.setItem(PREMIUM_NUDGE_KEY, 'true').catch(() => {});
+  }, []);
   const jokerMonth  = storage.thisMonth();
   const jokerAvail  = store.streak.jokerUsedMonth !== jokerMonth;
 
@@ -393,11 +415,34 @@ export default function DashboardScreen() {
               <Text style={styles.streakSub}>💪 Séances consécutives • Meilleur : {store.streak.best}j</Text>
             </View>
             {jokerAvail && (
-              <TouchableOpacity style={styles.jokerBtn} onPress={store.useJoker}>
+              <TouchableOpacity accessibilityRole="button" style={styles.jokerBtn} onPress={store.useJoker}>
                 <Text style={styles.jokerBtnText}>🃏 Joker</Text>
               </TouchableOpacity>
             )}
           </View>
+        </Card>
+      )}
+
+      {/* ── Invitation premium (une seule fois, après engagement réel) ────────── */}
+      {showPremiumNudge && (
+        <Card style={styles.nudgeCard}>
+          <View style={styles.nudgeHead}>
+            <Text style={styles.nudgeTitle}>Tu tiens le rythme 🔥</Text>
+            <TouchableOpacity onPress={dismissNudge} hitSlop={tapSlop} accessibilityRole="button" accessibilityLabel="Masquer">
+              <Ionicons name="close" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.nudgeSub}>
+            Le coach IA analyse tes séances et tes repas ensemble, et te dit quoi ajuster. Essaie-le.
+          </Text>
+          <TouchableOpacity
+            style={styles.nudgeCta}
+            accessibilityRole="button"
+            onPress={() => { dismissNudge(); router.push('/modals/paywall'); }}
+          >
+            <Ionicons name="sparkles" size={16} color={Colors.onPrimary} />
+            <Text style={styles.nudgeCtaText}>Découvrir Premium</Text>
+          </TouchableOpacity>
         </Card>
       )}
 
@@ -481,7 +526,7 @@ export default function DashboardScreen() {
         {/* Boutons rapides */}
         <View style={styles.waterBtns}>
           {[250, 500, 750, 1000].map(ml => (
-            <TouchableOpacity key={ml} style={[styles.waterBtn, { borderColor: waterColor + '40' }]} onPress={() => store.addWater(ml)}>
+            <TouchableOpacity accessibilityRole="button" key={ml} style={[styles.waterBtn, { borderColor: waterColor + '40' }]} onPress={() => store.addWater(ml)}>
               <Text style={[styles.waterBtnText, { color: waterColor }]}>+{ml >= 1000 ? '1L' : `${ml}ml`}</Text>
             </TouchableOpacity>
           ))}
@@ -502,7 +547,7 @@ export default function DashboardScreen() {
           <Text style={styles.coachLabel}>FitCoach IA</Text>
         </View>
         <Text style={styles.coachMsg}>{coachMessage(user.name, macros.calories, user.targetCalories, burned, todayWorkouts.length)}</Text>
-        <TouchableOpacity style={styles.coachBtn} onPress={() => router.push('/(tabs)/coach')}>
+        <TouchableOpacity accessibilityRole="button" style={styles.coachBtn} onPress={() => router.push('/(tabs)/coach')}>
           <Text style={styles.coachBtnText}>Discuter avec le coach →</Text>
         </TouchableOpacity>
       </Card>
@@ -652,7 +697,7 @@ function WeeklyBilanModal({ stats, onClose, onDetail }: {
           {/* Boutons */}
           <View style={wbStyles.btns}>
             <Button title="Voir le détail" onPress={onDetail} fullWidth={false} style={{ flex: 1 }} />
-            <TouchableOpacity style={wbStyles.closeActionBtn} onPress={onClose}>
+            <TouchableOpacity accessibilityRole="button" style={wbStyles.closeActionBtn} onPress={onClose}>
               <Text style={wbStyles.closeActionBtnText}>Fermer</Text>
             </TouchableOpacity>
           </View>
@@ -729,7 +774,7 @@ function StatCard({ icon, iconColor, value, label, onPress }: {
   value: number; label: string; onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={scStyles.card} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={scStyles.card} onPress={onPress}>
       <View style={[scStyles.iconBox, { backgroundColor: iconColor + '20' }]}>
         <Ionicons name={icon} size={22} color={iconColor} />
       </View>
@@ -746,6 +791,12 @@ const scStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  nudgeCard:   { borderColor: Colors.primary + '40', gap: Sp.xs },
+  nudgeHead:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  nudgeTitle:  { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
+  nudgeSub:    { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 19 },
+  nudgeCta:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 11, marginTop: Sp.xs },
+  nudgeCtaText:{ fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.onPrimary },
   firstRunCard:   { alignItems: 'center', gap: Sp.xs, paddingVertical: Sp.lg },
   firstRunEmoji:  { fontSize: 40 },
   firstRunTitle:  { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.text },

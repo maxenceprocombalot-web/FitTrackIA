@@ -259,7 +259,7 @@ export default function OnboardingModal() {
                   fullWidth={false}
                   style={{ alignSelf: 'center', paddingHorizontal: 48 }}
                 />
-                <TouchableOpacity onPress={() => router.push('/modals/privacy-policy')}>
+                <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/modals/privacy-policy')}>
                   <Text style={styles.legalText}>En continuant, tu acceptes notre politique de confidentialité</Text>
                 </TouchableOpacity>
               </View>
@@ -290,7 +290,7 @@ export default function OnboardingModal() {
                 <Text style={styles.subLabel}>Ton objectif</Text>
             <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
               {GOALS.map(g => (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={g.value}
                   style={[styles.goalCard, goal === g.value && styles.goalCardActive]}
                   onPress={() => setGoal(g.value)}
@@ -321,7 +321,7 @@ export default function OnboardingModal() {
               <Text style={[styles.subLabel, { marginTop: Sp.lg }]}>Entraînements par semaine</Text>
             <View style={{ gap: Sp.sm, marginTop: Sp.lg }}>
               {ACTIVITIES.map(a => (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={a.value}
                   style={[styles.actCard, activity === a.value && styles.actCardActive]}
                   onPress={() => setActivity(a.value)}
@@ -446,7 +446,7 @@ export default function OnboardingModal() {
 
               {/* ── DEV ONLY : Réinitialiser l'onboarding ──────────────── */}
               {__DEV__ && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={styles.devResetBtn}
                   onPress={() => Alert.alert(
                     '🛠 Réinitialiser l\'onboarding',
@@ -475,7 +475,7 @@ export default function OnboardingModal() {
         {/* ── Navigation ───────────────────────────────────────────────── */}
         {step > 0 && (
           <View style={styles.navRow}>
-            <TouchableOpacity style={styles.backBtn} onPress={goPrev}>
+            <TouchableOpacity accessibilityRole="button" style={styles.backBtn} onPress={goPrev}>
               <Ionicons name="arrow-back" size={18} color={Colors.textSecondary} />
               <Text style={styles.backBtnText}>Retour</Text>
             </TouchableOpacity>
@@ -497,7 +497,7 @@ export default function OnboardingModal() {
 
 function GenderBtn({ label, emoji, active, onPress }: { value: Gender; label: string; emoji: string; active: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={[gbStyles.btn, active && gbStyles.active]} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={[gbStyles.btn, active && gbStyles.active]} onPress={onPress}>
       <Text style={gbStyles.emoji}>{emoji}</Text>
       <Text style={[gbStyles.label, active && gbStyles.labelActive]}>{label}</Text>
     </TouchableOpacity>

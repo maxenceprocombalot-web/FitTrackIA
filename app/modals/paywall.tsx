@@ -151,9 +151,9 @@ export default function PaywallScreen() {
           Abonnement auto-renouvelable, résiliable à tout moment depuis les réglages de l'App Store.
         </Text>
         <View style={styles.legalLinks}>
-          <TouchableOpacity onPress={() => router.push('/modals/terms')}><Text style={styles.legalLink}>Conditions</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/modals/terms')}><Text style={styles.legalLink}>Conditions</Text></TouchableOpacity>
           <Text style={styles.legalDot}>·</Text>
-          <TouchableOpacity onPress={() => router.push('/modals/privacy-policy')}><Text style={styles.legalLink}>Confidentialité</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/modals/privacy-policy')}><Text style={styles.legalLink}>Confidentialité</Text></TouchableOpacity>
         </View>
       </ScrollView>
     </View>

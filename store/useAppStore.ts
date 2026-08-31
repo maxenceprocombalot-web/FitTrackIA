@@ -5,6 +5,7 @@ import {
   FavoriteMeal, WaterEntry, StreakData, SavedPlan, MonthlySummary,
   FoodItem,
 } from '../types';
+import { ProgramTemplate } from '../constants/programs';
 import * as S from '../services/storage';
 import { writeWorkoutToHealth, writeWeightToHealth, readLatestWeightFromHealth } from '../services/health';
 import { sumMeals } from '../services/metrics';
@@ -25,6 +26,7 @@ interface AppState {
   water: WaterEntry;       // hydratation du jour
   streak: StreakData;
   savedPlans: SavedPlan[]; // prédéfinis + utilisateur
+  aiPrograms: ProgramTemplate[]; // programmes structurés générés par l'IA
   recentFoods: FoodItem[];
   monthlySummaries: MonthlySummary[];
   loading: boolean;
@@ -38,7 +40,7 @@ let _state: AppState = {
   chat: [], prs: [], activeProgram: null,
   favorites: [], water: { date: S.today(), ml: 0 },
   streak: { current: 0, best: 0, lastWorkoutDate: '' },
-  savedPlans: PREDEFINED_PLANS, recentFoods: [],
+  savedPlans: PREDEFINED_PLANS, recentFoods: [], aiPrograms: [],
   monthlySummaries: [], loading: true,
   tutorialDone: false, isPremium: false, dataUnreadable: false,
 };
@@ -120,12 +122,12 @@ export function useAppStore(watch?: readonly StateKey[]) {
       user, workouts, meals, weights, chat, prs,
       activeProgram, favorites, storedStreak,
       userSavedPlans, recentFoods, monthlySummaries,
-      tutorialDone,
+      tutorialDone, aiPrograms,
     ] = await Promise.all([
       S.loadUser(), S.loadWorkouts(), S.loadMeals(), S.loadWeights(),
       S.loadChat(), S.loadPRs(), S.loadActiveProgram(), S.loadFavorites(),
       S.loadStreak(), S.loadSavedPlans(), S.loadRecentFoods(), S.loadMonthlySummaries(),
-      S.loadTutorialDone(),
+      S.loadTutorialDone(), S.loadAiPrograms(),
     ]);
 
     // Abonnement : init RevenueCat (no-op si non configuré) + statut premium
@@ -152,7 +154,7 @@ export function useAppStore(watch?: readonly StateKey[]) {
 
     setState({
       user, workouts, meals, weights, chat, prs, activeProgram,
-      favorites, water: waterToday, streak, savedPlans: allPlans,
+      favorites, water: waterToday, streak, savedPlans: allPlans, aiPrograms,
       recentFoods, monthlySummaries, loading: false,
       tutorialDone, isPremium,
       dataUnreadable: S.isDataUnreadable(),
@@ -238,6 +240,22 @@ export function useAppStore(watch?: readonly StateKey[]) {
     const next = [..._state.weights.filter(w => w.date !== e.date), e].sort((a, b) => a.date.localeCompare(b.date));
     setState({ weights: next });
     writeWeightToHealth(e.weight, e.date); // best-effort, jamais bloquant
+  }, []);
+
+  // ─── Programmes générés par l'IA ─────────────────────────────────────────────
+
+  const saveAiProgram = useCallback(async (p: ProgramTemplate) => {
+    await S.saveAiProgram(p);
+    setState({ aiPrograms: [p, ..._state.aiPrograms.filter(x => x.id !== p.id)] });
+  }, []);
+
+  const deleteAiProgram = useCallback(async (id: string) => {
+    await S.deleteAiProgram(id);
+    setState({ aiPrograms: _state.aiPrograms.filter(p => p.id !== id) });
+    if (_state.activeProgram?.programId === id) {
+      await S.clearActiveProgram();
+      setState({ activeProgram: null });
+    }
   }, []);
 
   // ─── Chat ────────────────────────────────────────────────────────────────────
@@ -415,6 +433,7 @@ export function useAppStore(watch?: readonly StateKey[]) {
   return {
     ..._state,
     refresh,
+    saveAiProgram, deleteAiProgram,
     setUser,
     addWorkout, deleteWorkout,
     addMeal, updateMeal, deleteMeal,

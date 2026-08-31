@@ -454,7 +454,7 @@ export default function PersoAthletiqueScreen() {
 
       {/* Choix du jour de destination */}
       <Modal visible={swapFrom !== null} transparent animationType="fade" onRequestClose={() => setSwapFrom(null)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSwapFrom(null)}>
+        <TouchableOpacity accessibilityRole="button" style={styles.overlay} activeOpacity={1} onPress={() => setSwapFrom(null)}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>
               Déplacer {swapFrom !== null ? WEEKDAYS[swapFrom] : ''} vers…

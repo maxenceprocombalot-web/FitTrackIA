@@ -230,7 +230,7 @@ function SwipeableWorkoutCard({ workout, index, onDelete }: {
         {...panResponder.panHandlers}
       >
         {/* Tap → détail de la séance */}
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button"
           activeOpacity={0.8}
           onPress={() => router.push({ pathname: '/modals/workout-detail', params: { id: workout.id } })}
           style={swipeStyles.cardInner}
@@ -304,7 +304,7 @@ const miniStyles = StyleSheet.create({
 
 function FilterChip({ label, active, color = Colors.primary, onPress }: { label: string; active: boolean; color?: string; onPress: () => void }) {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={[styles.chip, active && { borderColor: color, backgroundColor: color + '18' }]}
       onPress={onPress}
     >

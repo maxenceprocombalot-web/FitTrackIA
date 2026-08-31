@@ -48,7 +48,7 @@ function RowLink({ icon, label, sublabel, onPress, danger }: {
   danger?: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity accessibilityRole="button" style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.rowIcon, danger && styles.rowIconDanger]}>
         <Ionicons name={icon} size={17} color={danger ? Colors.red : Colors.primary} />
       </View>
@@ -400,7 +400,7 @@ export default function SettingsScreen() {
           <Text style={styles.fieldLabel}>Niveau d'activité</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.actScroll} contentContainerStyle={styles.actScrollContent}>
             {ACTIVITY_OPTS.map(a => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={a.value}
                 style={[styles.actChip, activityLevel === a.value && styles.actChipActive]}
                 onPress={() => setActivityLevel(a.value)}
@@ -412,7 +412,7 @@ export default function SettingsScreen() {
           </ScrollView>
 
           <View style={styles.objBtnsRow}>
-            <TouchableOpacity style={styles.recalcBtn} onPress={handleRecalculate}>
+            <TouchableOpacity accessibilityRole="button" style={styles.recalcBtn} onPress={handleRecalculate}>
               <Ionicons name="refresh-outline" size={15} color={Colors.primary} />
               <Text style={styles.recalcBtnText}>Recalculer avec Harris-Benedict</Text>
             </TouchableOpacity>
@@ -472,7 +472,7 @@ export default function SettingsScreen() {
               { id: 'bienveillant', label: '🤝 Bienveillant',  desc: 'Doux, empathique, encourageant' },
               { id: 'militaire',    label: '💂 Militaire',     desc: 'Direct, discipline, sans pitié' },
             ] as const).map(p => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={p.id}
                 style={[{ flexDirection: 'row', alignItems: 'center', gap: Sp.sm, paddingVertical: 10, paddingHorizontal: Sp.sm, borderRadius: R, borderWidth: 1, borderColor: persona === p.id ? Colors.primary : Colors.border, backgroundColor: persona === p.id ? Colors.primary + '12' : Colors.surfaceElevated }]}
                 onPress={async () => {
@@ -540,12 +540,12 @@ export default function SettingsScreen() {
         <SectionHeader title="LANGUE" />
         <View style={styles.card}>
           <View style={styles.langRow}>
-            <TouchableOpacity style={[styles.langBtn, styles.langBtnActive]}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.langBtn, styles.langBtnActive]}>
               <Text style={styles.langEmoji}>🇫🇷</Text>
               <Text style={styles.langLabel}>Français</Text>
               <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.langBtn} disabled>
+            <TouchableOpacity accessibilityRole="button" style={styles.langBtn} disabled>
               <Text style={styles.langEmoji}>🇬🇧</Text>
               <Text style={[styles.langLabel, { color: Colors.textMuted }]}>English</Text>
               <Text style={styles.langSoon}>Bientôt</Text>
@@ -618,7 +618,7 @@ export default function SettingsScreen() {
           <>
             <SectionHeader title="DÉVELOPPEUR" />
             <View style={styles.card}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.devBtn}
                 onPress={() => Alert.alert(
                   '🛠 Réinitialiser l\'onboarding',
@@ -633,7 +633,7 @@ export default function SettingsScreen() {
                 <Text style={styles.devBtnText}>Réinitialiser l'onboarding</Text>
               </TouchableOpacity>
               <View style={styles.divider} />
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={styles.devBtn}
                 onPress={() => Alert.alert(
                   '🛠 Vider toutes les données',

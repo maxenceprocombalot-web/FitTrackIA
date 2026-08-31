@@ -209,7 +209,7 @@ export default function NutritionDetailModal() {
 
         {/* Bouton copier vers aujourd'hui */}
         {!isToday && dayMeals.length > 0 && (
-          <TouchableOpacity style={styles.copyBtn} onPress={handleCopyToToday}>
+          <TouchableOpacity accessibilityRole="button" style={styles.copyBtn} onPress={handleCopyToToday}>
             <Ionicons name="copy-outline" size={16} color={Colors.primary} />
             <Text style={styles.copyBtnText}>Copier ce jour vers aujourd'hui</Text>
           </TouchableOpacity>

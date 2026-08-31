@@ -341,6 +341,97 @@ JOUR 1 — Full Body A
 
 // ─── Génération bilan mensuel ─────────────────────────────────────────────────
 
+/**
+ * Génère un programme STRUCTURÉ (et non de la prose) : séances, exercices,
+ * séries, répétitions, repos. Le résultat est directement démarrable et
+ * suivable comme un programme de la bibliothèque.
+ */
+export async function generateStructuredProgram(params: {
+  daysPerWeek: number; level: string; goal: string; equipment: string; name: string;
+}): Promise<import('../constants/programs').ProgramTemplate | null> {
+  const client = getClient();
+  if (!client) return null;
+
+  const res = await callAI(() => client.chat.completions.create({
+    model: MODEL,
+    messages: [{
+      role: 'user',
+      content: `Crée un programme de musculation pour ${params.name} : niveau ${params.level}, objectif ${params.goal}, ${params.daysPerWeek} séances par semaine, matériel : ${params.equipment}.
+Réponds UNIQUEMENT avec un objet JSON, sans texte autour, à ce format exact :
+{"name":"Nom court du programme","emoji":"💪","category":"Full Body","level":"${params.level}","daysPerWeek":${params.daysPerWeek},"goal":"${params.goal}","sessionDuration":60,"description":"Deux phrases expliquant la logique du programme.","sessions":[{"dayOfWeek":1,"name":"Nom de la séance","focus":"Poussée","exercises":[{"name":"Développé couché barre","sets":4,"reps":"8-10","rest":120,"notes":"Optionnel"}]}]}
+Contraintes : "category" parmi Full Body, Upper/Lower, PPL, Brosplit, Cardio. "dayOfWeek" entre 1 (lundi) et 7. Exactement ${params.daysPerWeek} séances, 5 à 8 exercices chacune, "rest" en secondes.`,
+    }],
+    max_tokens: 2500, temperature: 0.4,
+  }));
+
+  return parseProgram(res.choices[0]?.message?.content ?? '', params);
+}
+
+const DAY_FR = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+const CATEGORIES = ['Full Body', 'Upper/Lower', 'PPL', 'Brosplit', 'Cardio'];
+
+/** Assainit la sortie du modèle : on ne fait confiance à aucune valeur reçue. */
+function parseProgram(
+  text: string,
+  params: { daysPerWeek: number; level: string; goal: string },
+): import('../constants/programs').ProgramTemplate | null {
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  let raw: any;
+  try { raw = JSON.parse(m[0]); } catch { return null; }
+
+  const int = (v: unknown, min: number, max: number, fallback: number) => {
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) ? Math.min(Math.max(n, min), max) : fallback;
+  };
+  const str = (v: unknown, max: number, fallback: string) =>
+    typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : fallback;
+
+  const sessions = (Array.isArray(raw.sessions) ? raw.sessions : [])
+    .slice(0, 7)
+    .flatMap((sn: any, i: number) => {
+      const exercises = (Array.isArray(sn?.exercises) ? sn.exercises : [])
+        .slice(0, 10)
+        .flatMap((ex: any) => {
+          const name = str(ex?.name, 60, '');
+          if (!name) return [];
+          return [{
+            name,
+            sets: int(ex?.sets, 1, 10, 3),
+            reps: str(ex?.reps, 12, '10'),
+            rest: int(ex?.rest, 15, 300, 90),
+            ...(str(ex?.notes, 90, '') ? { notes: str(ex.notes, 90, '') } : {}),
+          }];
+        });
+      if (exercises.length === 0) return [];
+      const day = int(sn?.dayOfWeek, 1, 7, ((i * 2) % 7) + 1);
+      return [{
+        id: `ai_s${i}`,
+        dayOfWeek: day as 1 | 2 | 3 | 4 | 5 | 6 | 7,
+        dayLabel: DAY_FR[day],
+        name: str(sn?.name, 40, `Séance ${i + 1}`),
+        focus: str(sn?.focus, 20, 'Général'),
+        exercises,
+      }];
+    });
+
+  if (sessions.length === 0) return null;
+
+  const category = CATEGORIES.includes(raw?.category) ? raw.category : 'Full Body';
+  return {
+    id: `ai_${Date.now()}`,
+    name: str(raw?.name, 50, `Programme ${params.goal}`),
+    emoji: str(raw?.emoji, 4, '✨'),
+    category: category as any,
+    level: params.level as any,
+    daysPerWeek: sessions.length,
+    goal: params.goal as any,
+    sessionDuration: int(raw?.sessionDuration, 15, 180, 60),
+    description: str(raw?.description, 300, 'Programme généré sur mesure par le coach IA.'),
+    sessions,
+  };
+}
+
 export async function generateMonthlyMessage(user: import('../types').User, stats: {
   avgCalories: number;
   totalWorkouts: number;

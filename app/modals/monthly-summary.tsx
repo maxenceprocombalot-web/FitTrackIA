@@ -46,7 +46,7 @@ export default function MonthlySummaryModal() {
         <Ionicons name="bar-chart-outline" size={52} color={Colors.textMuted} />
         <Text style={styles.emptyTitle}>Bilan en cours de génération</Text>
         <Text style={styles.emptySub}>Reviens dans un instant…</Text>
-        <TouchableOpacity style={styles.closeLink} onPress={() => router.back()}>
+        <TouchableOpacity accessibilityRole="button" style={styles.closeLink} onPress={() => router.back()}>
           <Text style={{ color: Colors.primary }}>Fermer</Text>
         </TouchableOpacity>
       </View>
@@ -126,7 +126,7 @@ export default function MonthlySummaryModal() {
       {/* ── Bouton partager ──────────────────────────────────────────────── */}
       <Button title="Partager mon bilan" icon="share-social-outline" onPress={handleShare} />
 
-      <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+      <TouchableOpacity accessibilityRole="button" style={styles.closeBtn} onPress={() => router.back()}>
         <Text style={styles.closeBtnText}>Fermer</Text>
       </TouchableOpacity>
 

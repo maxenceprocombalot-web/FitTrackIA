@@ -99,7 +99,7 @@ export default function AddWorkoutModal() {
     }
     // Pré-remplissage depuis un programme
     if (!params.programId || !params.sessionId) return;
-    const prog    = PROGRAMS.find(p => p.id === params.programId);
+    const prog    = [...store.aiPrograms, ...PROGRAMS].find(p => p.id === params.programId);
     const session = prog?.sessions.find(s => s.id === params.sessionId);
     if (!session) return;
     const presetExercises: ExerciseLog[] = session.exercises.map((ex, i) => ({
@@ -313,7 +313,7 @@ export default function AddWorkoutModal() {
             </View>
           )}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.exercisePickerRow} onPress={() => addExercise(item)}>
+            <TouchableOpacity accessibilityRole="button" style={styles.exercisePickerRow} onPress={() => addExercise(item)}>
               <Text style={styles.exercisePickerName}>{item.name}</Text>
               <Text style={styles.exercisePickerMeta}>{item.defaultSets} × {item.defaultReps}</Text>
               <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
@@ -371,7 +371,7 @@ export default function AddWorkoutModal() {
       />
       {/* ── Bouton Mode Focus ────────────────────────────────────────────── */}
       {exercises.length > 0 && (
-        <TouchableOpacity style={styles.focusBtn} onPress={() => setShowFocus(true)}>
+        <TouchableOpacity accessibilityRole="button" style={styles.focusBtn} onPress={() => setShowFocus(true)}>
           <Ionicons name="eye-outline" size={16} color={Colors.orange} />
           <Text style={styles.focusBtnText}>Mode Focus 🎯</Text>
         </TouchableOpacity>
@@ -381,7 +381,7 @@ export default function AddWorkoutModal() {
       <Label text="Type" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll} contentContainerStyle={styles.typeContent}>
         {TYPE_OPTIONS.map(t => (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             key={t.value}
             style={[styles.typeBtn, type === t.value && styles.typeBtnActive]}
             onPress={() => setType(t.value)}
@@ -414,7 +414,7 @@ export default function AddWorkoutModal() {
       {/* ── Exercices ───────────────────────────────────────────────────── */}
       <View style={styles.exHeader}>
         <Label text={`Exercices (${exercises.length})`} />
-        <TouchableOpacity style={styles.addExBtn} onPress={() => setShowPicker(true)}>
+        <TouchableOpacity accessibilityRole="button" style={styles.addExBtn} onPress={() => setShowPicker(true)}>
           <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
           <Text style={styles.addExBtnText}>Ajouter</Text>
         </TouchableOpacity>
@@ -424,7 +424,7 @@ export default function AddWorkoutModal() {
         <View key={ex.id} style={styles.exerciseCard}>
           <View style={styles.exerciseCardHeader}>
             <Text style={styles.exerciseName}>{ex.name}</Text>
-            <TouchableOpacity onPress={() => removeExercise(exIdx)}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Retirer ${ex.name}`} onPress={() => removeExercise(exIdx)}>
               <Ionicons name="close-circle" size={18} color={Colors.red} />
             </TouchableOpacity>
           </View>
@@ -488,7 +488,7 @@ export default function AddWorkoutModal() {
                   <Text style={styles.prFlashText}>🏆</Text>
                 </Animated.View>
               )}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Série ${setIdx + 1} ${set.completed ? 'validée' : 'à valider'}`}
                 style={[styles.checkBtn, set.completed && styles.checkBtnDone]}
                 onPress={() => updateSet(exIdx, setIdx, 'completed', !set.completed)}
               >
@@ -498,11 +498,11 @@ export default function AddWorkoutModal() {
           ))}
           {/* Bouton repos manuel */}
           <View style={styles.setFooter}>
-            <TouchableOpacity style={styles.addSetBtn} onPress={() => addSet(exIdx)}>
+            <TouchableOpacity accessibilityRole="button" style={styles.addSetBtn} onPress={() => addSet(exIdx)}>
               <Ionicons name="add" size={14} color={Colors.primary} />
               <Text style={styles.addSetBtnText}>Série</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.restBtn} onPress={() => setTimerVisible(true)}>
+            <TouchableOpacity accessibilityRole="button" style={styles.restBtn} onPress={() => setTimerVisible(true)}>
               <Ionicons name="timer-outline" size={14} color={Colors.orange} />
               <Text style={styles.restBtnText}>Repos</Text>
             </TouchableOpacity>
@@ -687,11 +687,11 @@ function WorkoutSummaryModal({ summary, onClose }: { summary: SessionSummary; on
 
           {/* Boutons */}
           <View style={smStyles.btns}>
-            <TouchableOpacity style={smStyles.shareBtn} onPress={handleShare}>
+            <TouchableOpacity accessibilityRole="button" style={smStyles.shareBtn} onPress={handleShare}>
               <Ionicons name="share-outline" size={16} color={Colors.primary} />
               <Text style={smStyles.shareBtnText}>Partager</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={smStyles.continueBtn} onPress={onClose}>
+            <TouchableOpacity accessibilityRole="button" style={smStyles.continueBtn} onPress={onClose}>
               <Text style={smStyles.continueBtnText}>Continuer</Text>
             </TouchableOpacity>
           </View>
@@ -805,12 +805,12 @@ function FocusModeModal({ exercises, exIdx, setIdx, onSetDone, onNext, onPrev, o
           <View style={focusStyles.restBox}>
             <Text style={focusStyles.restTitle}>Repos</Text>
             <Text style={focusStyles.restTimer}>{restSecs}s</Text>
-            <TouchableOpacity style={focusStyles.skipRestBtn} onPress={() => { setResting(false); setRestSecs(0); }}>
+            <TouchableOpacity accessibilityRole="button" style={focusStyles.skipRestBtn} onPress={() => { setResting(false); setRestSecs(0); }}>
               <Text style={focusStyles.skipRestText}>Passer →</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={focusStyles.doneBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -826,11 +826,11 @@ function FocusModeModal({ exercises, exIdx, setIdx, onSetDone, onNext, onPrev, o
 
         {/* Navigation */}
         <View style={focusStyles.navRow}>
-          <TouchableOpacity onPress={onPrev} disabled={exIdx === 0} style={[focusStyles.navBtn, exIdx === 0 && { opacity: 0.3 }]}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Exercice précédent" onPress={onPrev} disabled={exIdx === 0} style={[focusStyles.navBtn, exIdx === 0 && { opacity: 0.3 }]}>
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={focusStyles.swipeHint}>← Swipe pour changer d'exercice →</Text>
-          <TouchableOpacity onPress={onNext} disabled={exIdx === exercises.length - 1} style={[focusStyles.navBtn, exIdx === exercises.length - 1 && { opacity: 0.3 }]}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Exercice suivant" onPress={onNext} disabled={exIdx === exercises.length - 1} style={[focusStyles.navBtn, exIdx === exercises.length - 1 && { opacity: 0.3 }]}>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>

@@ -6,8 +6,9 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { generateCustomProgram } from '../../services/openai';
+import { generateCustomProgram, generateStructuredProgram } from '../../services/openai';
 import { SavedPlan } from '../../types';
+import { ProgramTemplate } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import { usePremiumGate } from '../../hooks/usePremiumGate';
@@ -22,6 +23,16 @@ const LEVEL_OPTIONS: Level[]       = ['Débutant', 'Intermédiaire', 'Avancé'];
 const GOAL_OPTIONS: Goal[]         = ['Force', 'Hypertrophie', 'Perte de poids'];
 const EQUIP_OPTIONS: Equipment[]   = ['Salle complète', 'Haltères seulement', 'Poids du corps'];
 
+/** Rendu lisible d'un programme structuré, pour l'aperçu et le partage. */
+function programToText(p: ProgramTemplate): string {
+  const head = `${p.emoji} ${p.name}\n${p.description}\n${p.daysPerWeek} séances/semaine · ~${p.sessionDuration} min\n`;
+  const body = p.sessions.map(s =>
+    `\n── ${s.dayLabel} · ${s.name} (${s.focus}) ──\n` +
+    s.exercises.map(e => `• ${e.name} — ${e.sets}×${e.reps}, repos ${e.rest}s${e.notes ? ` (${e.notes})` : ''}`).join('\n'),
+  ).join('\n');
+  return head + body;
+}
+
 export default function AIProgramModal() {
   const router = useRouter();
   const store  = useAppStore();
@@ -34,20 +45,27 @@ export default function AIProgramModal() {
   const [loading,   setLoading]   = useState(false);
   const [result,    setResult]    = useState<string | null>(null);
   const [saved,     setSaved]     = useState(false);
+  // Programme structuré (séances/exercices) : c'est lui qui rend le résultat
+  // démarrable. Null si l'IA n'a pas su produire une structure exploitable —
+  // on retombe alors sur le texte, sans bloquer l'utilisateur.
+  const [structured, setStructured] = useState<ProgramTemplate | null>(null);
 
   const handleGenerate = async () => {
     if (!store.user) return;
     if (!requirePremium()) return;   // fonction IA → premium
     setLoading(true);
     try {
-      const text = await generateCustomProgram({
-        daysPerWeek: days,
-        level,
-        goal,
-        equipment,
-        name: store.user.name,
-      });
-      setResult(text);
+      const params = { daysPerWeek: days, level, goal, equipment, name: store.user.name };
+      // On demande d'abord une structure ; si le modèle ne la produit pas
+      // proprement, on bascule sur la version texte plutôt que d'échouer.
+      const prog = await generateStructuredProgram(params);
+      if (prog) {
+        setStructured(prog);
+        setResult(programToText(prog));
+      } else {
+        setStructured(null);
+        setResult(await generateCustomProgram(params));
+      }
       setSaved(false);
     } catch (e: any) {
       // AIError porte la cause réelle (hors-ligne, quota, clé refusée) :
@@ -60,16 +78,31 @@ export default function AIProgramModal() {
 
   const handleSave = async () => {
     if (!result) return;
+    // Un programme structuré est enregistré comme un vrai programme : il
+    // apparaît dans la bibliothèque, se démarre et se suit séance par séance.
+    if (structured) await store.saveAiProgram(structured);
     const plan: SavedPlan = {
       id: `ai_prog_${Date.now()}`,
       type: 'sport',
-      title: `Programme IA — ${level} ${goal} ${days}j/sem`,
+      title: structured?.name ?? `Programme IA — ${level} ${goal} ${days}j/sem`,
       content: result,
       date: storage.today(),
+      ...(structured ? { programId: structured.id } : {}),
     };
     await store.savePlan(plan);
     setSaved(true);
-    Alert.alert('💾 Sauvegardé !', 'Retrouve-le dans l\'onglet Programmes → Mes plans.');
+    if (structured) {
+      Alert.alert(
+        '💪 Programme prêt !',
+        'Il est dans ta bibliothèque, onglet Programmes. Tu peux le démarrer et suivre chaque séance.',
+        [
+          { text: 'Plus tard', style: 'cancel' },
+          { text: 'Voir le programme', onPress: () => router.replace(`/programs/${structured.id}`) },
+        ],
+      );
+    } else {
+      Alert.alert('💾 Sauvegardé !', 'Retrouve-le dans l\'onglet Programmes → Mes plans.');
+    }
   };
 
   // ── Vue résultat ──────────────────────────────────────────────────────────
@@ -88,7 +121,7 @@ export default function AIProgramModal() {
           <View style={{ height: 120 }} />
         </ScrollView>
         <View style={styles.resultActions}>
-          <TouchableOpacity style={styles.newBtn} onPress={() => { setResult(null); setSaved(false); }}>
+          <TouchableOpacity accessibilityRole="button" style={styles.newBtn} onPress={() => { setResult(null); setSaved(false); }}>
             <Text style={styles.newBtnText}>Nouveau</Text>
           </TouchableOpacity>
           <Button
@@ -188,7 +221,7 @@ function OptionBtn({ label, active, onPress, color }: {
   label: string; active: boolean; onPress: () => void; color: string;
 }) {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={[styles.optBtn, active && { borderColor: color, backgroundColor: color + '18' }]}
       onPress={onPress}
     >

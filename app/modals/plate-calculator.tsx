@@ -73,10 +73,10 @@ export default function PlateCalculatorScreen() {
           <StepBtn icon="add" onPress={() => bump(2.5)} label="Plus 2,5 kilos" />
         </View>
         <View style={styles.fineRow}>
-          <TouchableOpacity style={styles.fineBtn} onPress={() => bump(-1.25)}><Text style={styles.fineText}>−1,25</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.fineBtn} onPress={() => bump(1.25)}><Text style={styles.fineText}>+1,25</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.fineBtn} onPress={() => bump(5)}><Text style={styles.fineText}>+5</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.fineBtn} onPress={() => bump(20)}><Text style={styles.fineText}>+20</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={styles.fineBtn} onPress={() => bump(-1.25)}><Text style={styles.fineText}>−1,25</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={styles.fineBtn} onPress={() => bump(1.25)}><Text style={styles.fineText}>+1,25</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={styles.fineBtn} onPress={() => bump(5)}><Text style={styles.fineText}>+5</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={styles.fineBtn} onPress={() => bump(20)}><Text style={styles.fineText}>+20</Text></TouchableOpacity>
         </View>
 
         {/* Choix de la barre */}

@@ -86,13 +86,13 @@ export default function PlanDetailModal() {
 
       {/* ── Actions ──────────────────────────────────────────────────────── */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+        <TouchableOpacity accessibilityRole="button" style={styles.shareBtn} onPress={handleShare}>
           <Ionicons name="share-outline" size={16} color={Colors.textSecondary} />
           <Text style={styles.shareBtnText}>Partager</Text>
         </TouchableOpacity>
 
         {!plan.isPredefined && (
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Supprimer ce plan" style={styles.deleteBtn} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={16} color={Colors.red} />
           </TouchableOpacity>
         )}

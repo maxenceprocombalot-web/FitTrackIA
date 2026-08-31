@@ -22,7 +22,7 @@ const GOAL_FILTERS: (ProgramGoal | 'all')[] = ['all', 'Force', 'Hypertrophie', '
 
 export default function ProgramsScreen() {
   const router = useRouter();
-  const store  = useAppStore(['activeProgram', 'savedPlans']);
+  const store  = useAppStore(['activeProgram', 'savedPlans', 'aiPrograms']);
   const [planFilter, setPlanFilter] = useState<'all' | 'sport' | 'nutrition'>('all');
   const visiblePlans = useMemo(
     () => store.savedPlans.filter(p => planFilter === 'all' || p.type === planFilter),
@@ -35,12 +35,12 @@ export default function ProgramsScreen() {
 
   // Programme actif trouvé dans la bibliothèque
   const activeProgram = store.activeProgram
-    ? PROGRAMS.find(p => p.id === store.activeProgram?.programId)
+    ? [...store.aiPrograms, ...PROGRAMS].find(p => p.id === store.activeProgram?.programId)
     : null;
   const currentWeek = store.getProgramWeek();
 
   // Filtrage dynamique
-  const filtered = useMemo(() => PROGRAMS.filter(p => {
+  const filtered = useMemo(() => [...store.aiPrograms, ...PROGRAMS].filter(p => {
     if (daysFilter  !== 'all' && p.daysPerWeek !== daysFilter)  return false;
     if (levelFilter !== 'all' && p.level       !== levelFilter) return false;
     if (goalFilter  !== 'all' && p.goal        !== goalFilter)  return false;
@@ -59,7 +59,7 @@ export default function ProgramsScreen() {
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* ── Créer un programme IA ────────────────────────────────────────── */}
-      <TouchableOpacity
+      <TouchableOpacity accessibilityRole="button"
         style={styles.aiProgramBtn}
         onPress={() => router.push('/modals/ai-program')}
       >
@@ -79,13 +79,13 @@ export default function ProgramsScreen() {
           <View style={styles.activeBannerTop}>
             <View style={styles.activeDot} />
             <Text style={styles.activeLabel}>Programme en cours</Text>
-            <TouchableOpacity onPress={store.stopProgram} style={styles.stopBtn}>
+            <TouchableOpacity accessibilityRole="button" onPress={store.stopProgram} style={styles.stopBtn}>
               <Text style={styles.stopBtnText}>Arrêter</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.activeName}>{activeProgram.emoji} {activeProgram.name}</Text>
           <Text style={styles.activeWeek}>Semaine {currentWeek}</Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             style={styles.activeCta}
             onPress={() => router.push(`/programs/${activeProgram.id}`)}
           >
@@ -201,7 +201,7 @@ function EmptyPrograms({ onReset }: { onReset?: () => void }) {
       <Text style={styles.emptyTitle}>Aucun programme</Text>
       <Text style={styles.emptySub}>Aucun programme ne correspond à ces filtres.</Text>
       {onReset && (
-        <TouchableOpacity style={styles.emptyBtn} onPress={onReset} activeOpacity={0.85}>
+        <TouchableOpacity accessibilityRole="button" style={styles.emptyBtn} onPress={onReset} activeOpacity={0.85}>
           <Ionicons name="refresh-outline" size={16} color={Colors.primary} />
           <Text style={styles.emptyBtnText}>Réinitialiser les filtres</Text>
         </TouchableOpacity>
@@ -218,7 +218,7 @@ function PlanCard({ plan, onPress }: { plan: SavedPlan; onPress: () => void }) {
   const preview   = plan.content.slice(0, 80).replace(/\n/g, ' ');
 
   return (
-    <TouchableOpacity style={pcStyles.card} onPress={onPress}>
+    <TouchableOpacity accessibilityRole="button" style={pcStyles.card} onPress={onPress}>
       <View style={pcStyles.row}>
         <View style={[pcStyles.typeIcon, { backgroundColor: typeColor + '20' }]}>
           <Text style={pcStyles.typeEmoji}>{typeLabel}</Text>
@@ -263,7 +263,7 @@ function ProgramCard({ program: p, isActive, onPress }: {
 }) {
   const catMeta = CATEGORY_META[p.category];
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={[styles.card, isActive && styles.cardActive]}
       onPress={onPress}
       activeOpacity={0.8}
@@ -307,7 +307,7 @@ function Chip({ label, active, color = Colors.primary, onPress }: {
   label: string; active: boolean; color?: string; onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       style={[chipStyles.chip, active && { borderColor: color, backgroundColor: color + '18' }]}
       onPress={onPress}
     >

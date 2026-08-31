@@ -8,6 +8,7 @@ import {
   FavoriteMeal, WaterEntry, StreakData,
   SavedPlan, MonthlySummary, NotifPrefs,
 } from '../types';
+import { ProgramTemplate } from '../constants/programs';
 
 // ─── Clés de stockage ──────────────────────────────────────────────────────────
 
@@ -345,6 +346,29 @@ export async function loadNotifPrefs(): Promise<NotifPrefs> {
 
 export const saveNotifPrefs = (p: NotifPrefs) =>
   AsyncStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(p));
+
+// ─── Programmes générés par l'IA ──────────────────────────────────────────────
+// Stockés à part des programmes de la bibliothèque (en dur dans
+// constants/programs.ts) mais résolus par le même identifiant, ce qui rend un
+// programme IA démarrable et suivable comme n'importe quel autre.
+
+const AI_PROGRAMS_KEY = '@fit_ai_programs';
+
+export async function loadAiPrograms(): Promise<ProgramTemplate[]> {
+  return (await load<ProgramTemplate[]>(AI_PROGRAMS_KEY)) ?? [];
+}
+
+export async function saveAiProgram(p: ProgramTemplate): Promise<void> {
+  await mutate<ProgramTemplate>(AI_PROGRAMS_KEY, list => {
+    const i = list.findIndex(x => x.id === p.id);
+    if (i >= 0) list[i] = p; else list.unshift(p);
+    return list.slice(0, 30); // borne : évite une croissance illimitée
+  });
+}
+
+export async function deleteAiProgram(id: string): Promise<void> {
+  await mutate<ProgramTemplate>(AI_PROGRAMS_KEY, list => list.filter(p => p.id !== id));
+}
 
 // ─── Suppression de toutes les données (RGPD) ─────────────────────────────────
 

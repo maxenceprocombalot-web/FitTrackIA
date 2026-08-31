@@ -290,10 +290,10 @@ export default function AddFoodModal() {
             <MacroPill label="Lip."  value={fat}  color={Colors.fatColor} />
           </View>
           <View style={styles.confirmBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setPending(null)}>
+            <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={() => setPending(null)}>
               <Text style={styles.cancelText}>Retour</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addBtn} onPress={confirmAdd}>
+            <TouchableOpacity accessibilityRole="button" style={styles.addBtn} onPress={confirmAdd}>
               <Ionicons name="add-circle-outline" size={18} color={Colors.onPrimary} />
               <Text style={styles.addBtnText}>Ajouter au {MEAL_LABELS[mealType]}</Text>
             </TouchableOpacity>
@@ -378,7 +378,7 @@ export default function AddFoodModal() {
                 </View>
               }
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(item)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.foodRow} onPress={() => selectItem(item)}>
                   <View style={styles.foodInfo}>
                     <Text style={styles.foodName}>{item.name}</Text>
                     {item.brand && <Text style={styles.foodBrand}>{item.brand}</Text>}
@@ -411,7 +411,7 @@ export default function AddFoodModal() {
                 const fav = item as FavoriteMeal;
                 const totalCal = Math.round(fav.items.reduce((sum, i) => sum + i.caloriesPer100g * i.quantity / 100, 0));
                 return (
-                  <TouchableOpacity style={styles.favRow} onPress={() => addFavoriteToMeal(fav)}>
+                  <TouchableOpacity accessibilityRole="button" style={styles.favRow} onPress={() => addFavoriteToMeal(fav)}>
                     <View style={styles.favIcon}>
                       <Ionicons name="star" size={18} color={Colors.yellow} />
                     </View>
@@ -435,7 +435,7 @@ export default function AddFoodModal() {
               if ((section as { key: string }).key === 'recent') {
                 const food = item as FoodItem;
                 return (
-                  <TouchableOpacity style={styles.foodRow} onPress={() => selectItem(food)}>
+                  <TouchableOpacity accessibilityRole="button" style={styles.foodRow} onPress={() => selectItem(food)}>
                     <View style={[styles.recentDot, { backgroundColor: Colors.primary + '30' }]}>
                       <Ionicons name="time-outline" size={14} color={Colors.primary} />
                     </View>
@@ -450,7 +450,7 @@ export default function AddFoodModal() {
               }
               const cf = item as typeof COMMON_FOODS[number];
               return (
-                <TouchableOpacity style={styles.foodRow} onPress={() => selectItem({
+                <TouchableOpacity accessibilityRole="button" style={styles.foodRow} onPress={() => selectItem({
                   id: cf.id, name: cf.name, quantity: cf.defaultPortion,
                   caloriesPer100g: cf.caloriesPer100g, proteinPer100g: cf.proteinPer100g,
                   carbsPer100g: cf.carbsPer100g, fatPer100g: cf.fatPer100g,
@@ -515,7 +515,7 @@ export default function AddFoodModal() {
             <View style={{ flex: 1 }}><ManualField label="Glucides/100g"  value={manualCarb} onChange={setManualCarb} placeholder="28"  numeric decimal /></View>
             <View style={{ flex: 1 }}><ManualField label="Lipides/100g"   value={manualFat}  onChange={setManualFat}  placeholder="0.3" numeric decimal /></View>
           </View>
-          <TouchableOpacity style={styles.manualBtn} onPress={handleManualAdd}>
+          <TouchableOpacity accessibilityRole="button" style={styles.manualBtn} onPress={handleManualAdd}>
             <Text style={styles.manualBtnText}>Valider et choisir la portion</Text>
           </TouchableOpacity>
         </ScrollView>

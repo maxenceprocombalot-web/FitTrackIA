@@ -132,7 +132,7 @@ export default function TutorialOverlay({ onDone }: Props) {
 
         {/* Boutons */}
         <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.skipBtn} onPress={skip}>
+          <TouchableOpacity accessibilityRole="button" style={styles.skipBtn} onPress={skip}>
             <Text style={styles.skipText}>Passer</Text>
           </TouchableOpacity>
           <Button

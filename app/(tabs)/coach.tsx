@@ -625,7 +625,7 @@ function ConversationHistoryModal({ onClose, onRestore }: {
           keyExtractor={c => c.id}
           contentContainerStyle={{ padding: Sp.md, gap: Sp.sm }}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={{ backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md }}
               onPress={() => setSelected(item)}
             >

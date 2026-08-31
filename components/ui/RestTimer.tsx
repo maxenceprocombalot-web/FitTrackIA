@@ -118,7 +118,7 @@ export default function RestTimer({ visible, onClose }: Props) {
           {/* Sélecteur de durée */}
           <View style={styles.durationRow}>
             {DURATIONS.map(d => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 key={d}
                 style={[styles.durBtn, selected === d && !running && styles.durBtnActive]}
                 onPress={() => { if (!running) setSelected(d); }}
@@ -169,11 +169,11 @@ export default function RestTimer({ visible, onClose }: Props) {
                 style={{ flex: 1 }}
               />
             ) : (
-              <TouchableOpacity style={styles.stopBtn} onPress={stopTimer}>
+              <TouchableOpacity accessibilityRole="button" style={styles.stopBtn} onPress={stopTimer}>
                 <Text style={styles.stopBtnText}>Arrêter</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <TouchableOpacity accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
               <Text style={styles.closeBtnText}>Fermer</Text>
             </TouchableOpacity>
           </View>
