@@ -932,11 +932,18 @@ function MealPrepModal({ user, onClose, onSave }: { user: any; onClose: () => vo
   const [shopping, setShopping] = useState('');
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<'plan'|'shopping'>('plan');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    generateMealPrepWithShopping(user).then(r => { setPlan(r.plan); setShopping(r.shopping); setLoading(false); });
+    generateMealPrepWithShopping(user)
+      .then(r => { setPlan(r.plan); setShopping(r.shopping); })
+      .catch((e: any) => {
+        // Sans ce catch, un échec IA laissait le modal bloqué sur son spinner.
+        setError(e?.message ?? "Génération impossible. Réessaie plus tard.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -960,7 +967,9 @@ function MealPrepModal({ user, onClose, onSave }: { user: any; onClose: () => vo
             ))}
           </View>
           <ScrollView contentContainerStyle={{ padding: Sp.md, paddingBottom: 100 }}>
-            <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 22 }}>{tab === 'plan' ? plan : shopping}</Text>
+            <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: error ? Colors.red : Colors.text, lineHeight: 22 }}>
+              {error || (tab === 'plan' ? plan : shopping)}
+            </Text>
           </ScrollView>
           <View style={{ flexDirection: 'row', gap: Sp.sm, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border }}>
             <TouchableOpacity

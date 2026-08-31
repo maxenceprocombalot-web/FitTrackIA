@@ -49,8 +49,10 @@ export default function AIProgramModal() {
       });
       setResult(text);
       setSaved(false);
-    } catch {
-      Alert.alert('Erreur', 'Impossible de générer le programme. Vérifie ta connexion.');
+    } catch (e: any) {
+      // AIError porte la cause réelle (hors-ligne, quota, clé refusée) :
+      // afficher « vérifie ta connexion » pour un quota dépassé induit en erreur.
+      Alert.alert('Génération impossible', e?.message ?? 'Réessaie plus tard.');
     } finally {
       setLoading(false);
     }

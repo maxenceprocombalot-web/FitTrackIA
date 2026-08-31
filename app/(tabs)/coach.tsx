@@ -258,8 +258,8 @@ export default function CoachScreen() {
       const plan = await generateMealPlan(store.user);
       const botMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: plan, timestamp: new Date().toISOString() };
       await store.addChatMessage(botMsg);
-    } catch {
-      await store.addChatMessage({ id: (Date.now() + 2).toString(), role: 'assistant', content: 'Erreur lors de la génération du plan repas.', timestamp: new Date().toISOString() });
+    } catch (e: any) {
+      await store.addChatMessage({ id: (Date.now() + 2).toString(), role: 'assistant', content: e?.message ?? 'Erreur lors de la génération du plan repas.', timestamp: new Date().toISOString() });
     } finally {
       setGeneratingMealPlan(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -362,8 +362,8 @@ export default function CoachScreen() {
       const analysis = await analyzeNutritionDeficiencies(store.meals, store.user);
       const botMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: analysis, timestamp: new Date().toISOString() };
       await store.addChatMessage(botMsg);
-    } catch {
-      await store.addChatMessage({ id: (Date.now() + 2).toString(), role: 'assistant', content: 'Erreur lors de l\'analyse.', timestamp: new Date().toISOString() });
+    } catch (e: any) {
+      await store.addChatMessage({ id: (Date.now() + 2).toString(), role: 'assistant', content: e?.message ?? 'Erreur lors de l\'analyse.', timestamp: new Date().toISOString() });
     } finally {
       setAnalyzingNutrition(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);

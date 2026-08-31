@@ -52,7 +52,9 @@ export async function initPurchases(): Promise<void> {
 /** Statut premium : override de test OU entitlement RevenueCat actif. */
 export async function checkPremium(): Promise<boolean> {
   try {
-    if ((await AsyncStorage.getItem(DEV_KEY)) === 'true') return true;
+    // __DEV__ uniquement : sinon une valeur écrite dans AsyncStorage (sauvegarde
+    // modifiée, appareil jailbreaké) débloquerait le premium sans achat.
+    if (__DEV__ && (await AsyncStorage.getItem(DEV_KEY)) === 'true') return true;
     if (!_configured) return false;
     const P = loadPurchases(); if (!P) return false;
     const info = await P.getCustomerInfo();
