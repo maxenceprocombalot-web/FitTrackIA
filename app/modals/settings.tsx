@@ -21,6 +21,11 @@ import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import { ActivityLevel, NotifPrefs } from '../../types';
 
+// Outils de développement : visibles en dev, et dans le build « screenshots »
+// qui sert à produire les captures de la fiche App Store. La production ne
+// définit pas EXPO_PUBLIC_DEMO, donc rien de tout cela n'y apparaît.
+const DEV_TOOLS = __DEV__ || process.env.EXPO_PUBLIC_DEMO === '1';
+
 const ACTIVITY_OPTS: { value: ActivityLevel; emoji: string; short: string }[] = [
   { value: 'sedentary',   emoji: '🛋️', short: 'Séd.' },
   { value: 'light',       emoji: '🚶', short: 'Léger' },
@@ -614,8 +619,8 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* ── DÉVELOPPEUR (__DEV__ uniquement) ─────────────────────────── */}
-        {__DEV__ && (
+        {/* ── DÉVELOPPEUR (dev, ou build « screenshots » dédié) ─────────── */}
+        {DEV_TOOLS && (
           <>
             <SectionHeader title="DÉVELOPPEUR" />
             <View style={styles.card}>

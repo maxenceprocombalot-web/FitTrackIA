@@ -31,6 +31,19 @@
       "ios": {
         "buildConfiguration": "Release"
       }
+    },
+    "screenshots": {
+      "extends": "production",
+      "distribution": "internal",
+      "channel": "screenshots",
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "EXPO_PUBLIC_PERSO": "0",
+        "EXPO_PUBLIC_DEMO": "1"
+      }
     }
   },
   "submit": {
