@@ -23,6 +23,11 @@ const GOAL_FILTERS: (ProgramGoal | 'all')[] = ['all', 'Force', 'Hypertrophie', '
 export default function ProgramsScreen() {
   const router = useRouter();
   const store  = useAppStore(['activeProgram', 'savedPlans']);
+  const [planFilter, setPlanFilter] = useState<'all' | 'sport' | 'nutrition'>('all');
+  const visiblePlans = useMemo(
+    () => store.savedPlans.filter(p => planFilter === 'all' || p.type === planFilter),
+    [store.savedPlans, planFilter],
+  );
 
   const [daysFilter,  setDaysFilter]  = useState<number | 'all'>('all');
   const [levelFilter, setLevelFilter] = useState<ProgramLevel | 'all'>('all');
@@ -98,6 +103,40 @@ export default function ProgramsScreen() {
         ))}
       </ScrollView>
 
+      {/* ── Mes plans (générés par l'IA) — avant la bibliothèque : c'est le
+             contenu propre à l'utilisateur, il doit être immédiatement visible ── */}
+      {store.savedPlans.length > 0 && (
+        <>
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsTitle}>Mes plans</Text>
+            <View style={styles.resultCountPill}>
+              <Text style={styles.resultCountText}>{store.savedPlans.length}</Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+            {(['all', 'sport', 'nutrition'] as const).map(t => (
+              <Chip
+                key={t}
+                label={t === 'all' ? 'Tous' : t === 'sport' ? '💪 Sport' : '🥗 Nutrition'}
+                active={planFilter === t}
+                onPress={() => setPlanFilter(t)}
+              />
+            ))}
+          </ScrollView>
+          {visiblePlans.length === 0 ? (
+            <Text style={styles.resultCount}>Aucun plan {planFilter === 'sport' ? 'sport' : 'nutrition'} pour l'instant.</Text>
+          ) : (
+            visiblePlans.map(plan => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                onPress={() => router.push({ pathname: '/modals/plan-detail', params: { planId: plan.id } })}
+              />
+            ))
+          )}
+        </>
+      )}
+
       <Text style={styles.filterLabel}>Niveau</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
         {LEVEL_FILTERS.map(l => (
@@ -141,20 +180,6 @@ export default function ProgramsScreen() {
             program={p}
             isActive={p.id === store.activeProgram?.programId}
             onPress={() => router.push(`/programs/${p.id}`)}
-          />
-        ))
-      )}
-
-      {/* ── Mes plans sauvegardés (coach IA + prédéfinis) ─────────────────── */}
-      <Text style={styles.filterLabel}>Mes plans sauvegardés</Text>
-      {store.savedPlans.length === 0 ? (
-        <Text style={styles.resultCount}>Aucun plan — demande un plan au Coach IA et touche « Sauvegarder ».</Text>
-      ) : (
-        store.savedPlans.map(plan => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            onPress={() => router.push({ pathname: '/modals/plan-detail', params: { planId: plan.id } })}
           />
         ))
       )}

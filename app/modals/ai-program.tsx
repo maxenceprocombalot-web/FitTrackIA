@@ -67,7 +67,7 @@ export default function AIProgramModal() {
     };
     await store.savePlan(plan);
     setSaved(true);
-    Alert.alert('💾 Sauvegardé !', 'Ton programme est dans Progrès → Plans.');
+    Alert.alert('💾 Sauvegardé !', 'Retrouve-le dans l\'onglet Programmes → Mes plans.');
   };
 
   // ── Vue résultat ──────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.primary, borderRadius: R, padding: Sp.md, marginTop: Sp.sm,
   },
-  generateBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: '#fff' },
+  generateBtnText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.onPrimary },
   // Résultat
   resultHeader: { padding: Sp.lg, paddingBottom: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border },
   resultTitle: { fontSize: Fs.xl, fontFamily: Fonts.heavy, color: Colors.text },

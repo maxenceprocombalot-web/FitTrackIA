@@ -56,7 +56,8 @@ function fmtDate(dateStr: string, todayStr: string): string {
 
 export default function NutritionScreen() {
   const router = useRouter();
-  const store  = useAppStore(['user', 'meals', 'favorites', 'recentFoods', 'isPremium']);
+  const store  = useAppStore(['user', 'meals', 'favorites', 'recentFoods', 'isPremium', 'savedPlans']);
+  const savedNutritionPlans = store.savedPlans.filter(p => p.type === 'nutrition');
   const { requirePremium } = usePremiumGate();
   const user   = store.user;
 
@@ -294,6 +295,22 @@ export default function NutritionScreen() {
           <Ionicons name="clipboard-outline" size={16} color={Colors.green} />
           <Text style={[styles.recipesBtnText, { color: Colors.green }]}>Meal Prep</Text>
         </TouchableOpacity>
+        {/* Accès direct aux plans nutrition sauvegardés : sans ce raccourci,
+            ils n'étaient consultables que depuis l'onglet Sport → Programmes. */}
+        {savedNutritionPlans.length > 0 && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            style={styles.recipesBtn}
+            onPress={() => router.push(
+              savedNutritionPlans.length === 1
+                ? { pathname: '/modals/plan-detail', params: { planId: savedNutritionPlans[0].id } }
+                : { pathname: '/(tabs)/programs' },
+            )}
+          >
+            <Ionicons name="bookmark-outline" size={16} color={Colors.primary} />
+            <Text style={styles.recipesBtnText}>Mes plans repas ({savedNutritionPlans.length})</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
       {fastTimerText !== '' && (
         <View style={[styles.fastTimer, { borderColor: fastTimerText.startsWith('🔒') ? Colors.orange + '50' : Colors.green + '50', backgroundColor: fastTimerText.startsWith('🔒') ? Colors.orange + '10' : Colors.green + '10' }]}>
@@ -424,7 +441,21 @@ export default function NutritionScreen() {
 
     {/* ── Modal meal prep ───────────────────────────────────────────────── */}
     <Modal visible={showMealPrep} animationType="slide" onRequestClose={() => setShowMealPrep(false)}>
-      <MealPrepModal user={user} onClose={() => setShowMealPrep(false)} />
+      <MealPrepModal
+        user={user}
+        onClose={() => setShowMealPrep(false)}
+        onSave={(plan, shopping) => {
+          store.savePlan({
+            id: `ai_meal_${Date.now()}`,
+            type: 'nutrition',
+            title: `Meal prep — ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`,
+            content: `${plan}\n\n🛒 LISTE DE COURSES\n${shopping}`,
+            date: storage.today(),
+          });
+          setShowMealPrep(false);
+          Alert.alert('💾 Sauvegardé !', "Retrouve ton meal prep dans l'onglet Programmes → Mes plans.");
+        }}
+      />
     </Modal>
 
     {/* ── Modal recettes ────────────────────────────────────────────────── */}
@@ -896,7 +927,7 @@ function RestaurantModal({ onClose, onAdd }: {
 
 // ─── Modal Meal Prep ──────────────────────────────────────────────────────────
 
-function MealPrepModal({ user, onClose }: { user: any; onClose: () => void }) {
+function MealPrepModal({ user, onClose, onSave }: { user: any; onClose: () => void; onSave: (plan: string, shopping: string) => void }) {
   const [plan, setPlan] = useState('');
   const [shopping, setShopping] = useState('');
   const [loading, setLoading] = useState(false);
@@ -932,9 +963,21 @@ function MealPrepModal({ user, onClose }: { user: any; onClose: () => void }) {
             <Text style={{ fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 22 }}>{tab === 'plan' ? plan : shopping}</Text>
           </ScrollView>
           <View style={{ flexDirection: 'row', gap: Sp.sm, padding: Sp.md, borderTopWidth: 1, borderTopColor: Colors.border }}>
-            <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 12 }} onPress={() => Share.share({ message: `${plan}\n\n${shopping}`, title: 'Mon Meal Prep' })}>
-              <Ionicons name="share-outline" size={16} color="#fff" />
-              <Text style={{ color: '#fff', fontFamily: Fonts.semibold, fontSize: Fs.sm }}>Exporter</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: Colors.border, borderRadius: R, paddingVertical: 12 }}
+              onPress={() => Share.share({ message: `${plan}\n\n${shopping}`, title: 'Mon Meal Prep' })}
+            >
+              <Ionicons name="share-outline" size={16} color={Colors.textSecondary} />
+              <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.semibold, fontSize: Fs.sm }}>Exporter</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: R, paddingVertical: 12 }}
+              onPress={() => onSave(plan, shopping)}
+            >
+              <Ionicons name="bookmark-outline" size={16} color={Colors.onPrimary} />
+              <Text style={{ color: Colors.onPrimary, fontFamily: Fonts.bold, fontSize: Fs.sm }}>Sauvegarder</Text>
             </TouchableOpacity>
           </View>
         </>
