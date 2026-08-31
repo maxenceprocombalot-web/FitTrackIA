@@ -167,6 +167,7 @@ export interface NotifPrefs {
   meals: boolean;
   workout: boolean;
   weekly: boolean;
+  water: boolean;
 }
 
 // ─── Coach IA ─────────────────────────────────────────────────────────────────

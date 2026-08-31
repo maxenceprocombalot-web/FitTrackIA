@@ -329,9 +329,18 @@ export async function clearApiKey(): Promise<void> {
 
 const NOTIF_PREFS_KEY = '@fit_notif_prefs';
 
+const NOTIF_PREFS_DEFAULT: NotifPrefs = { meals: true, workout: true, weekly: true, water: true };
+
 export async function loadNotifPrefs(): Promise<NotifPrefs> {
   const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);
-  return raw ? JSON.parse(raw) : { meals: true, workout: true, weekly: true };
+  if (!raw) return { ...NOTIF_PREFS_DEFAULT };
+  try {
+    // Fusion avec les défauts : une préférence ajoutée après coup serait
+    // sinon `undefined` et donc traitée comme désactivée.
+    return { ...NOTIF_PREFS_DEFAULT, ...(JSON.parse(raw) as Partial<NotifPrefs>) };
+  } catch {
+    return { ...NOTIF_PREFS_DEFAULT };
+  }
 }
 
 export const saveNotifPrefs = (p: NotifPrefs) =>

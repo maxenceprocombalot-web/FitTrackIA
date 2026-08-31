@@ -125,7 +125,7 @@ export default function SettingsScreen() {
   const [objSaved,       setObjSaved]       = useState(false);
 
   // ── Notifications ────────────────────────────────────────────────────────
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ meals: true, workout: true, weekly: true });
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ meals: true, workout: true, weekly: true, water: true });
 
   // ── Clé API ──────────────────────────────────────────────────────────────
   const [apiKey,        setApiKey]        = useState('');
@@ -449,6 +449,14 @@ export default function SettingsScreen() {
             sublabel="Dimanche 20h"
             value={notifPrefs.weekly}
             onToggle={v => handleNotifToggle('weekly', v)}
+          />
+          <View style={styles.divider} />
+          <RowToggle
+            icon="water-outline"
+            label="Rappel hydratation"
+            sublabel="10h, 14h, 16h et 21h"
+            value={notifPrefs.water}
+            onToggle={v => handleNotifToggle('water', v)}
           />
         </View>
 
