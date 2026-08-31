@@ -11,6 +11,7 @@ import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } f
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
 import { createBackup, decryptBackup, restoreBackup } from '../../services/backup';
+import { seedDemoData } from '../../services/demo-seed';
 import { isHealthAvailable, isHealthSyncEnabled, enableHealthSync, disableHealthSync } from '../../services/health';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -645,6 +646,24 @@ export default function SettingsScreen() {
                 )}
               >
                 <Ionicons name="nuclear-outline" size={15} color={Colors.orange} />
+          <View style={styles.divider} />
+          <RowLink
+            icon="sparkles-outline"
+            label="Générer des données de démo"
+            sublabel="Pour les captures App Store — 5 semaines d'historique"
+            onPress={() => Alert.alert(
+              'Générer des données de démo',
+              "Ajoute 5 semaines de séances, repas, pesées et records. À n'utiliser que pour les captures d'écran.",
+              [
+                { text: 'Annuler', style: 'cancel' },
+                { text: 'Générer', onPress: async () => {
+                  await seedDemoData();
+                  await store.refresh();
+                  Alert.alert('✅ Données générées', 'Ton app est prête pour les captures.');
+                } },
+              ],
+            )}
+          />
                 <Text style={styles.devBtnText}>Vider toutes les données</Text>
               </TouchableOpacity>
             </View>
