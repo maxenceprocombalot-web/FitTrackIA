@@ -271,17 +271,6 @@ export default function DashboardScreen() {
     ]).start();
   }, []);
 
-  if (store.loading || !user) return null;
-
-  const waterGoal   = user.waterGoalMl ?? 2000;
-  const waterPct    = Math.min(store.water.ml / waterGoal, 1);
-  const waterColor  = waterPct >= 1 ? Colors.primary : waterPct >= 0.6 ? Colors.blue : waterPct >= 0.3 ? Colors.orange : Colors.red;
-  const streak      = store.streak.current;
-
-  // Premier lancement : aucune donnée saisie, toutes catégories confondues.
-  // Un tableau de bord entièrement à zéro décourage — on montre une seule action.
-  const isFirstRun = store.meals.length === 0 && store.workouts.length === 0 && store.weights.length === 0;
-
   // Moment de conversion hors IA : sans lui, un utilisateur qui suit ses séances
   // et ses repas sans jamais toucher à l'IA ne voit jamais le paywall.
   // Déclenché sur un signal d'engagement réel, affiché une seule fois, refusable.
@@ -300,6 +289,18 @@ export default function DashboardScreen() {
     setShowPremiumNudge(false);
     AsyncStorage.setItem(PREMIUM_NUDGE_KEY, 'true').catch(() => {});
   }, []);
+
+  if (store.loading || !user) return null;
+
+  const waterGoal   = user.waterGoalMl ?? 2000;
+  const waterPct    = Math.min(store.water.ml / waterGoal, 1);
+  const waterColor  = waterPct >= 1 ? Colors.primary : waterPct >= 0.6 ? Colors.blue : waterPct >= 0.3 ? Colors.orange : Colors.red;
+  const streak      = store.streak.current;
+
+  // Premier lancement : aucune donnée saisie, toutes catégories confondues.
+  // Un tableau de bord entièrement à zéro décourage — on montre une seule action.
+  const isFirstRun = store.meals.length === 0 && store.workouts.length === 0 && store.weights.length === 0;
+
   const jokerMonth  = storage.thisMonth();
   const jokerAvail  = store.streak.jokerUsedMonth !== jokerMonth;
 
