@@ -4,6 +4,7 @@ import {
   StyleSheet, Animated, Dimensions, Alert, TextStyle, StyleProp,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { User, Gender, Goal, ActivityLevel } from '../../types';
@@ -197,13 +198,16 @@ export default function OnboardingModal() {
     router.replace('/(tabs)');
   };
 
+  // Sans cet inset, l'en-tête de progression passait sous l'heure et le wifi.
+  const insets = useSafeAreaInsets();
+
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* En-tête de progression : compteur + barre animée (masqué sur step 0) */}
       {step > 0 && (
         <View style={styles.progressHeader}>

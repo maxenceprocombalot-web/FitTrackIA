@@ -11,6 +11,7 @@ import {
   BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold,
 } from '@expo-google-fonts/barlow-condensed';
 import { Colors, Fonts } from '../constants/theme';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppLockGate from '../components/ui/AppLockGate';
 import * as QuickActions from 'expo-quick-actions';
 import { useQuickActionRouting } from 'expo-quick-actions/router';
@@ -54,6 +55,7 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontsError) return null;
 
   return (
+    <SafeAreaProvider>
     <AppLockGate>
       <StatusBar style="light" />
       <Stack
@@ -133,5 +135,6 @@ export default function RootLayout() {
         />
       </Stack>
     </AppLockGate>
+    </SafeAreaProvider>
   );
 }
