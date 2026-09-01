@@ -131,6 +131,13 @@ export default function DashboardScreen() {
       ? Math.round(calVals.reduce((a, b) => a + b, 0) / calVals.length)
       : 0;
 
+    // Rien à célébrer : un utilisateur qui vient de s'inscrire recevait
+    // « Beau travail ce mois-ci ! 0 séances complétées » quelques secondes
+    // après l'onboarding. Sans activité sur le mois, pas de bilan.
+    if (lastMonthWorkouts.length === 0 && lastMonthMeals.length === 0 && monthWeights.length === 0) {
+      return;
+    }
+
     // Volume total
     const totalVolume = lastMonthWorkouts.reduce((s, w) =>
       s + w.exercises.reduce((sv, e) =>
