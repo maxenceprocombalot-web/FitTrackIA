@@ -7,9 +7,9 @@
 
 ## Nom de l'app (≤ 30 caractères)
 ```
-FitTrack IA : Coach Fitness
+FitTrack IA : Coach Sport
 ```
-*(alt. plus court : `FitTrack IA — Muscu & Repas`)*
+*(alt. : `FitTrack IA — Sport & Nutrition`)*
 
 ## Sous-titre (≤ 30 caractères)
 ```
@@ -18,13 +18,13 @@ Muscu, calories & coach IA
 
 ## Mots-clés (≤ 100 caractères, séparés par virgules, SANS espaces)
 ```
-fitness,musculation,coach,ia,calories,macros,nutrition,régime,poids,séance,gym,muscu,proteine,perte
+musculation,marathon,triathlon,course,running,trail,basket,natation,hyrox,coach,ia,calories,macros,nutrition,seance
 ```
 *Ne répète PAS les mots déjà dans le nom/sous-titre (Apple les indexe déjà). Teste des variantes tous les 15 j.*
 
 ## Texte promotionnel (≤ 170 caractères, modifiable sans review)
 ```
-Ton coach IA analyse tes séances ET ton assiette pour te dire quoi ajuster. Scan des aliments, records, plans de repas — tout au même endroit. Essaie gratuitement.
+Marathon, triathlon, basket ou muscu : 21 programmes et un coach IA qui analyse tes séances ET ton assiette. Scan des aliments, records, plans de repas. Essaie gratuitement.
 ```
 
 ---
@@ -33,7 +33,15 @@ Ton coach IA analyse tes séances ET ton assiette pour te dire quoi ajuster. Sca
 
 **Ton coach sportif et nutritionnel, propulsé par l'IA.**
 
-FitTrack IA réunit ta musculation ET ta nutrition dans une seule app — et un coach IA qui analyse la corrélation entre les deux pour te dire exactement quoi ajuster.
+FitTrack IA réunit ton sport ET ta nutrition dans une seule app — et un coach IA qui analyse la corrélation entre les deux pour te dire exactement quoi ajuster.
+
+Marathon, triathlon, basket, muscu, Hyrox : 21 programmes couvrant 11 disciplines. Que tu prépares un Ironman ou que tu cherches à prendre de la masse, tout est au même endroit.
+
+**🏃 TOUS LES SPORTS, PAS QUE LA MUSCU**
+• 21 programmes prêts : marathon, semi, 10 km, trail, triathlon, Ironman 70.3
+• Prépa basket, prépa foot, natation, Hyrox
+• Programmes de musculation : Full Body, PPL, Upper/Lower, Brosplit
+• Le coach IA génère un programme sur mesure dans n'importe quelle discipline
 
 **💪 SPORT**
 • 100+ exercices, séries/reps/poids, minuteur de repos
@@ -75,6 +83,7 @@ Télécharge FitTrack IA et transforme-toi — un jour à la fois.
 ## Nouveautés (What's New — v1.0)
 ```
 🎉 Première version de FitTrack IA !
+• 21 programmes : marathon, triathlon, basket, muscu, Hyrox…
 • Coach IA sport + nutrition
 • Photo de repas → calories estimées par l'IA
 • Scan de code-barres et 2 265 aliments français (CIQUAL)
@@ -87,7 +96,7 @@ Dis-nous ce que tu en penses ⭐
 ---
 
 ## Légendes des captures d'écran (6 recommandées, la 1re est décisive)
-1. **« Ton coach IA analyse sport + nutrition »** — écran Coach
+1. **« Tous tes sports, un seul coach »** — écran Programmes, filtre Discipline visible
 2. **« Suis tes macros en un scan »** — écran Nutrition (scan)
 3. **« Progresse à chaque séance »** — suggestion de surcharge progressive
 4. **« Tes records, automatiquement »** — écran séance avec PR
