@@ -1223,6 +1223,372 @@ const HYROX: ProgramTemplate = {
   ],
 };
 
+const RUGBY: ProgramTemplate = {
+  id: 'prepa_rugby',
+  name: 'Prépa rugby',
+  emoji: '🏉',
+  category: 'Sport co',
+  level: 'Avancé',
+  daysPerWeek: 4,
+  goal: 'Force',
+  sessionDuration: 80,
+  description: 'Puissance, collision et capacité à répéter les efforts. Le cou et la chaîne postérieure sont travaillés en priorité.',
+  sessions: [
+    {
+      id: 'rg_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Force max', focus: 'Force',
+      exercises: [
+        { name: 'Squat', sets: 5, reps: '5', rest: 180 },
+        { name: 'Développé couché', sets: 5, reps: '5', rest: 180 },
+        { name: 'Rowing barre', sets: 4, reps: '6', rest: 120 },
+        { name: 'Renforcement du cou (isométrie)', sets: 4, reps: '20 s par direction', rest: 60, notes: 'Prévention des commotions' },
+      ],
+    },
+    {
+      id: 'rg_b', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Puissance', focus: 'Explosivité',
+      exercises: [
+        { name: 'Épaulé debout', sets: 5, reps: '3', rest: 180 },
+        { name: 'Sauts en contrebas', sets: 4, reps: '5', rest: 120 },
+        { name: 'Sprints 20 m', sets: 8, reps: '20 m', rest: 90 },
+        { name: 'Lancers de médecine-ball', sets: 4, reps: '8', rest: 90 },
+      ],
+    },
+    {
+      id: 'rg_c', dayOfWeek: 4, dayLabel: 'Jeudi', name: 'Intermittent', focus: 'Capacité',
+      exercises: [
+        { name: 'Échauffement', sets: 1, reps: '15 min', rest: 0 },
+        { name: '15 s effort maximal / 15 s récup', sets: 20, reps: '30 s', rest: 0, notes: 'Reproduit les séquences de jeu' },
+        { name: 'Gainage anti-rotation', sets: 3, reps: '12 par côté', rest: 45 },
+      ],
+    },
+    {
+      id: 'rg_d', dayOfWeek: 6, dayLabel: 'Samedi', name: 'Chaîne postérieure', focus: 'Prévention',
+      exercises: [
+        { name: 'Soulevé de terre', sets: 4, reps: '6', rest: 180 },
+        { name: 'Nordic hamstring', sets: 4, reps: '6', rest: 120 },
+        { name: 'Hip thrust', sets: 4, reps: '10', rest: 90 },
+        { name: 'Tirage menton', sets: 3, reps: '12', rest: 60 },
+      ],
+    },
+  ],
+};
+
+const TENNIS: ProgramTemplate = {
+  id: 'prepa_tennis',
+  name: 'Prépa tennis',
+  emoji: '🎾',
+  category: 'Sport co',
+  level: 'Intermédiaire',
+  daysPerWeek: 4,
+  goal: 'Performance',
+  sessionDuration: 70,
+  description: 'Déplacements latéraux, rotation du tronc et endurance sur match long. L épaule est protégée en priorité.',
+  sessions: [
+    {
+      id: 'tn_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Appuis latéraux', focus: 'Agilité',
+      exercises: [
+        { name: 'Pas chassés en Z', sets: 6, reps: '15 m', rest: 60 },
+        { name: 'Départs latéraux sur signal', sets: 8, reps: '5 m', rest: 45 },
+        { name: 'Fentes latérales', sets: 3, reps: '10 par jambe', rest: 90 },
+        { name: 'Sauts latéraux par-dessus une ligne', sets: 4, reps: '20 s', rest: 60 },
+      ],
+    },
+    {
+      id: 'tn_b', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Rotation et gainage', focus: 'Puissance',
+      exercises: [
+        { name: 'Lancers de médecine-ball en rotation', sets: 4, reps: '8 par côté', rest: 90 },
+        { name: 'Pallof press', sets: 4, reps: '12 par côté', rest: 60 },
+        { name: 'Russian twists', sets: 3, reps: '20', rest: 45 },
+        { name: 'Gainage latéral', sets: 3, reps: '45 s par côté', rest: 45 },
+      ],
+    },
+    {
+      id: 'tn_c', dayOfWeek: 4, dayLabel: 'Jeudi', name: 'Épaule et prévention', focus: 'Prévention',
+      exercises: [
+        { name: 'Rotations externes élastique', sets: 4, reps: '15', rest: 45, notes: 'La coiffe encaisse chaque service' },
+        { name: 'Face pulls', sets: 4, reps: '15', rest: 60 },
+        { name: 'Développé militaire haltères', sets: 3, reps: '10', rest: 90 },
+        { name: 'YTWL sur banc incliné', sets: 3, reps: '8 par lettre', rest: 60 },
+      ],
+    },
+    {
+      id: 'tn_d', dayOfWeek: 6, dayLabel: 'Samedi', name: 'Endurance intermittente', focus: 'Capacité',
+      exercises: [
+        { name: 'Échauffement', sets: 1, reps: '15 min', rest: 0 },
+        { name: 'Intermittent 20 s / 20 s', sets: 18, reps: '40 s', rest: 0 },
+        { name: 'Retour au calme', sets: 1, reps: '10 min', rest: 0 },
+      ],
+    },
+  ],
+};
+
+const BOXE: ProgramTemplate = {
+  id: 'prepa_boxe',
+  name: 'Prépa boxe',
+  emoji: '🥊',
+  category: 'Sport co',
+  level: 'Intermédiaire',
+  daysPerWeek: 4,
+  goal: 'Performance',
+  sessionDuration: 75,
+  description: 'Capacité à tenir la reprise, puissance de frappe et gainage. Le travail de jambes prime sur le sac.',
+  sessions: [
+    {
+      id: 'bx_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Rounds', focus: 'Capacité',
+      exercises: [
+        { name: 'Corde à sauter', sets: 3, reps: '3 min', rest: 60 },
+        { name: 'Shadow boxing', sets: 4, reps: '3 min', rest: 60, notes: 'Déplacements constants, jamais les pieds collés' },
+        { name: 'Sac de frappe', sets: 4, reps: '3 min', rest: 60 },
+        { name: 'Gainage planche', sets: 3, reps: '60 s', rest: 45 },
+      ],
+    },
+    {
+      id: 'bx_b', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Puissance', focus: 'Explosivité',
+      exercises: [
+        { name: 'Lancers de médecine-ball au mur', sets: 5, reps: '8', rest: 90 },
+        { name: 'Pompes claquées', sets: 4, reps: '6', rest: 90 },
+        { name: 'Épaulé debout', sets: 4, reps: '3', rest: 180 },
+        { name: 'Sauts en contrebas', sets: 4, reps: '5', rest: 120 },
+      ],
+    },
+    {
+      id: 'bx_c', dayOfWeek: 4, dayLabel: 'Jeudi', name: 'Force', focus: 'Force',
+      exercises: [
+        { name: 'Squat', sets: 4, reps: '6', rest: 180 },
+        { name: 'Tractions lestées', sets: 4, reps: '6', rest: 120 },
+        { name: 'Développé militaire', sets: 4, reps: '8', rest: 120 },
+        { name: 'Rotations externes élastique', sets: 3, reps: '15', rest: 45 },
+      ],
+    },
+    {
+      id: 'bx_d', dayOfWeek: 6, dayLabel: 'Samedi', name: 'Fond', focus: 'Endurance',
+      exercises: [
+        { name: 'Footing en zone 2', sets: 1, reps: '40 min', rest: 0 },
+        { name: 'Sprints en côte', sets: 6, reps: '20 s', rest: 90 },
+        { name: 'Gainage complet', sets: 3, reps: '45 s', rest: 45 },
+      ],
+    },
+  ],
+};
+
+const VELO: ProgramTemplate = {
+  id: 'cyclisme_route',
+  name: 'Cyclisme route',
+  emoji: '🚴',
+  category: 'Cardio',
+  level: 'Intermédiaire',
+  daysPerWeek: 4,
+  goal: 'Endurance',
+  sessionDuration: 90,
+  description: 'Construire une base solide puis développer le seuil. Les sorties longues font la différence en fin de saison.',
+  sessions: [
+    {
+      id: 'cy_a', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Seuil', focus: 'Puissance',
+      exercises: [
+        { name: 'Échauffement', sets: 1, reps: '20 min', rest: 0 },
+        { name: 'Bloc au seuil', sets: 4, reps: '8 min', rest: 240 },
+        { name: 'Retour au calme', sets: 1, reps: '15 min', rest: 0 },
+      ],
+    },
+    {
+      id: 'cy_b', dayOfWeek: 3, dayLabel: 'Mercredi', name: 'Endurance', focus: 'Aérobie',
+      exercises: [
+        { name: 'Sortie en zone 2', sets: 1, reps: '1 h 30', rest: 0, notes: 'Rester capable de tenir une conversation' },
+      ],
+    },
+    {
+      id: 'cy_c', dayOfWeek: 5, dayLabel: 'Vendredi', name: 'Force sous-maximale', focus: 'Force',
+      exercises: [
+        { name: 'Échauffement', sets: 1, reps: '20 min', rest: 0 },
+        { name: 'Bloc à faible cadence (50-60 tr/min)', sets: 5, reps: '5 min', rest: 180 },
+        { name: 'Retour au calme', sets: 1, reps: '15 min', rest: 0 },
+      ],
+    },
+    {
+      id: 'cy_d', dayOfWeek: 7, dayLabel: 'Dimanche', name: 'Sortie longue', focus: 'Volume',
+      exercises: [
+        { name: 'Sortie longue vallonnée', sets: 1, reps: '3 h', rest: 0 },
+        { name: 'Gainage après vélo', sets: 3, reps: '45 s', rest: 45 },
+      ],
+    },
+  ],
+};
+
+const SKI: ProgramTemplate = {
+  id: 'prepa_ski',
+  name: 'Prépa ski',
+  emoji: '⛷️',
+  category: 'Cardio',
+  level: 'Intermédiaire',
+  daysPerWeek: 3,
+  goal: 'Force',
+  sessionDuration: 60,
+  description: 'Préparer les cuisses et les genoux avant la saison. L excentrique et la proprioception évitent la blessure du premier jour.',
+  sessions: [
+    {
+      id: 'sk_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Force excentrique', focus: 'Force',
+      exercises: [
+        { name: 'Squat descente lente (4 s)', sets: 4, reps: '8', rest: 150, notes: 'C est la descente qui compte en ski' },
+        { name: 'Chaise contre un mur', sets: 4, reps: '60 s', rest: 90 },
+        { name: 'Fentes bulgares', sets: 3, reps: '10 par jambe', rest: 90 },
+        { name: 'Mollets excentriques', sets: 4, reps: '12', rest: 60 },
+      ],
+    },
+    {
+      id: 'sk_b', dayOfWeek: 3, dayLabel: 'Mercredi', name: 'Proprioception', focus: 'Équilibre',
+      exercises: [
+        { name: 'Équilibre unipodal sur surface instable', sets: 4, reps: '45 s par pied', rest: 30 },
+        { name: 'Sauts latéraux avec réception tenue', sets: 4, reps: '8 par côté', rest: 90 },
+        { name: 'Fentes sautées', sets: 3, reps: '10', rest: 90 },
+        { name: 'Gainage latéral', sets: 3, reps: '45 s par côté', rest: 45 },
+      ],
+    },
+    {
+      id: 'sk_c', dayOfWeek: 5, dayLabel: 'Vendredi', name: 'Capacité', focus: 'Endurance',
+      exercises: [
+        { name: 'Échauffement', sets: 1, reps: '10 min', rest: 0 },
+        { name: 'Intermittent 45 s effort / 15 s récup', sets: 12, reps: '1 min', rest: 0, notes: 'Une descente dure environ 2 min' },
+        { name: 'Vélo ou rameur souple', sets: 1, reps: '15 min', rest: 0 },
+      ],
+    },
+  ],
+};
+
+const VOLLEY: ProgramTemplate = {
+  id: 'prepa_volley',
+  name: 'Prépa volley / hand',
+  emoji: '🏐',
+  category: 'Sport co',
+  level: 'Intermédiaire',
+  daysPerWeek: 4,
+  goal: 'Performance',
+  sessionDuration: 70,
+  description: 'Détente verticale répétée et épaule solide. Sauter fort une fois ne sert à rien s il faut le refaire cinquante fois.',
+  sessions: [
+    {
+      id: 'vb_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Détente', focus: 'Plyométrie',
+      exercises: [
+        { name: 'Box jump', sets: 5, reps: '5', rest: 120 },
+        { name: 'Sauts en contrebas', sets: 4, reps: '5', rest: 120 },
+        { name: 'Squat sauté', sets: 4, reps: '6', rest: 120 },
+        { name: 'Pogo jumps', sets: 3, reps: '15', rest: 60 },
+      ],
+    },
+    {
+      id: 'vb_b', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Épaule', focus: 'Prévention',
+      exercises: [
+        { name: 'Rotations externes élastique', sets: 4, reps: '15', rest: 45 },
+        { name: 'Face pulls', sets: 4, reps: '15', rest: 60 },
+        { name: 'Développé militaire', sets: 4, reps: '8', rest: 120 },
+        { name: 'Gainage anti-rotation', sets: 3, reps: '12 par côté', rest: 45 },
+      ],
+    },
+    {
+      id: 'vb_c', dayOfWeek: 4, dayLabel: 'Jeudi', name: 'Force bas du corps', focus: 'Force',
+      exercises: [
+        { name: 'Squat', sets: 4, reps: '5', rest: 180 },
+        { name: 'Soulevé de terre roumain', sets: 4, reps: '8', rest: 120 },
+        { name: 'Fentes marchées', sets: 3, reps: '12 par jambe', rest: 90 },
+        { name: 'Mollets debout', sets: 4, reps: '15', rest: 60 },
+      ],
+    },
+    {
+      id: 'vb_d', dayOfWeek: 6, dayLabel: 'Samedi', name: 'Répétition de sauts', focus: 'Capacité',
+      exercises: [
+        { name: 'Séries de sauts maximaux', sets: 6, reps: '6', rest: 120, notes: 'Arrêter dès que la hauteur chute' },
+        { name: 'Déplacements latéraux', sets: 6, reps: '15 m', rest: 60 },
+        { name: 'Gainage complet', sets: 3, reps: '45 s', rest: 45 },
+      ],
+    },
+  ],
+};
+
+const ESCALADE: ProgramTemplate = {
+  id: 'prepa_escalade',
+  name: 'Prépa escalade',
+  emoji: '🧗',
+  category: 'Sport co',
+  level: 'Intermédiaire',
+  daysPerWeek: 3,
+  goal: 'Force',
+  sessionDuration: 65,
+  description: 'Force de doigts, tirage et gainage. La progression des doigts est lente : la respecter évite la poulie cassée.',
+  sessions: [
+    {
+      id: 'es_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Doigts', focus: 'Force',
+      exercises: [
+        { name: 'Suspensions sur réglette (20 mm)', sets: 6, reps: '10 s', rest: 180, notes: 'Jamais sur doigts froids, jamais deux jours de suite' },
+        { name: 'Tractions lestées', sets: 4, reps: '5', rest: 180 },
+        { name: 'Rowing haltère', sets: 3, reps: '10', rest: 90 },
+        { name: 'Gainage planche', sets: 3, reps: '60 s', rest: 45 },
+      ],
+    },
+    {
+      id: 'es_b', dayOfWeek: 3, dayLabel: 'Mercredi', name: 'Tirage et blocage', focus: 'Puissance',
+      exercises: [
+        { name: 'Tractions en blocage à 90 degrés', sets: 4, reps: '5', rest: 150 },
+        { name: 'Tractions explosives', sets: 4, reps: '4', rest: 150 },
+        { name: 'Relevés de jambes suspendu', sets: 4, reps: '10', rest: 90 },
+        { name: 'Rotations externes élastique', sets: 3, reps: '15', rest: 45 },
+      ],
+    },
+    {
+      id: 'es_c', dayOfWeek: 5, dayLabel: 'Vendredi', name: 'Antagonistes', focus: 'Prévention',
+      exercises: [
+        { name: 'Pompes', sets: 4, reps: '12', rest: 90 },
+        { name: 'Développé militaire', sets: 3, reps: '10', rest: 90 },
+        { name: 'Extensions poignets élastique', sets: 3, reps: '20', rest: 45, notes: 'Compense le volume de tirage' },
+        { name: 'Gainage latéral', sets: 3, reps: '45 s par côté', rest: 45 },
+      ],
+    },
+  ],
+};
+
+const CROSSFIT: ProgramTemplate = {
+  id: 'crossfit_general',
+  name: 'CrossFit général',
+  emoji: '🏋️',
+  category: 'Hyrox',
+  level: 'Intermédiaire',
+  daysPerWeek: 4,
+  goal: 'Performance',
+  sessionDuration: 70,
+  description: 'Alternance force, gymnastique et metcon. Le mouvement propre passe avant le chrono.',
+  sessions: [
+    {
+      id: 'cf_a', dayOfWeek: 1, dayLabel: 'Lundi', name: 'Force', focus: 'Force',
+      exercises: [
+        { name: 'Squat avant', sets: 5, reps: '5', rest: 180 },
+        { name: 'Développé militaire', sets: 5, reps: '5', rest: 150 },
+        { name: 'Tractions strictes', sets: 4, reps: '8', rest: 120 },
+      ],
+    },
+    {
+      id: 'cf_b', dayOfWeek: 2, dayLabel: 'Mardi', name: 'Metcon court', focus: 'Intensité',
+      exercises: [
+        { name: 'AMRAP 12 min : 5 tractions / 10 pompes / 15 air squats', sets: 1, reps: '12 min', rest: 0 },
+        { name: 'Gainage complet', sets: 3, reps: '60 s', rest: 45 },
+      ],
+    },
+    {
+      id: 'cf_c', dayOfWeek: 4, dayLabel: 'Jeudi', name: 'Haltérophilie', focus: 'Technique',
+      exercises: [
+        { name: 'Arraché technique', sets: 6, reps: '3', rest: 150 },
+        { name: 'Épaulé-jeté', sets: 5, reps: '3', rest: 180 },
+        { name: 'Fentes lestées', sets: 3, reps: '10 par jambe', rest: 90 },
+      ],
+    },
+    {
+      id: 'cf_d', dayOfWeek: 6, dayLabel: 'Samedi', name: 'Metcon long', focus: 'Capacité',
+      exercises: [
+        { name: 'Rameur', sets: 1, reps: '1000 m', rest: 0 },
+        { name: 'Burpees', sets: 1, reps: '50', rest: 0 },
+        { name: 'Wall balls', sets: 1, reps: '50', rest: 0 },
+        { name: 'Rameur', sets: 1, reps: '1000 m', rest: 0, notes: 'Gérer l allure : partir trop vite coûte plus que ça ne rapporte' },
+      ],
+    },
+  ],
+};
+
 export const PROGRAMS: ProgramTemplate[] = [
   FB_DEBUTANT,
   FB_FORCE,
@@ -1238,6 +1604,7 @@ export const PROGRAMS: ProgramTemplate[] = [
   RUN_5K, RUN_10K, RUN_SEMI, RUN_MARA, TRAIL,
   TRI_S, TRI_703, SWIM,
   BASKET, FOOT, HYROX,
+  RUGBY, TENNIS, BOXE, VELO, SKI, VOLLEY, ESCALADE, CROSSFIT,
 ];
 
 // Couleurs et icônes par catégorie — alignées sur la charte OR & NOIR

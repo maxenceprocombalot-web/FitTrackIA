@@ -35,11 +35,12 @@ Marathon, triathlon, basket ou muscu : 21 programmes et un coach IA qui analyse 
 
 FitTrack IA réunit ton sport ET ta nutrition dans une seule app — et un coach IA qui analyse la corrélation entre les deux pour te dire exactement quoi ajuster.
 
-Marathon, triathlon, basket, muscu, Hyrox : 21 programmes couvrant 11 disciplines. Que tu prépares un Ironman ou que tu cherches à prendre de la masse, tout est au même endroit.
+Marathon, triathlon, rugby, tennis, escalade, muscu : 29 programmes couvrant 11 disciplines. Que tu prépares un Ironman ou que tu cherches à prendre de la masse, tout est au même endroit.
 
 **🏃 TOUS LES SPORTS, PAS QUE LA MUSCU**
-• 21 programmes prêts : marathon, semi, 10 km, trail, triathlon, Ironman 70.3
-• Prépa basket, prépa foot, natation, Hyrox
+• 29 programmes prêts : marathon, semi, 10 km, trail, triathlon, Ironman 70.3
+• Prépa basket, foot, rugby, tennis, boxe, volley, escalade, ski
+• Cyclisme, natation, Hyrox, CrossFit
 • Programmes de musculation : Full Body, PPL, Upper/Lower, Brosplit
 • Le coach IA génère un programme sur mesure dans n'importe quelle discipline
 
@@ -83,7 +84,7 @@ Télécharge FitTrack IA et transforme-toi — un jour à la fois.
 ## Nouveautés (What's New — v1.0)
 ```
 🎉 Première version de FitTrack IA !
-• 21 programmes : marathon, triathlon, basket, muscu, Hyrox…
+• 29 programmes : marathon, triathlon, rugby, tennis, escalade, muscu…
 • Coach IA sport + nutrition
 • Photo de repas → calories estimées par l'IA
 • Scan de code-barres et 2 265 aliments français (CIQUAL)
