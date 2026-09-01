@@ -18,7 +18,13 @@ import { SavedPlan } from '../../types';
 
 const DAYS_FILTERS: (number | 'all')[] = ['all', 3, 4, 5, 6];
 const LEVEL_FILTERS: (ProgramLevel | 'all')[] = ['all', 'Débutant', 'Intermédiaire', 'Avancé'];
-const GOAL_FILTERS: (ProgramGoal | 'all')[] = ['all', 'Force', 'Hypertrophie', 'Perte de poids', 'Endurance'];
+const GOAL_FILTERS: (ProgramGoal | 'all')[] = ['all', 'Force', 'Hypertrophie', 'Perte de poids', 'Endurance', 'Performance'];
+// La bibliothèque couvre la muscu ET les sports d'endurance et collectifs :
+// le filtre par discipline devient le premier critère de tri.
+const SPORT_FILTERS: (ProgramCategory | 'all')[] = [
+  'all', 'Course', 'Trail', 'Triathlon', 'Natation', 'Sport co', 'Hyrox',
+  'Full Body', 'Upper/Lower', 'PPL', 'Brosplit', 'Cardio',
+];
 
 export default function ProgramsScreen() {
   const router = useRouter();
@@ -29,6 +35,7 @@ export default function ProgramsScreen() {
     [store.savedPlans, planFilter],
   );
 
+  const [sportFilter, setSportFilter] = useState<ProgramCategory | 'all'>('all');
   const [daysFilter,  setDaysFilter]  = useState<number | 'all'>('all');
   const [levelFilter, setLevelFilter] = useState<ProgramLevel | 'all'>('all');
   const [goalFilter,  setGoalFilter]  = useState<ProgramGoal  | 'all'>('all');
@@ -41,18 +48,20 @@ export default function ProgramsScreen() {
 
   // Filtrage dynamique
   const filtered = useMemo(() => [...store.aiPrograms, ...PROGRAMS].filter(p => {
+    if (sportFilter !== 'all' && p.category    !== sportFilter) return false;
     if (daysFilter  !== 'all' && p.daysPerWeek !== daysFilter)  return false;
     if (levelFilter !== 'all' && p.level       !== levelFilter) return false;
     if (goalFilter  !== 'all' && p.goal        !== goalFilter)  return false;
     return true;
-  }), [daysFilter, levelFilter, goalFilter]);
+  }), [sportFilter, daysFilter, levelFilter, goalFilter]);
 
   const resetFilters = () => {
+    setSportFilter('all');
     setDaysFilter('all');
     setLevelFilter('all');
     setGoalFilter('all');
   };
-  const hasActiveFilter = daysFilter !== 'all' || levelFilter !== 'all' || goalFilter !== 'all';
+  const hasActiveFilter = sportFilter !== 'all' || daysFilter !== 'all' || levelFilter !== 'all' || goalFilter !== 'all';
 
   return (
     <AnimatedScreen style={styles.container}>
@@ -136,6 +145,19 @@ export default function ProgramsScreen() {
           )}
         </>
       )}
+
+      <Text style={styles.filterLabel}>Discipline</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+        {SPORT_FILTERS.map(c => (
+          <Chip
+            key={String(c)}
+            label={c === 'all' ? 'Tous' : `${CATEGORY_META[c].icon} ${c}`}
+            active={sportFilter === c}
+            color={c !== 'all' ? CATEGORY_META[c].color : undefined}
+            onPress={() => setSportFilter(c)}
+          />
+        ))}
+      </ScrollView>
 
       <Text style={styles.filterLabel}>Niveau</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>

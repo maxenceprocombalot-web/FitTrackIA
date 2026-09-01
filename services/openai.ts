@@ -356,10 +356,11 @@ export async function generateStructuredProgram(params: {
     model: MODEL,
     messages: [{
       role: 'user',
-      content: `Crée un programme de musculation pour ${params.name} : niveau ${params.level}, objectif ${params.goal}, ${params.daysPerWeek} séances par semaine, matériel : ${params.equipment}.
+      content: `Crée un programme d'entraînement pour ${params.name} : niveau ${params.level}, objectif ${params.goal}, ${params.daysPerWeek} séances par semaine, matériel ou contexte : ${params.equipment}.
+Adapte-toi à la discipline demandée : musculation, course à pied, trail, triathlon, natation, sport collectif ou cross-training. Pour l'endurance, exprime les séances en distances ou durées — par exemple {"name":"Fractionné 400 m","sets":8,"reps":"400 m","rest":90}.
 Réponds UNIQUEMENT avec un objet JSON, sans texte autour, à ce format exact :
 {"name":"Nom court du programme","emoji":"💪","category":"Full Body","level":"${params.level}","daysPerWeek":${params.daysPerWeek},"goal":"${params.goal}","sessionDuration":60,"description":"Deux phrases expliquant la logique du programme.","sessions":[{"dayOfWeek":1,"name":"Nom de la séance","focus":"Poussée","exercises":[{"name":"Développé couché barre","sets":4,"reps":"8-10","rest":120,"notes":"Optionnel"}]}]}
-Contraintes : "category" parmi Full Body, Upper/Lower, PPL, Brosplit, Cardio. "dayOfWeek" entre 1 (lundi) et 7. Exactement ${params.daysPerWeek} séances, 5 à 8 exercices chacune, "rest" en secondes.`,
+Contraintes : "category" parmi Full Body, Upper/Lower, PPL, Brosplit, Cardio, Course, Trail, Triathlon, Natation, Sport co, Hyrox. "dayOfWeek" entre 1 (lundi) et 7. Exactement ${params.daysPerWeek} séances, 5 à 8 exercices chacune, "rest" en secondes.`,
     }],
     max_tokens: 2500, temperature: 0.4,
   }));
@@ -368,7 +369,7 @@ Contraintes : "category" parmi Full Body, Upper/Lower, PPL, Brosplit, Cardio. "d
 }
 
 const DAY_FR = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-const CATEGORIES = ['Full Body', 'Upper/Lower', 'PPL', 'Brosplit', 'Cardio'];
+const CATEGORIES = ['Full Body', 'Upper/Lower', 'PPL', 'Brosplit', 'Cardio', 'Course', 'Trail', 'Triathlon', 'Natation', 'Sport co', 'Hyrox'];
 
 /** Assainit la sortie du modèle : on ne fait confiance à aucune valeur reçue. */
 function parseProgram(
