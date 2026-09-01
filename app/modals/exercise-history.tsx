@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import { useAppStore } from '../../store/useAppStore';
 import { estimate1RM } from '../../services/metrics';
-import { daysAgo } from '../../services/date';
+import { daysAgo , fmtDayMonth } from '../../services/date';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 
 const CW = Dimensions.get('window').width - 32;
@@ -105,7 +105,7 @@ export default function ExerciseHistoryScreen() {
               ))}
               {[0, Math.floor(chartData.length / 2), chartData.length - 1].filter((v, i, a) => a.indexOf(v) === i && v < chartData.length).map(i => (
                 <SvgText key={i} x={toX(i)} y={CH - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-                  {chartData[i].date.slice(5).replace('-', '/')}
+                  {fmtDayMonth(chartData[i].date)}
                 </SvgText>
               ))}
               <SvgText x={PAD.left - 4} y={toY(maxW) + 4} fontSize={9} fill={Colors.textMuted} textAnchor="end">{maxW.toFixed(0)}</SvgText>

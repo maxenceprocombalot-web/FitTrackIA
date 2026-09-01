@@ -1,3 +1,4 @@
+import { fmtDayMonth } from '../../services/date';
 import React from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
@@ -86,7 +87,7 @@ function WeightChart({ entries }: { entries: WeightEntry[] }) {
       ))}
       {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
         <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {entries[i].date.slice(5).replace('-', '/')}
+          {fmtDayMonth(entries[i].date)}
         </SvgText>
       ))}
     </Svg>
@@ -149,7 +150,7 @@ function CaloriesChart({ entries, target }: {
       ))}
       {[0, Math.floor((entries.length - 1) / 2), entries.length - 1].map(i => (
         <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {entries[i].date.slice(5).replace('-', '/')}
+          {fmtDayMonth(entries[i].date)}
         </SvgText>
       ))}
     </Svg>
@@ -193,7 +194,7 @@ function ExerciseChart({ data }: { data: { date: string; maxWeight: number }[] }
       {points.map((p, i) => <Circle key={i} cx={p.x} cy={p.y} r={3} fill={Colors.yellow} />)}
       {xIndices.map(i => (
         <SvgText key={i} x={toX(i)} y={CHART_H - 4} fontSize={9} fill={Colors.textMuted} textAnchor="middle">
-          {data[i].date.slice(5).replace('-', '/')}
+          {fmtDayMonth(data[i].date)}
         </SvgText>
       ))}
     </Svg>

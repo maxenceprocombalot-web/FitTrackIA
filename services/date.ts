@@ -32,3 +32,6 @@ export function daysAgo(n: number): string {
 
 /** Hier (heure locale), YYYY-MM-DD. */
 export const yesterday = (): string => daysAgo(1);
+
+/** 'YYYY-MM-DD' → 'JJ/MM' (format français ; slice(5) donnait MM/JJ). */
+export const fmtDayMonth = (iso: string): string => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;

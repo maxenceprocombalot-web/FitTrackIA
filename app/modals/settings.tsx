@@ -651,25 +651,27 @@ export default function SettingsScreen() {
                 )}
               >
                 <Ionicons name="nuclear-outline" size={15} color={Colors.orange} />
-          <View style={styles.divider} />
-          <RowLink
-            icon="sparkles-outline"
-            label="Générer des données de démo"
-            sublabel="Pour les captures App Store — 5 semaines d'historique"
-            onPress={() => Alert.alert(
-              'Générer des données de démo',
-              "Ajoute 5 semaines de séances, repas, pesées et records. À n'utiliser que pour les captures d'écran.",
-              [
-                { text: 'Annuler', style: 'cancel' },
-                { text: 'Générer', onPress: async () => {
-                  await seedDemoData();
-                  await store.refresh();
-                  Alert.alert('✅ Données générées', 'Ton app est prête pour les captures.');
-                } },
-              ],
-            )}
-          />
                 <Text style={styles.devBtnText}>Vider toutes les données</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                accessibilityRole="button"
+                style={styles.devBtn}
+                onPress={() => Alert.alert(
+                  'Générer des données de démo',
+                  "Ajoute 5 semaines de séances, repas, pesées et records. À n'utiliser que pour les captures d'écran.",
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Générer', onPress: async () => {
+                      await seedDemoData();
+                      await store.refresh();
+                      Alert.alert('✅ Données générées', 'Ton app est prête pour les captures.');
+                    } },
+                  ],
+                )}
+              >
+                <Ionicons name="sparkles-outline" size={15} color={Colors.orange} />
+                <Text style={styles.devBtnText}>Générer des données de démo</Text>
               </TouchableOpacity>
             </View>
           </>

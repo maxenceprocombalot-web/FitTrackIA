@@ -1,3 +1,4 @@
+import { fmtDayMonth } from '../../services/date';
 import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -250,7 +251,7 @@ function SwipeableWorkoutCard({ workout, index, onDelete }: {
               <Text style={swipeStyles.exCount}>{workout.exercises.length} exercice{workout.exercises.length > 1 ? 's' : ''}</Text>
             )}
           </View>
-          <Text style={swipeStyles.date}>{workout.date.slice(5).replace('-', '/')}</Text>
+          <Text style={swipeStyles.date}>{fmtDayMonth(workout.date)}</Text>
           <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
         </TouchableOpacity>
       </Animated.View>

@@ -23,7 +23,7 @@ import {
   loadMeasurements, saveMeasurement,
   loadChallenges, saveChallenges,
 } from '../../services/storage';
-import { today, thisMonth, daysAgo, localISO } from '../../services/date';
+import { today, thisMonth, daysAgo, localISO , fmtDayMonth } from '../../services/date';
 import { projectWeight } from '../../services/metrics';
 import { BADGES } from '../../constants/badges';
 import { WeightChart, CaloriesChart, ExerciseChart } from '../../components/progress/Charts';
@@ -639,7 +639,7 @@ export default function ProgressScreen() {
               </View>
               {[...measurements].reverse().slice(0, 10).map(m => (
                 <View key={m.date} style={{ flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
-                  <Text style={{ flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' }}>{m.date.slice(5).replace('-', '/')}</Text>
+                  <Text style={{ flex: 1, fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' }}>{fmtDayMonth(m.date)}</Text>
                   {[m.waist, m.arm, m.thigh, m.chest].map((v, i) => (
                     <Text key={i} style={{ flex: 1, fontSize: Fs.xs, fontFamily: v ? Fonts.semibold : Fonts.regular, color: v ? Colors.text : Colors.textMuted, textAlign: 'center' }}>
                       {v ? `${v}` : '—'}
@@ -749,7 +749,7 @@ export default function ProgressScreen() {
                         <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
                       </View>
                     )}
-                    <Text style={styles.photoDate}>{photo.date.slice(5).replace('-', '/')}</Text>
+                    <Text style={styles.photoDate}>{fmtDayMonth(photo.date)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -778,11 +778,11 @@ export default function ProgressScreen() {
                   </TouchableOpacity>
                   <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}>
                     <View style={{ flex: 1, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Avant · {p1.date.slice(5).replace('-', '/')}</Text>
+                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Avant · {fmtDayMonth(p1.date)}</Text>
                       <Image source={{ uri: p1.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
                     </View>
                     <View style={{ flex: 1, alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Après · {p2.date.slice(5).replace('-', '/')}</Text>
+                      <Text style={{ color: '#fff', fontFamily: Fonts.bold, marginBottom: 4 }}>Après · {fmtDayMonth(p2.date)}</Text>
                       <Image source={{ uri: p2.uri }} style={{ width: '95%', height: 400, borderRadius: 8 }} resizeMode="cover" />
                     </View>
                   </View>
