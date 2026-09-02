@@ -5,7 +5,7 @@ import {
   FavoriteMeal, WaterEntry, StreakData, SavedPlan, MonthlySummary,
   FoodItem,
 } from '../types';
-import { ProgramTemplate } from '../constants/programs';
+import { ProgramTemplate, PROGRAMS } from '../constants/programs';
 import * as S from '../services/storage';
 import { writeWorkoutToHealth, writeWeightToHealth, readLatestWeightFromHealth } from '../services/health';
 import { sumMeals } from '../services/metrics';
@@ -244,19 +244,25 @@ export function useAppStore(watch?: readonly StateKey[]) {
 
   // ─── Programmes générés par l'IA ─────────────────────────────────────────────
 
+  // Source unique de vérité pour résoudre un programme : les programmes IA
+  // priment sur la bibliothèque. Recopier cette règle dans chaque écran la
+  // rendait facile à oublier — et une liste de dépendances incomplète suffisait
+  // à masquer un programme fraîchement généré.
+  // Le tutoriel et la carte de bienvenue doivent rester d'accord : un seul
+  // prédicat, sinon ajouter une 4e catégorie de données les désynchronise.
+  const hasAnyEntry = _state.meals.length > 0 || _state.workouts.length > 0 || _state.weights.length > 0;
+
+  const allPrograms = [..._state.aiPrograms, ...PROGRAMS];
+  const findProgram = useCallback(
+    (id?: string | null) => (id ? [..._state.aiPrograms, ...PROGRAMS].find(p => p.id === id) : undefined),
+    [_state.aiPrograms],
+  );
+
   const saveAiProgram = useCallback(async (p: ProgramTemplate) => {
     await S.saveAiProgram(p);
     setState({ aiPrograms: [p, ..._state.aiPrograms.filter(x => x.id !== p.id)] });
   }, []);
 
-  const deleteAiProgram = useCallback(async (id: string) => {
-    await S.deleteAiProgram(id);
-    setState({ aiPrograms: _state.aiPrograms.filter(p => p.id !== id) });
-    if (_state.activeProgram?.programId === id) {
-      await S.clearActiveProgram();
-      setState({ activeProgram: null });
-    }
-  }, []);
 
   // ─── Chat ────────────────────────────────────────────────────────────────────
 
@@ -433,7 +439,8 @@ export function useAppStore(watch?: readonly StateKey[]) {
   return {
     ..._state,
     refresh,
-    saveAiProgram, deleteAiProgram,
+    saveAiProgram,
+    allPrograms, findProgram, hasAnyEntry,
     setUser,
     addWorkout, deleteWorkout,
     addMeal, updateMeal, deleteMeal,

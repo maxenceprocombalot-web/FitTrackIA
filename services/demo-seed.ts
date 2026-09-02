@@ -4,14 +4,8 @@
 // bouton qui l'invoque est derrière __DEV__).
 
 import * as S from './storage';
-import { localISO } from './date';
+import { today, daysAgo } from './date';
 import { WorkoutSession, Meal, WeightEntry, PersonalRecord, ChatMessage } from '../types';
-
-const daysAgo = (n: number): string => {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return localISO(d);
-};
 
 const SEANCES = [
   { name: 'Push — Pecs / Épaules', type: 'strength' as const, exos: [
@@ -62,10 +56,9 @@ const REPAS: { type: 'breakfast' | 'lunch' | 'dinner' | 'snack'; items: [string,
 export async function seedDemoData(): Promise<void> {
   // Séances : 4 par semaine sur 5 semaines, charges en progression
   for (let week = 4; week >= 0; week--) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < SEANCES.length; i++) {
       const s = SEANCES[i];
       const day = week * 7 + (6 - i * 2);
-      if (day < 0) continue;
       const bump = (4 - week) * 2.5; // progression hebdomadaire
       const w: WorkoutSession = {
         id: `demo_w_${week}_${i}`,
@@ -119,7 +112,7 @@ export async function seedDemoData(): Promise<void> {
   for (const pr of prs) await S.savePR(pr);
 
   // Hydratation du jour
-  await S.saveWaterEntry({ date: localISO(new Date()), ml: 1500 });
+  await S.saveWaterEntry({ date: today(), ml: 1500 });
 
   // Conversation coach : sans clé IA l'écran reste vide et ne montre rien
   // de ce que l'app sait faire.
@@ -137,5 +130,5 @@ export async function seedDemoData(): Promise<void> {
   await S.saveChat(chat);
 
   // Série en cours
-  await S.saveStreak({ current: 12, best: 21, lastWorkoutDate: daysAgo(0) });
+  await S.saveStreak({ current: 12, best: 21, lastWorkoutDate: today() });
 }

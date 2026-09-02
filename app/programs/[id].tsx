@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import {
-  PROGRAMS, ProgramSession, ProgramExercise,
+  ProgramSession, ProgramExercise,
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
@@ -25,7 +25,7 @@ export default function ProgramDetailScreen() {
   const { id }  = useLocalSearchParams<{ id: string }>();
   const router  = useRouter();
   const store   = useAppStore();
-  const program = [...store.aiPrograms, ...PROGRAMS].find(p => p.id === id);
+  const program = store.findProgram(id);
 
   const [expanded, setExpanded] = useState<string | null>(null);
 

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NotifPrefs } from '../types';
+import { NOTIF_PREFS_DEFAULT } from './storage';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -70,7 +71,7 @@ const weekly = (weekday: number, hour: number) =>
 const WATER_HOURS = [10, 14, 16, 21];
 
 export async function scheduleAllReminders(
-  prefs: NotifPrefs = { meals: true, workout: true, weekly: true, water: true },
+  prefs: NotifPrefs = NOTIF_PREFS_DEFAULT,
 ): Promise<void> {
   await cancelManagedReminders();
 

@@ -20,7 +20,6 @@ function icon(name: IconName, focused: boolean, size = 20) {
 
 export default function TabsLayout() {
   const store = useAppStore();
-  const hasFirstEntry = store.meals.length > 0 || store.workouts.length > 0 || store.weights.length > 0;
 
   return (
     <View style={{ flex: 1 }}>
@@ -83,7 +82,7 @@ export default function TabsLayout() {
 
       {/* Le tutoriel attend la première saisie : sinon il se superposait à la
           carte de bienvenue de l'accueil, qui demande justement une action. */}
-      {!store.tutorialDone && !!store.user?.onboardingDone && hasFirstEntry && (
+      {!store.tutorialDone && !!store.user?.onboardingDone && store.hasAnyEntry && (
         <TutorialOverlay onDone={() => store.markTutorialDone()} />
       )}
     </View>

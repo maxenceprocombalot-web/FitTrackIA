@@ -348,9 +348,9 @@ JOUR 1 — Full Body A
  */
 export async function generateStructuredProgram(params: {
   daysPerWeek: number; level: string; goal: string; equipment: string; name: string;
-}): Promise<import('../constants/programs').ProgramTemplate | null> {
+}): Promise<{ program: import('../constants/programs').ProgramTemplate | null; text: string }> {
   const client = getClient();
-  if (!client) return null;
+  if (!client) return { program: null, text: '' };
 
   const res = await callAI(() => client.chat.completions.create({
     model: MODEL,
@@ -365,7 +365,10 @@ Contraintes : "category" parmi Full Body, Upper/Lower, PPL, Brosplit, Cardio, Co
     max_tokens: 2500, temperature: 0.4,
   }));
 
-  return parseProgram(res.choices[0]?.message?.content ?? '', params);
+  // On renvoie AUSSI le texte : si le parsing échoue, l'appelant peut
+  // l'afficher au lieu de payer une seconde complétion pour la même demande.
+  const text = res.choices[0]?.message?.content ?? '';
+  return { program: parseProgram(text, params), text };
 }
 
 const DAY_FR = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];

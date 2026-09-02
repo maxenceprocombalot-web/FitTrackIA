@@ -4,6 +4,7 @@ import {
   Animated, Dimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
 import Button from './Button';
 
@@ -15,7 +16,7 @@ const SPOT_R   = 40;
 
 const STEPS: { tabIdx: number; title: string; desc: string }[] = [
   { tabIdx: 1, title: 'Sport', desc: 'Enregistre tes séances, suis tes performances et bats tes records personnels.' },
-  { tabIdx: 1, title: 'Programmes', desc: '29 programmes prêts à suivre — marathon, triathlon, basket, muscu, Hyrox. Depuis l\'onglet Sport.' },
+  { tabIdx: 1, title: 'Programmes', desc: `${PROGRAMS.length} programmes prêts à suivre — marathon, triathlon, basket, muscu, Hyrox. Depuis l\'onglet Sport.` },
   { tabIdx: 2, title: 'Nutrition', desc: 'Trace tes repas jour par jour et surveille tes macros en temps réel.' },
   { tabIdx: 3, title: 'Coach IA', desc: 'Pose toutes tes questions à ton coach alimenté par l\'IA — conseils, plans, analyses.' },
 ];

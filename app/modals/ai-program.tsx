@@ -58,14 +58,11 @@ export default function AIProgramModal() {
       const params = { daysPerWeek: days, level, goal, equipment, name: store.user.name };
       // On demande d'abord une structure ; si le modèle ne la produit pas
       // proprement, on bascule sur la version texte plutôt que d'échouer.
-      const prog = await generateStructuredProgram(params);
-      if (prog) {
-        setStructured(prog);
-        setResult(programToText(prog));
-      } else {
-        setStructured(null);
-        setResult(await generateCustomProgram(params));
-      }
+      const { program, text } = await generateStructuredProgram(params);
+      setStructured(program);
+      // Repli sur le texte déjà reçu : relancer une génération complète
+      // coûtait un second appel et 10 à 30 s d'attente pour rien.
+      setResult(program ? programToText(program) : (text.trim() || await generateCustomProgram(params)));
       setSaved(false);
     } catch (e: any) {
       // AIError porte la cause réelle (hors-ligne, quota, clé refusée) :

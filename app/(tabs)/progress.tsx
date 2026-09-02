@@ -711,7 +711,7 @@ export default function ProgressScreen() {
 
           {photos.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 50 }}>
-              <Text style={{ fontSize: 48, fontFamily: Fonts.regular }}>📸</Text>
+              <Text style={{ fontSize: 48 }}>📸</Text>
               <Text style={{ color: Colors.textSecondary, marginTop: 12, fontSize: Fs.md, fontFamily: Fonts.regular }}>Aucune photo</Text>
               <Text style={{ color: Colors.textMuted, fontSize: Fs.sm, fontFamily: Fonts.regular, textAlign: 'center', marginTop: 6 }}>
                 Ajoute des photos pour suivre ta transformation

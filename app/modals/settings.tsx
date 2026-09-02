@@ -6,12 +6,11 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, isValidApiKey, CoachPersona, setCoachPersona, getCoachPersona } from '../../services/openai';
-import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs } from '../../services/storage';
+import { computeTDEE, computeTargetCalories, computeMacros, setRuntimeApiKey, isValidApiKey, hasApiKey, CoachPersona, setCoachPersona, getCoachPersona } from '../../services/openai';
+import { loadApiKey, saveApiKey, clearApiKey, loadNotifPrefs, saveNotifPrefs, NOTIF_PREFS_DEFAULT } from '../../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleAllReminders } from '../../services/notifications';
 import { createBackup, decryptBackup, restoreBackup } from '../../services/backup';
-import { seedDemoData } from '../../services/demo-seed';
 import { isHealthAvailable, isHealthSyncEnabled, enableHealthSync, disableHealthSync } from '../../services/health';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -131,7 +130,7 @@ export default function SettingsScreen() {
   const [objSaved,       setObjSaved]       = useState(false);
 
   // ── Notifications ────────────────────────────────────────────────────────
-  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({ meals: true, workout: true, weekly: true, water: true });
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(NOTIF_PREFS_DEFAULT);
 
   // ── Clé API ──────────────────────────────────────────────────────────────
   const [apiKey,        setApiKey]        = useState('');
@@ -316,7 +315,9 @@ export default function SettingsScreen() {
   if (!user) return null;
 
   const initiale = user.name?.trim() ? user.name[0].toUpperCase() : '?';
-  const isDemoMode = !apiKey.trim() && !process.env.EXPO_PUBLIC_OPENAI_KEY;
+  // hasApiKey() couvre proxy, variable d'environnement ET clé saisie ici :
+  // sans lui, un build avec proxy annonçait « Mode démo » à tort.
+  const isDemoMode = !hasApiKey();
 
   return (
     <View style={styles.container}>
@@ -663,6 +664,10 @@ export default function SettingsScreen() {
                   [
                     { text: 'Annuler', style: 'cancel' },
                     { text: 'Générer', onPress: async () => {
+                      // Import paresseux : les données factices — dont une
+                      // conversation coach inventée — n'ont rien à faire dans
+                      // le binaire App Store.
+                      const { seedDemoData } = await import('../../services/demo-seed');
                       await seedDemoData();
                       await store.refresh();
                       Alert.alert('✅ Données générées', 'Ton app est prête pour les captures.');

@@ -330,7 +330,7 @@ export async function clearApiKey(): Promise<void> {
 
 const NOTIF_PREFS_KEY = '@fit_notif_prefs';
 
-const NOTIF_PREFS_DEFAULT: NotifPrefs = { meals: true, workout: true, weekly: true, water: true };
+export const NOTIF_PREFS_DEFAULT: NotifPrefs = { meals: true, workout: true, weekly: true, water: true };
 
 export async function loadNotifPrefs(): Promise<NotifPrefs> {
   const raw = await AsyncStorage.getItem(NOTIF_PREFS_KEY);

@@ -120,7 +120,11 @@ export default function PaywallScreen() {
         ) : packages.length > 0 ? (
           <View style={styles.plans}>
             {packages.map(p => {
-              const sel = selected?.identifier === p.identifier;
+              const sel   = selected?.identifier === p.identifier;
+              const intro = introLabel(p);
+              const badge = p.product.introPrice?.price === 0 ? 'ESSAI GRATUIT'
+                          : p.packageType === 'ANNUAL'        ? 'MEILLEURE OFFRE'
+                          : null;
               return (
                 <TouchableOpacity
                   key={p.identifier}
@@ -128,14 +132,10 @@ export default function PaywallScreen() {
                   onPress={() => { Haptics.selectionAsync(); setSelected(p); }}
                   accessibilityRole="button"
                 >
-                  {p.product.introPrice?.price === 0
-                    ? <View style={styles.badge}><Text style={styles.badgeText}>ESSAI GRATUIT</Text></View>
-                    : p.packageType === 'ANNUAL'
-                      ? <View style={styles.badge}><Text style={styles.badgeText}>MEILLEURE OFFRE</Text></View>
-                      : null}
+                  {badge && <View style={styles.badge}><Text style={styles.badgeText}>{badge}</Text></View>}
                   <Text style={[styles.planPeriod, sel && { color: Colors.primary }]}>{periodLabel(p)}</Text>
                   <Text style={styles.planPrice}>{p.product.priceString}</Text>
-                  {introLabel(p) && <Text style={styles.planIntro}>{introLabel(p)}</Text>}
+                  {intro && <Text style={styles.planIntro}>{intro}</Text>}
                   <Ionicons
                     name={sel ? 'radio-button-on' : 'radio-button-off'}
                     size={20}

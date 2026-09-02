@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { useAppStore } from '../../store/useAppStore';
 import {
-  PROGRAMS, ProgramTemplate, ProgramCategory, ProgramLevel, ProgramGoal,
+  ProgramTemplate, ProgramCategory, ProgramLevel, ProgramGoal,
   CATEGORY_META, LEVEL_COLOR, GOAL_COLOR,
 } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
@@ -42,18 +42,18 @@ export default function ProgramsScreen() {
 
   // Programme actif trouvé dans la bibliothèque
   const activeProgram = store.activeProgram
-    ? [...store.aiPrograms, ...PROGRAMS].find(p => p.id === store.activeProgram?.programId)
+    ? store.findProgram(store.activeProgram?.programId)
     : null;
   const currentWeek = store.getProgramWeek();
 
   // Filtrage dynamique
-  const filtered = useMemo(() => [...store.aiPrograms, ...PROGRAMS].filter(p => {
+  const filtered = useMemo(() => store.allPrograms.filter(p => {
     if (sportFilter !== 'all' && p.category    !== sportFilter) return false;
     if (daysFilter  !== 'all' && p.daysPerWeek !== daysFilter)  return false;
     if (levelFilter !== 'all' && p.level       !== levelFilter) return false;
     if (goalFilter  !== 'all' && p.goal        !== goalFilter)  return false;
     return true;
-  }), [sportFilter, daysFilter, levelFilter, goalFilter]);
+  }), [store.allPrograms, sportFilter, daysFilter, levelFilter, goalFilter]);
 
   const resetFilters = () => {
     setSportFilter('all');
@@ -73,7 +73,7 @@ export default function ProgramsScreen() {
         onPress={() => router.push('/modals/ai-program')}
       >
         <View style={styles.aiProgramIcon}>
-          <Text style={{ fontSize: 22, fontFamily: Fonts.regular }}>🧠</Text>
+          <Text style={{ fontSize: 22 }}>🧠</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.aiProgramTitle}>Créer mon programme IA</Text>

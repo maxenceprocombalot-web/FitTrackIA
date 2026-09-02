@@ -221,6 +221,12 @@ export default function DashboardScreen() {
     const weekMeals    = store.meals.filter(m => m.date >= since && m.date <= untilStr);
     const weekWeights  = store.weights.filter(w => w.date >= since && w.date <= untilStr);
 
+    // Même garde que le bilan mensuel : un utilisateur inscrit un dimanche
+    // recevait le lundi un bilan « 0 séance, 0 kcal ».
+    if (weekWorkouts.length === 0 && weekMeals.length === 0 && weekWeights.length === 0) {
+      return;
+    }
+
     const dayCalMap: Record<string, number> = {};
     weekMeals.forEach(m => {
       const cal = m.items.reduce((s, i) => s + i.caloriesPer100g * i.quantity / 100, 0);
@@ -299,7 +305,7 @@ export default function DashboardScreen() {
 
   // Premier lancement : aucune donnée saisie, toutes catégories confondues.
   // Un tableau de bord entièrement à zéro décourage — on montre une seule action.
-  const isFirstRun = store.meals.length === 0 && store.workouts.length === 0 && store.weights.length === 0;
+  const isFirstRun = !store.hasAnyEntry;
 
   const jokerMonth  = storage.thisMonth();
   const jokerAvail  = store.streak.jokerUsedMonth !== jokerMonth;

@@ -15,7 +15,6 @@ import {
   EXERCISES, EXERCISE_CATEGORIES, ExerciseTemplate,
   CALORIES_PER_MIN,
 } from '../../constants/exercises';
-import { PROGRAMS } from '../../constants/programs';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
@@ -99,7 +98,7 @@ export default function AddWorkoutModal() {
     }
     // Pré-remplissage depuis un programme
     if (!params.programId || !params.sessionId) return;
-    const prog    = [...store.aiPrograms, ...PROGRAMS].find(p => p.id === params.programId);
+    const prog    = store.findProgram(params.programId as string | undefined);
     const session = prog?.sessions.find(s => s.id === params.sessionId);
     if (!session) return;
     const presetExercises: ExerciseLog[] = session.exercises.map((ex, i) => ({
