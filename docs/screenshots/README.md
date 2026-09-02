@@ -12,11 +12,20 @@ iPhone 17 Pro Max (iOS 26.4) avec des données de démonstration.
 | `5-progres.png` | Progrès | **Vois ta transformation** |
 | `6-coach.png` | Coach IA | **Un coach qui lit tes vraies données** |
 
-## Avant de les envoyer
+## Deux jeux de fichiers
 
-Ajoute un bandeau de texte lisible en haut de chaque capture (fond noir,
-texte or) : les gens font défiler vite, une capture sans accroche est
-perdue. Canva ou Figma suffisent.
+- **Racine** (`1-accueil.png` …) — captures brutes de l'app
+- **`store/`** — les mêmes avec bandeau de texte, **prêtes à envoyer à
+  Apple**. C'est ce dossier qu'il faut utiliser.
+
+Les bandeaux sont générés par `banners.py` (Barlow Condensed or sur fond
+noir, cohérent avec l'app). Pour changer une accroche, éditer la liste
+`SHOTS` et relancer le script.
+
+⚠️ **Capture 6 (Coach)** : l'en-tête affiche « Coach non configuré »
+parce que le proxy IA n'était pas encore déployé. Une fois qu'il l'est,
+reprendre cette capture — le sous-titre affichera la personnalité du
+coach à la place.
 
 ## Régénérer
 
