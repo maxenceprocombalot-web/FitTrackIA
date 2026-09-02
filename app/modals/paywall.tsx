@@ -19,6 +19,30 @@ function periodLabel(p: PurchasesPackage): string {
   }
 }
 
+const UNIT_FR: Record<string, [string, string]> = {
+  DAY:   ['jour', 'jours'],
+  WEEK:  ['semaine', 'semaines'],
+  MONTH: ['mois', 'mois'],
+  YEAR:  ['an', 'ans'],
+};
+
+/**
+ * Libellé de l'offre d'introduction (essai gratuit ou tarif réduit).
+ * Apple exige que les conditions d'une offre soient affichées clairement sur
+ * l'écran d'achat ; l'omettre est un motif de rejet — et l'essai gratuit est
+ * l'argument de conversion le plus fort.
+ */
+function introLabel(p: PurchasesPackage): string | null {
+  const intro = p.product.introPrice;
+  if (!intro) return null;
+  const n = intro.periodNumberOfUnits;
+  const [one, many] = UNIT_FR[intro.periodUnit] ?? ['période', 'périodes'];
+  const duration = `${n} ${n > 1 ? many : one}`;
+  return intro.price === 0
+    ? `${duration} offert${n > 1 ? 's' : ''}, puis ${p.product.priceString}`
+    : `${intro.priceString} pendant ${duration}, puis ${p.product.priceString}`;
+}
+
 export default function PaywallScreen() {
   const router = useRouter();
   const store  = useAppStore();
@@ -104,9 +128,14 @@ export default function PaywallScreen() {
                   onPress={() => { Haptics.selectionAsync(); setSelected(p); }}
                   accessibilityRole="button"
                 >
-                  {p.packageType === 'ANNUAL' && <View style={styles.badge}><Text style={styles.badgeText}>MEILLEURE OFFRE</Text></View>}
+                  {p.product.introPrice?.price === 0
+                    ? <View style={styles.badge}><Text style={styles.badgeText}>ESSAI GRATUIT</Text></View>
+                    : p.packageType === 'ANNUAL'
+                      ? <View style={styles.badge}><Text style={styles.badgeText}>MEILLEURE OFFRE</Text></View>
+                      : null}
                   <Text style={[styles.planPeriod, sel && { color: Colors.primary }]}>{periodLabel(p)}</Text>
                   <Text style={styles.planPrice}>{p.product.priceString}</Text>
+                  {introLabel(p) && <Text style={styles.planIntro}>{introLabel(p)}</Text>}
                   <Ionicons
                     name={sel ? 'radio-button-on' : 'radio-button-off'}
                     size={20}
@@ -181,6 +210,7 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 9, fontFamily: Fonts.bold, color: Colors.onPrimary, letterSpacing: 0.3 },
   planPeriod: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.textSecondary },
   planPrice: { fontSize: Fs.lg, fontFamily: Fonts.condensedHeavy, color: Colors.text, marginTop: 2 },
+  planIntro: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.green, textAlign: 'center', marginTop: 3, paddingHorizontal: 4 },
 
   notConfigured: { alignSelf: 'stretch', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, padding: Sp.md },
   notConfiguredText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
