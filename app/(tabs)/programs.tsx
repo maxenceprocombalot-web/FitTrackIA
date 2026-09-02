@@ -105,13 +105,6 @@ export default function ProgramsScreen() {
       )}
 
       {/* ── Filtres ──────────────────────────────────────────────────────── */}
-      <Text style={styles.filterLabel}>Jours / semaine</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
-        {DAYS_FILTERS.map(d => (
-          <Chip key={String(d)} label={d === 'all' ? 'Tous' : `${d}j`} active={daysFilter === d} onPress={() => setDaysFilter(d)} />
-        ))}
-      </ScrollView>
-
       {/* ── Mes plans (générés par l'IA) — avant la bibliothèque : c'est le
              contenu propre à l'utilisateur, il doit être immédiatement visible ── */}
       {store.savedPlans.length > 0 && (
@@ -156,6 +149,13 @@ export default function ProgramsScreen() {
             color={c !== 'all' ? CATEGORY_META[c].color : undefined}
             onPress={() => setSportFilter(c)}
           />
+        ))}
+      </ScrollView>
+
+      <Text style={styles.filterLabel}>Jours / semaine</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+        {DAYS_FILTERS.map(d => (
+          <Chip key={String(d)} label={d === 'all' ? 'Tous' : `${d}j`} active={daysFilter === d} onPress={() => setDaysFilter(d)} />
         ))}
       </ScrollView>
 
