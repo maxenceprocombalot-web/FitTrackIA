@@ -7,7 +7,7 @@ import {
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona } from '../../services/openai';
+import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona, hasApiKey } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
 import Button from '../../components/ui/Button';
@@ -29,7 +29,7 @@ const QUICK_QUESTIONS = [
   'Comment booster mes performances ?',
 ];
 
-const DEMO_MODE = !process.env.EXPO_PUBLIC_OPENAI_KEY;
+
 
 // Détecte si la réponse contient un plan/programme (longueur minimale)
 function looksLikePlan(content: string): boolean {
@@ -124,6 +124,10 @@ async function applyMealPlanToWeek(content: string, addMeal: (m: Meal) => Promis
 
 export default function CoachScreen() {
   const store     = useAppStore(['user', 'chat', 'workouts', 'meals', 'prs', 'savedPlans', 'isPremium']);
+  // Évalué à chaque rendu : tient compte du proxy, de la clé d'environnement
+  // ET de la clé saisie dans les réglages (une constante de module ne se
+  // mettait jamais à jour après la saisie).
+  const demoMode  = !hasApiKey();
   const { requirePremium } = usePremiumGate();
   const scrollRef = useRef<ScrollView>(null);
   const [input,              setInput]             = useState('');
@@ -380,7 +384,7 @@ export default function CoachScreen() {
         </View>
         <View>
           <Text style={styles.coachName}>FitCoach IA</Text>
-          <Text style={styles.coachSub}>{DEMO_MODE ? 'Mode démo' : `${PERSONA_LABELS[currentPersona] ?? ''} · GPT-4o`}</Text>
+          <Text style={styles.coachSub}>{demoMode ? 'Coach non configuré' : `${PERSONA_LABELS[currentPersona] ?? ''} · IA`}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Historique des conversations" hitSlop={tapSlop}>
           <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
@@ -420,10 +424,12 @@ export default function CoachScreen() {
             <Text style={styles.welcomeEmoji}>🤖</Text>
             <Text style={styles.welcomeTitle}>Ton coach IA personnel</Text>
             <Text style={styles.welcomeText}>J'analyse tes données de sport et nutrition pour te donner des conseils précis et personnalisés.</Text>
-            {DEMO_MODE && (
+            {demoMode && (
               <View style={styles.demoWarning}>
                 <Ionicons name="warning-outline" size={14} color={Colors.orange} />
-                <Text style={styles.demoText}>Mode démo — ajoute EXPO_PUBLIC_OPENAI_KEY pour GPT-4o</Text>
+                <Text style={styles.demoText}>
+                  Le coach IA n'est pas encore actif — réponses d'exemple. Configure-le dans Réglages → Coach IA.
+                </Text>
               </View>
             )}
             <Button

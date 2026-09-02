@@ -5,7 +5,7 @@
 
 import * as S from './storage';
 import { localISO } from './date';
-import { WorkoutSession, Meal, WeightEntry, PersonalRecord } from '../types';
+import { WorkoutSession, Meal, WeightEntry, PersonalRecord, ChatMessage } from '../types';
 
 const daysAgo = (n: number): string => {
   const d = new Date();
@@ -120,6 +120,21 @@ export async function seedDemoData(): Promise<void> {
 
   // Hydratation du jour
   await S.saveWaterEntry({ date: localISO(new Date()), ml: 1500 });
+
+  // Conversation coach : sans clé IA l'écran reste vide et ne montre rien
+  // de ce que l'app sait faire.
+  const t = (min: number) => new Date(Date.now() - min * 60000).toISOString();
+  const chat: ChatMessage[] = [
+    { id: 'demo_c1', role: 'user', timestamp: t(42),
+      content: 'Je stagne sur mon développé couché depuis 3 semaines, qu\'est-ce que je fais ?' },
+    { id: 'demo_c2', role: 'assistant', timestamp: t(41),
+      content: "J'ai regardé tes données. Ton volume sur les pectoraux est stable, mais tes protéines tournent à 166 g pour un objectif de 150 g — ce n'est pas là que ça coince.\n\nCe que je vois : tu fais toujours 3×8 à la même charge depuis le 12 août. Ton corps n'a plus de raison de s'adapter.\n\nDeux pistes :\n• Passe à 4 séries en descendant à 6 reps, avec 2,5 kg de plus\n• Ajoute une seconde séance pecs légère en milieu de semaine\n\nTon sommeil et ta récup ont l'air corrects vu ta série de 12 jours. Commence par la première piste sur 3 semaines." },
+    { id: 'demo_c3', role: 'user', timestamp: t(3),
+      content: 'Et côté nutrition, je mange assez ?' },
+    { id: 'demo_c4', role: 'assistant', timestamp: t(2),
+      content: "Sur les 7 derniers jours tu es à 2 061 kcal en moyenne pour une cible de 2 776. Tu es en déficit de 700 kcal alors que ton objectif est la prise de masse — c'est l'explication la plus probable de ta stagnation.\n\nAjoute environ 300 kcal au petit-déjeuner (40 g de flocons + une banane, par exemple) et on refait le point dans deux semaines." },
+  ];
+  await S.saveChat(chat);
 
   // Série en cours
   await S.saveStreak({ current: 12, best: 21, lastWorkoutDate: daysAgo(0) });
