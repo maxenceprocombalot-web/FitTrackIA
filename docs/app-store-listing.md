@@ -112,13 +112,28 @@ scrollent vite). Fond noir + accent or = cohérent avec l'icône.*
 ## Champs annexes
 - **Catégorie** : Forme et santé (primaire) · Style de vie (secondaire)
 - **Âge** : 4+ (aucun contenu sensible)
-- **Politique de confidentialité** : ⚠️ URL publique obligatoire — la page est
-  prête dans `docs/privacy.html`. À héberger (2 options gratuites) :
+- **Politique de confidentialité** : ✅ **HÉBERGÉE** →
+  `https://fittrackia-legal.pages.dev/privacy`
+  C'est cette URL à coller dans App Store Connect.
+
+  <details><summary>Comment elle est déployée</summary>
+
+  Le dossier `public/` (page de confidentialité uniquement) est publié sur
+  Cloudflare Pages. ⚠️ Ne jamais déployer `docs/` : il contient la checklist
+  de lancement, la configuration RevenueCat et la stratégie App Store.
+
+  ```bash
+  npx wrangler pages deploy public --project-name fittrackia-legal --branch main
+  ```
+  </details>
+
+  <details><summary>Anciennes options (obsolètes)</summary>
   1. **Cloudflare Pages** (tu as déjà un compte pour le proxy) : dashboard →
      Workers & Pages → Create → Pages → upload du fichier. URL en
      `*.pages.dev` obtenue en 2 minutes.
   2. **GitHub Pages** : nécessite un repo public — ne PAS utiliser le repo de
      l'app (privé) ; créer un petit repo public dédié avec ce seul fichier.
+  </details>
 - **Confidentialité (nutrition labels App Store Connect)** — déclaration honnête :
   - « Santé et forme » + « Autre contenu utilisateur » (messages coach, photos
     de repas) → **collectées, NON liées à l'identité, PAS de tracking** :

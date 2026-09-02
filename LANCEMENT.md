@@ -45,16 +45,18 @@ Puis donne-moi l'URL et le jeton : je branche `eas.json`.
 
 ---
 
-## 02 · Héberger la politique de confidentialité — ≈ 5 min
+## 02 · Héberger la politique de confidentialité — ✅ FAIT
 
-Apple refuse la soumission sans URL publique. Le fichier est prêt.
+**URL à coller dans App Store Connect :**
+`https://fittrackia-legal.pages.dev/privacy`
+
+⚠️ Pour toute mise à jour, déployer `public/` et **jamais** `docs/` — ce
+dernier contient la checklist de lancement, la configuration RevenueCat
+et la stratégie App Store.
 
 ```bash
-cd ~/Projects/FitTrackIA && npx wrangler pages deploy docs --project-name fittrackia-legal
+npx wrangler pages deploy public --project-name fittrackia-legal --branch main
 ```
-
-L'URL obtenue se termine par `/privacy.html` — c'est elle à coller dans
-App Store Connect.
 
 ---
 
