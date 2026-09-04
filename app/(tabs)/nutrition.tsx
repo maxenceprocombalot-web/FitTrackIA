@@ -10,10 +10,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { Meal, MealType, FoodItem, Recipe, FastingConfig } from '../../types';
-import MacroBar from '../../components/ui/MacroBar';
-import Card from '../../components/ui/Card';
 import { usePremiumGate } from '../../hooks/usePremiumGate';
-import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop, Rr } from '../../constants/theme';
+import { DisplayTitle, HeroCard, CoachBanner, Fab } from '../../components/ui/design';
 import * as storage from '../../services/storage';
 import { loadFasting, saveFasting } from '../../services/storage';
 import { today, localISO } from '../../services/date';
@@ -29,6 +28,30 @@ const MEAL_META: Record<MealType, { label: string; icon: React.ComponentProps<ty
   snack:     { label: 'Collation',      icon: 'cafe-outline',       color: Colors.green },
 };
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+// Colonne de macro du récapitulatif (maquette 1d) : libellé, puis « 92/140 »
+// en condensé, la valeur consommée dans la teinte de la macro.
+function MacroCol({ label, current, goal, color }: {
+  label: string; current: number; goal: number; color: string;
+}) {
+  return (
+    <View
+      style={{ flex: 1, alignItems: 'center' }}
+      accessible
+      accessibilityLabel={`${label} : ${Math.round(current)} sur ${Math.round(goal)} grammes`}
+    >
+      <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginBottom: 3 }}>
+        {label}
+      </Text>
+      <Text style={{ fontSize: Fs.lg, fontFamily: Fonts.condensedBold, color }}>
+        {Math.round(current)}
+        <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>
+          /{Math.round(goal)}
+        </Text>
+      </Text>
+    </View>
+  );
+}
 
 function calcMacros(items: FoodItem[]) {
   return items.reduce(
@@ -221,35 +244,41 @@ export default function NutritionScreen() {
     <AnimatedScreen style={styles.animWrapper}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-      {/* ── Navigateur de date ───────────────────────────────────────────── */}
-      <View style={styles.dateNav}>
-        <TouchableOpacity style={styles.dateArrow} onPress={goToPrev} accessibilityRole="button" accessibilityLabel="Jour précédent" hitSlop={tapSlop}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity accessibilityRole="button"
-          activeOpacity={0.7}
-          onPress={() => router.push({ pathname: '/modals/nutrition-detail', params: { date: selectedDate } })}
-          style={styles.dateLabelWrap}
-        >
-          <Text style={styles.dateLabel}>{fmtDate(selectedDate, TODAY)}</Text>
-          <Text style={styles.dateLabelHint}>Voir le détail →</Text>
-          {!isToday && (
-            <TouchableOpacity accessibilityRole="button" onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
-              <Text style={styles.todayLinkText}>Revenir à aujourd'hui</Text>
-            </TouchableOpacity>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.dateArrow, isToday && styles.dateArrowDisabled]}
-          onPress={goToNext}
-          disabled={isToday}
-          accessibilityRole="button"
-          accessibilityLabel="Jour suivant"
-          hitSlop={tapSlop}
-        >
-          <Ionicons name="chevron-forward" size={22} color={isToday ? Colors.textMuted : Colors.text} />
-        </TouchableOpacity>
+      {/* ── Titre + navigation de date (maquette 1d) ─────────────────────── */}
+      <View style={styles.headerRow}>
+        <DisplayTitle>Nutrition</DisplayTitle>
+        <View style={styles.dateNav}>
+          <TouchableOpacity style={styles.dateArrow} onPress={goToPrev} accessibilityRole="button" accessibilityLabel="Jour précédent" hitSlop={tapSlop}>
+            <Ionicons name="chevron-back" size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`${fmtDate(selectedDate, TODAY)} — voir le détail`}
+            activeOpacity={0.7}
+            onPress={() => router.push({ pathname: '/modals/nutrition-detail', params: { date: selectedDate } })}
+          >
+            <Text style={styles.dateLabel}>{isToday ? 'Auj.' : fmtDate(selectedDate, TODAY)}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={isToday && styles.dateArrowDisabled}
+            onPress={goToNext}
+            disabled={isToday}
+            accessibilityRole="button"
+            accessibilityLabel="Jour suivant"
+            hitSlop={tapSlop}
+          >
+            <Ionicons name="chevron-forward" size={18} color={isToday ? Colors.textMuted : Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Retour au jour courant : la maquette n'a qu'un libellé « Auj. », mais
+          sans ce raccourci on ne peut revenir qu'en tapant flèche par flèche. */}
+      {!isToday && (
+        <TouchableOpacity accessibilityRole="button" onPress={() => setSelectedDate(TODAY)} style={styles.todayLink}>
+          <Text style={styles.todayLinkText}>Revenir à aujourd'hui</Text>
+        </TouchableOpacity>
+      )}
 
       {/* ── Bande des 7 derniers jours : navigation en un tap ────────────── */}
       <View style={styles.weekStrip}>
@@ -328,36 +357,81 @@ export default function NutritionScreen() {
         </TouchableOpacity>
       )}
 
-      {/* ── Récapitulatif calorique ──────────────────────────────────────── */}
-      <Card>
+      {/* ── Récapitulatif calorique (maquette 1d) ────────────────────────── */}
+      <HeroCard>
         <View style={styles.summaryTop}>
           <View>
+            <Text style={styles.summaryCaption}>Consommé</Text>
             <Text style={styles.bigCal}>{Math.round(macros.cal)}</Text>
-            <Text style={styles.bigCalLabel}>
-              kcal {isToday ? "aujourd'hui" : fmtDate(selectedDate, TODAY).toLowerCase()}
-            </Text>
           </View>
-          {user && (
-            <View style={styles.remaining}>
-              <Text style={[styles.remValue, { color: macros.cal > user.targetCalories ? Colors.red : Colors.green }]}>
-                {Math.abs(Math.round(user.targetCalories - macros.cal))}
-              </Text>
-              <Text style={styles.remLabel}>
-                {macros.cal > user.targetCalories ? 'kcal dépassées' : 'kcal restantes'}
-              </Text>
-            </View>
-          )}
+          <Text style={styles.summarySlash}>/</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.summaryCaption}>Objectif</Text>
+            <Text style={[styles.bigCal, { color: Colors.primary }]}>{user?.targetCalories ?? '—'}</Text>
+          </View>
         </View>
-        <MacroBar label="Protéines" current={macros.prot} goal={user?.targetProtein ?? 150} color={Colors.proteinColor} />
-        <MacroBar label="Glucides"  current={macros.carb} goal={user?.targetCarbs   ?? 200} color={Colors.carbsColor} />
-        <MacroBar label="Lipides"   current={macros.fat}  goal={user?.targetFat     ?? 65}  color={Colors.fatColor} />
-      </Card>
+
+        <View style={styles.calTrack}>
+          <View
+            style={[
+              styles.calFill,
+              {
+                width: `${Math.min((macros.cal / (user?.targetCalories || 1)) * 100, 100)}%`,
+                backgroundColor: user && macros.cal > user.targetCalories ? Colors.red : Colors.primary,
+              },
+            ]}
+          />
+        </View>
+
+        {/* Reste à consommer : absent de la maquette, mais c'est le chiffre que
+            l'utilisateur vient chercher — le retirer aurait été une régression. */}
+        {user && (
+          <Text style={styles.remLabel}>
+            {macros.cal > user.targetCalories
+              ? `${Math.abs(Math.round(user.targetCalories - macros.cal))} kcal dépassées`
+              : `${Math.round(user.targetCalories - macros.cal)} kcal restantes`}
+          </Text>
+        )}
+
+        <View style={styles.macroCols}>
+          <MacroCol label="Protéines" current={macros.prot} goal={user?.targetProtein ?? 150} color={Colors.proteinColor} />
+          <View style={styles.macroDivider} />
+          <MacroCol label="Glucides"  current={macros.carb} goal={user?.targetCarbs   ?? 200} color={Colors.carbsColor} />
+          <View style={styles.macroDivider} />
+          <MacroCol label="Lipides"   current={macros.fat}  goal={user?.targetFat     ?? 65}  color={Colors.fatColor} />
+        </View>
+      </HeroCard>
 
       {/* ── Sections par repas ───────────────────────────────────────────── */}
       {MEAL_ORDER.map(type => {
         const meals  = selectedMeals.filter(m => m.type === type);
         const totals = calcMacros(meals.flatMap(m => m.items));
         const meta   = MEAL_META[type];
+        const isEmpty = meals.length === 0;
+
+        // Maquette 1d : un repas vide n'est pas une carte pleine avec un texte
+        // gris, c'est une invitation en pointillés. C'est la seule différence
+        // de traitement entre les deux états.
+        if (isEmpty) {
+          return (
+            <TouchableOpacity
+              key={type}
+              style={styles.mealEmptyCard}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={`Ajouter un aliment à ${meta.label}`}
+              onPress={() => router.push({
+                pathname: '/modals/add-food',
+                params: { mealType: type, targetDate: selectedDate },
+              })}
+            >
+              <Ionicons name={meta.icon} size={18} color={Colors.textMuted} />
+              <Text style={styles.mealEmptyLabel}>{meta.label}</Text>
+              <Text style={styles.mealEmptyCta}>+ Ajouter</Text>
+            </TouchableOpacity>
+          );
+        }
+
         return (
           <View key={type} style={styles.mealSection}>
             <View style={styles.mealHeader}>
@@ -389,16 +463,33 @@ export default function NutritionScreen() {
                 />
               ))
             )}
-
-            {meals.length === 0 && (
-              <Text style={styles.emptyMeal}>Aucun aliment enregistré</Text>
-            )}
           </View>
         );
       })}
 
+      {/* ── Plan repas IA (maquette 1d) ──────────────────────────────────── */}
+      <CoachBanner
+        title="Générer un plan repas IA"
+        subtitle={
+          user
+            ? `Adapté à tes ${Math.max(Math.round(user.targetCalories - macros.cal), 0)} kcal restantes`
+            : 'Adapté à tes objectifs'
+        }
+        chevron
+        onPress={() => { if (requirePremium()) setShowMealPrep(true); }}
+      />
+
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    {/* ── Ajout rapide d'un aliment (maquette 1d) ───────────────────────── */}
+    <Fab
+      label="Ajouter un aliment"
+      onPress={() => router.push({
+        pathname: '/modals/add-food',
+        params: { targetDate: selectedDate },
+      })}
+    />
 
     {/* ── Modal jeûne ─────────────────────────────────────────────────── */}
     {showFastingModal && (
@@ -578,15 +669,13 @@ const foodStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   animWrapper: { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.bg },
-  content:   { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
-  // Navigateur de date
-  dateNav: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.surface, borderRadius: R,
-    borderWidth: 1, borderColor: Colors.border,
-    paddingVertical: Sp.sm,
-  },
-  dateArrow:         { paddingHorizontal: Sp.md, paddingVertical: 4 },
+  // paddingBottom élargi : le FAB de la maquette 1d recouvrait sinon le
+  // bandeau « plan repas IA », qui est le dernier bloc de l'écran.
+  content:   { padding: Sp.md, gap: Sp.sm, paddingBottom: 96 },
+  // En-tête + navigateur de date (maquette 1d)
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Sp.xs },
+  dateNav:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dateArrow: { paddingVertical: 4 },
   weekStrip:         { flexDirection: 'row', gap: 5, marginBottom: Sp.sm },
   dayPill:           { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 10, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
   dayPillActive:     { backgroundColor: Colors.primary, borderColor: Colors.primary },
@@ -595,10 +684,8 @@ const styles = StyleSheet.create({
   dayPillTextActive: { color: Colors.onPrimary },
   dayPillDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.green, marginTop: 2 },
   dateArrowDisabled: { opacity: 0.25 },
-  dateLabelWrap:     { flex: 1, alignItems: 'center', gap: 2 },
-  dateLabel:         { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
-  dateLabelHint:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary },
-  todayLink:         { marginTop: 1 },
+  dateLabel:         { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  todayLink:         { alignSelf: 'flex-end' },
   todayLinkText:     { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary },
   // Bouton copier
   copyBtn: {
@@ -609,21 +696,33 @@ const styles = StyleSheet.create({
   },
   copyBtnText: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold, flex: 1 },
   // Résumé
-  summaryTop:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Sp.md },
-  bigCal:      { fontSize: Fs.xxxl, fontFamily: Fonts.condensedHeavy, color: Colors.caloriesColor },
-  bigCalLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  remaining:   { alignItems: 'flex-end' },
-  remValue:    { fontSize: Fs.xl, fontFamily: Fonts.bold },
-  remLabel:    { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  // Récapitulatif calorique (maquette 1d)
+  summaryTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 },
+  summaryCaption: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  summarySlash:   { fontSize: Fs.xl, color: Colors.textMuted, paddingBottom: 6 },
+  bigCal:         { fontSize: 34, lineHeight: 36, fontFamily: Fonts.condensedBold, color: Colors.text },
+  calTrack:       { height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  calFill:        { height: '100%', borderRadius: 5 },
+  remLabel:       { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 8, textAlign: 'right' },
+  macroCols:      { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
+  macroDivider:   { width: 1, alignSelf: 'stretch', backgroundColor: Colors.border },
   // Section repas
-  mealSection: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  mealSection: { backgroundColor: Colors.surface, borderRadius: Rr.panel, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  // Repas vide : invitation en pointillés (maquette 1d)
+  mealEmptyCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: Rr.panel, borderWidth: 1, borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.12)', padding: 15,
+  },
+  mealEmptyLabel: { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.textSecondary },
+  mealEmptyCta:   { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   mealHeader:  { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.md },
   mealIcon:    { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   mealLabel:   { flex: 1, fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
   mealCal:     { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
   favBtn:      { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.yellow + '15' },
   addBtn:      { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  emptyMeal:   { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center', paddingVertical: 10 },
   // Recettes
   recipesBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '12', borderRadius: R, borderWidth: 1, borderColor: Colors.primary + '30', paddingVertical: 8, paddingHorizontal: Sp.sm, flex: 1, justifyContent: 'center' },
   recipesBtnText: { fontSize: Fs.xs, color: Colors.primary, fontFamily: Fonts.semibold },

@@ -12,7 +12,8 @@ import { useAppStore } from '../../store/useAppStore';
 import { WorkoutSession, WorkoutType } from '../../types';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts, Rr } from '../../constants/theme';
+import { DisplayTitle, SectionLabel, RaisedCard, GoldButton, Fab } from '../../components/ui/design';
 import * as storage from '../../services/storage';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -35,7 +36,7 @@ type Filter = WorkoutType | 'all';
 
 export default function WorkoutScreen() {
   const router = useRouter();
-  const store  = useAppStore(['workouts', 'loading']);
+  const store  = useAppStore(['workouts', 'loading', 'activeProgram']);
   const [filter, setFilter] = useState<Filter>('all');
 
   const todayWorkouts = store.workouts.filter(w => w.date === storage.today());
@@ -47,9 +48,126 @@ export default function WorkoutScreen() {
   // Dernière séance enregistrée (la plus récente)
   const lastWorkout = store.workouts[0] ?? null;
 
+  // ── Programme actif et semaine en cours (maquette 1b) ──────────────────────
+  const program    = store.activeProgram ? store.findProgram(store.activeProgram.programId) : null;
+  const todayDOW   = ((new Date().getDay() + 6) % 7) + 1; // 1=Lundi … 7=Dimanche
+  const todaySession = program?.sessions.find(sess => sess.dayOfWeek === todayDOW) ?? null;
+  const nextSessions = program
+    ? program.sessions.filter(sess => sess.dayOfWeek !== todayDOW).slice(0, 3)
+    : [];
+  const doneToday = todayWorkouts.length > 0;
+
+  // Bandeau de semaine : les 7 jours à partir du lundi courant.
+  const weekDays = (() => {
+    const now   = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dow = (i + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
+      return {
+        letter: ['L', 'M', 'M', 'J', 'V', 'S', 'D'][i],
+        num: d.getDate(),
+        isToday: dow === todayDOW,
+        // Un jour « programmé » porte une séance du programme actif.
+        planned: !!program?.sessions.some(sess => sess.dayOfWeek === dow),
+      };
+    });
+  })();
+
   return (
     <AnimatedScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* ── Titre + bandeau de semaine (maquette 1b) ────────────────────── */}
+        <DisplayTitle style={styles.screenTitle}>Entraînement</DisplayTitle>
+
+        <View style={styles.weekStrip} accessibilityRole="header" accessibilityLabel="Semaine en cours">
+          {weekDays.map((d, i) => (
+            <View key={i} style={styles.weekCol}>
+              <Text style={styles.weekLetter}>{d.letter}</Text>
+              <View
+                style={[
+                  styles.weekPill,
+                  d.planned && styles.weekPillPlanned,
+                  d.isToday && styles.weekPillToday,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.weekNum,
+                    d.planned && styles.weekNumPlanned,
+                    d.isToday && styles.weekNumToday,
+                  ]}
+                >
+                  {d.num}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Programme actif : séance du jour puis suivantes (maquette 1b) ─ */}
+        {program && (
+          <>
+            <SectionLabel style={styles.blockLabel}>
+              Mon programme · {program.name}
+            </SectionLabel>
+
+            {todaySession ? (
+              <RaisedCard style={styles.todayCard}>
+                <View style={styles.todayBadge}>
+                  <Text style={styles.todayBadgeText}>
+                    {doneToday ? 'TERMINÉE' : "AUJOURD'HUI"}
+                  </Text>
+                </View>
+                <View style={styles.todayHead}>
+                  <View style={styles.todayIcon}><Text style={styles.todayEmoji}>🏋️</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.todayTitle} numberOfLines={2}>{todaySession.name}</Text>
+                    <Text style={styles.todaySub}>
+                      {todaySession.exercises.length} exercice{todaySession.exercises.length > 1 ? 's' : ''} · {todaySession.focus}
+                    </Text>
+                  </View>
+                </View>
+                <GoldButton
+                  title={doneToday ? 'Refaire la séance' : 'Démarrer la séance'}
+                  onPress={() => router.push('/modals/add-workout')}
+                  style={styles.todayCta}
+                />
+              </RaisedCard>
+            ) : (
+              <View style={styles.restCard}>
+                <Text style={styles.restEmoji}>🌙</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.restTitle}>Repos aujourd'hui</Text>
+                  <Text style={styles.restSub}>Aucune séance prévue par ton programme</Text>
+                </View>
+              </View>
+            )}
+
+            {nextSessions.map(sess => (
+              <TouchableOpacity
+                key={sess.id}
+                style={styles.upcomingRow}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`${sess.dayLabel} : ${sess.name}`}
+                onPress={() => router.push({ pathname: '/programs/[id]', params: { id: program.id } })}
+              >
+                <View style={styles.upcomingIcon}><Text style={{ fontSize: 20 }}>🦵</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.upcomingTitle} numberOfLines={1}>{sess.name}</Text>
+                  <Text style={styles.upcomingSub}>
+                    {sess.dayLabel} · {sess.exercises.length} exercice{sess.exercises.length > 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
 
         {/* ── Carte Programmes ───────────────────────────────────────────── */}
         <TouchableOpacity style={styles.programsCard} onPress={() => router.push('/(tabs)/programs')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Ouvrir les programmes d'entraînement">
@@ -158,15 +276,8 @@ export default function WorkoutScreen() {
         )}
       </ScrollView>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/modals/add-workout')}
-        accessibilityRole="button"
-        accessibilityLabel="Ajouter une séance"
-      >
-        <Ionicons name="add" size={28} color={Colors.onPrimary} />
-      </TouchableOpacity>
+      {/* ── FAB (maquette 1b) ────────────────────────────────────────────── */}
+      <Fab onPress={() => router.push('/modals/add-workout')} label="Ajouter une séance" />
     </AnimatedScreen>
   );
 }
@@ -353,6 +464,64 @@ function NoWorkoutMatch({ label, onReset }: { label: string; onReset: () => void
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
+
+  // ── Maquette 1b : titre, bandeau de semaine, programme actif ──────────────
+  screenTitle: { marginTop: Sp.xs, marginBottom: Sp.xs },
+  weekStrip: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Sp.sm },
+  weekCol: { alignItems: 'center', gap: 6 },
+  weekLetter: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
+  weekPill: {
+    width: 34, height: 34, borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  weekPillPlanned: { backgroundColor: 'rgba(232,184,75,0.16)' },
+  weekPillToday: { backgroundColor: Colors.primary },
+  weekNum: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.textSecondary },
+  weekNumPlanned: { color: Colors.primary },
+  weekNumToday: { color: Colors.onPrimary, fontFamily: Fonts.bold },
+
+  blockLabel: { marginTop: Sp.xs },
+  todayCard: { gap: 0 },
+  todayBadge: {
+    position: 'absolute', top: 14, right: 14, zIndex: 2,
+    backgroundColor: Colors.primary, borderRadius: 999,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  todayBadgeText: { fontSize: 10, fontFamily: Fonts.bold, color: Colors.onPrimary, letterSpacing: 0.4 },
+  todayHead: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingRight: 90 },
+  todayIcon: {
+    width: 50, height: 50, borderRadius: Rr.field,
+    backgroundColor: 'rgba(232,184,75,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  todayEmoji: { fontSize: 22 },
+  todayTitle: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  todaySub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
+  todayCta: { marginTop: 14 },
+
+  restCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 13,
+    backgroundColor: Colors.surface, borderRadius: Rr.card,
+    borderWidth: 1, borderColor: Colors.border, padding: Sp.md,
+  },
+  restEmoji: { fontSize: 24 },
+  restTitle: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  restSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
+
+  upcomingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 13,
+    backgroundColor: Colors.surface, borderRadius: Rr.panel,
+    borderWidth: 1, borderColor: Colors.border, padding: 15,
+    opacity: 0.9,
+  },
+  upcomingIcon: {
+    width: 46, height: 46, borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  upcomingTitle: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  upcomingSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
   // Carte Programmes
   programsCard: {
     flexDirection: 'row', alignItems: 'center', gap: Sp.md,
@@ -406,12 +575,4 @@ const styles = StyleSheet.create({
   filterContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
   chip: { borderRadius: 99, paddingHorizontal: Sp.md, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
   chipText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  fab: {
-    position: 'absolute', bottom: 30, right: Sp.lg,
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45, shadowRadius: 12, elevation: 8,
-  },
 });

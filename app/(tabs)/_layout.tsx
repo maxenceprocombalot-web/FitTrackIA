@@ -66,7 +66,10 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="progress"
           listeners={{ tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light) }}
-          options={{ title: 'Progrès', tabBarIcon: ({ focused }) => icon('trending-up-outline', focused) }}
+          // Maquette 1g : l'onglet devient « Profil ». L'écran garde son
+          // fichier `progress.tsx` — le renommer casserait les router.push
+          // existants sans rien changer à ce que voit l'utilisateur.
+          options={{ title: 'Profil', tabBarIcon: ({ focused }) => icon('person-outline', focused) }}
         />
 
         {/* Programmes : retiré du layout de la tab bar pour ne pas créer d'espace vide ── */}

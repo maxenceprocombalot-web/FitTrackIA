@@ -15,12 +15,12 @@ import {
   EXERCISES, EXERCISE_CATEGORIES, ExerciseTemplate,
   CALORIES_PER_MIN,
 } from '../../constants/exercises';
-import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop, Rr, goldBorder } from '../../constants/theme';
+import { GoldButton, CoachBanner, SectionLabel } from '../../components/ui/design';
 import * as storage from '../../services/storage';
 import { suggestProgression, ProgressionSuggestion } from '../../services/metrics';
 import { registerPositiveEvent } from '../../services/review';
 import { shareFooter } from '../../constants/app';
-import Button from '../../components/ui/Button';
 
 // ─── Type résumé de séance ────────────────────────────────────────────────────
 
@@ -71,6 +71,7 @@ export default function AddWorkoutModal() {
   // pas de durée, on utilise le temps écoulé — zéro champ obligatoire.
   const startRef = useRef(Date.now());
   const elapsedMin = () => Math.max(1, Math.round((Date.now() - startRef.current) / 60_000));
+
 
   // Nom auto si laissé vide : « Muscu du mardi »
   const autoName = () => {
@@ -136,6 +137,14 @@ export default function AddWorkoutModal() {
       Animated.timing(prFlashAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start(() => setPrFlash(null));
   }, []);
+
+  // Compteurs de séance en cours (maquette 1c) : volume soulevé et séries
+  // validées se recalculent à chaque saisie, comme les chiffres du haut de
+  // la maquette.
+  const liveVolume = exercises.reduce((sv, ex) =>
+    sv + ex.sets.reduce((ss, set) => ss + (set.completed ? set.reps * set.weight : 0), 0), 0);
+  const liveSetsTotal = exercises.reduce((n, ex) => n + ex.sets.length, 0);
+  const liveSetsDone  = exercises.reduce((n, ex) => n + ex.sets.filter(set => set.completed).length, 0);
 
   const estimatedCal = duration
     ? Math.round(parseInt(duration) * (CALORIES_PER_MIN[type] ?? 5))
@@ -359,6 +368,29 @@ export default function AddWorkoutModal() {
     <RestTimer visible={timerVisible} onClose={() => setTimerVisible(false)} />
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
+      {/* ── Séance en cours : durée, volume, séries (maquette 1c) ────────── */}
+      {exercises.length > 0 && (
+        <View style={styles.liveRow}>
+          <View style={styles.liveTile}>
+            <Text style={styles.liveLabel}>Durée</Text>
+            <Text style={styles.liveValue}>{elapsedMin()}<Text style={styles.liveUnit}> min</Text></Text>
+          </View>
+          <View style={styles.liveTile}>
+            <Text style={styles.liveLabel}>Volume</Text>
+            <Text style={styles.liveValue}>
+              {liveVolume >= 1000 ? `${(liveVolume / 1000).toFixed(1)} t` : `${liveVolume}`}
+              {liveVolume < 1000 && <Text style={styles.liveUnit}> kg</Text>}
+            </Text>
+          </View>
+          <View style={styles.liveTile}>
+            <Text style={styles.liveLabel}>Séries</Text>
+            <Text style={styles.liveValue}>
+              {liveSetsDone}<Text style={styles.liveUnit}>/{liveSetsTotal}</Text>
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* ── Nom ─────────────────────────────────────────────────────────── */}
       <Label text="Nom de la séance (optionnel)" />
       <TextInput
@@ -385,7 +417,9 @@ export default function AddWorkoutModal() {
             style={[styles.typeBtn, type === t.value && styles.typeBtnActive]}
             onPress={() => setType(t.value)}
           >
-            <Ionicons name={t.icon} size={18} color={type === t.value ? Colors.primary : Colors.textSecondary} />
+            {/* Sur l'or plein, l'icône doit passer en foncé — en Colors.primary
+                elle disparaissait dans le fond du segment actif. */}
+            <Ionicons name={t.icon} size={18} color={type === t.value ? Colors.onPrimary : Colors.textSecondary} />
             <Text style={[styles.typeBtnText, type === t.value && styles.typeBtnTextActive]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
@@ -412,11 +446,10 @@ export default function AddWorkoutModal() {
 
       {/* ── Exercices ───────────────────────────────────────────────────── */}
       <View style={styles.exHeader}>
-        <Label text={`Exercices (${exercises.length})`} />
-        <TouchableOpacity accessibilityRole="button" style={styles.addExBtn} onPress={() => setShowPicker(true)}>
-          <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
-          <Text style={styles.addExBtnText}>Ajouter</Text>
-        </TouchableOpacity>
+        <SectionLabel>Exercices</SectionLabel>
+        <Text style={styles.exCount}>
+          {exercises.length} ajouté{exercises.length > 1 ? 's' : ''}
+        </Text>
       </View>
 
       {exercises.map((ex, exIdx) => (
@@ -466,14 +499,14 @@ export default function AddWorkoutModal() {
             <View key={setIdx} style={styles.setRow}>
               <Text style={[styles.setNum, { width: 28 }]}>{setIdx + 1}</Text>
               <TextInput
-                style={[styles.setInput, { flex: 1 }]}
+                style={[styles.setInput, { flex: 1 }, set.completed && styles.setInputDone]}
                 value={String(set.reps)}
                 onChangeText={v => updateSet(exIdx, setIdx, 'reps', parseInt(v) || 0)}
                 keyboardType="number-pad"
                 selectTextOnFocus
               />
               <TextInput
-                style={[styles.setInput, { flex: 1 }]}
+                style={[styles.setInput, { flex: 1 }, set.completed && styles.setInputDone]}
                 value={set.weight === 0 ? '' : String(set.weight)}
                 onChangeText={v => updateSet(exIdx, setIdx, 'weight', parseFloat(v) || 0)}
                 keyboardType="decimal-pad"
@@ -509,6 +542,24 @@ export default function AddWorkoutModal() {
         </View>
       ))}
 
+      {/* ── Ajout d'exercice + assistant IA (maquette 1h) ────────────────── */}
+      <TouchableOpacity
+        style={styles.addExDashed}
+        onPress={() => setShowPicker(true)}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Ajouter un exercice"
+      >
+        <Text style={styles.addExDashedText}>+ Ajouter un exercice</Text>
+      </TouchableOpacity>
+
+      <CoachBanner
+        title="Séance générée par l'IA"
+        subtitle="Laisse l'IA construire ta séance selon tes objectifs"
+        chevron
+        onPress={() => router.push('/modals/ai-program')}
+      />
+
       {/* ── Notes ───────────────────────────────────────────────────────── */}
       <Label text="Notes (optionnel)" />
       <TextInput
@@ -522,11 +573,10 @@ export default function AddWorkoutModal() {
       />
 
       {/* ── Bouton sauvegarder ──────────────────────────────────────────── */}
-      <Button
+      <GoldButton
         title="Enregistrer la séance"
         icon="checkmark-circle-outline"
         onPress={handleSave}
-        size="lg"
         style={{ marginTop: Sp.lg }}
       />
     </ScrollView>
@@ -541,21 +591,39 @@ function Label({ text }: { text: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, paddingBottom: Sp.xxl, gap: 4 },
+
+  // ── Séance en cours (maquette 1c) ─────────────────────────────────────────
+  liveRow:   { flexDirection: 'row', gap: 12, marginBottom: Sp.sm },
+  liveTile:  {
+    flex: 1, alignItems: 'center',
+    backgroundColor: Colors.surface, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border, padding: 12,
+  },
+  liveLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
+  liveValue: { fontSize: 26, fontFamily: Fonts.condensedBold, color: Colors.text },
+  liveUnit:  { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
+
+  // ── Ajout d'exercice (maquette 1h) ────────────────────────────────────────
+  exCount:      { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
+  addExDashed:  {
+    borderWidth: 1, borderStyle: 'dashed', borderColor: goldBorder,
+    borderRadius: Rr.field, paddingVertical: 13, alignItems: 'center',
+    marginTop: Sp.sm, marginBottom: Sp.xs,
+  },
+  addExDashedText: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
   label: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginTop: Sp.md, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: { backgroundColor: Colors.surface, borderRadius: R, padding: Sp.md, fontSize: Fs.md, fontFamily: Fonts.regular, color: Colors.text, borderWidth: 1, borderColor: Colors.border, marginBottom: 4 },
   textarea: { height: 80, textAlignVertical: 'top' },
   typeScroll: { marginHorizontal: -Sp.md },
   typeContent: { paddingHorizontal: Sp.md, gap: Sp.xs },
-  typeBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: Sp.md, paddingVertical: 8, borderRadius: R, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surface },
-  typeBtnActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '18' },
-  typeBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  typeBtnTextActive: { color: Colors.primary, fontFamily: Fonts.semibold },
+  typeBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: Sp.md, paddingVertical: 11, borderRadius: Rr.chip, borderWidth: 1, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)' },
+  typeBtnActive: { backgroundColor: Colors.primary },
+  typeBtnText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: '#B8B3A8' },
+  typeBtnTextActive: { color: Colors.onPrimary, fontFamily: Fonts.bold },
   durationRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   calBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.orange + '18', borderRadius: R, paddingHorizontal: Sp.sm, paddingVertical: 10 },
   calBadgeText: { fontSize: Fs.sm, color: Colors.orange, fontFamily: Fonts.semibold },
   exHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addExBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addExBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
   exerciseCard: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', marginBottom: 4 },
   exerciseCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Sp.sm + 4 },
   exerciseName: { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.text },
@@ -570,6 +638,8 @@ const styles = StyleSheet.create({
   setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Sp.sm, paddingVertical: 5, gap: 6, borderTopWidth: 1, borderTopColor: Colors.border },
   setNum: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted, textAlign: 'center' },
   setInput: { backgroundColor: Colors.surfaceElevated, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, textAlign: 'center', borderWidth: 1, borderColor: Colors.border },
+  // Série validée : fond vert teinté (maquette 1c).
+  setInputDone: { backgroundColor: 'rgba(143,166,107,0.14)', borderColor: 'rgba(143,166,107,0.35)', color: '#9DB87A', fontFamily: Fonts.semibold },
   checkBtn: { width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   checkBtnDone: { backgroundColor: Colors.green, borderColor: Colors.green },
   setFooter: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: Colors.border },

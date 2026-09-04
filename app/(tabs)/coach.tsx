@@ -7,9 +7,12 @@ import {
 import AnimatedScreen from '../../components/ui/AnimatedScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
-import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona, hasApiKey } from '../../services/openai';
+import { sendCoachMessage, generateMealPlan, analyzeNutritionDeficiencies, setCoachPersona, getCoachPersona, hasApiKey, CoachPersona } from '../../services/openai';
 import { ChatMessage, FoodItem, Meal, MealType, SavedPlan } from '../../types';
 import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
+import { GoldTile, Chip } from '../../components/ui/design';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Grad } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import { usePremiumGate } from '../../hooks/usePremiumGate';
 import { FREE_COACH_MESSAGES_PER_DAY } from '../../constants/premium';
@@ -19,6 +22,11 @@ import { today, yesterday, daysAgo, localISO } from '../../services/date';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PERSONA_LABELS: Record<string, string> = { motivateur: '🔥 Motivateur', scientifique: '📊 Scientifique', bienveillant: '🤝 Bienveillant', militaire: '💂 Militaire' };
+
+// Maquette 1f : les quatre personas sont choisissables depuis le chat lui-même.
+// Ils restaient jusqu'ici enterrés dans Réglages → Coach IA, alors que changer
+// de persona est l'un des quatre flux clés du brief.
+const PERSONAS: readonly CoachPersona[] = ['motivateur', 'scientifique', 'bienveillant', 'militaire'];
 
 const WEEKLY_ANALYSIS_PROMPT = "Analyse ma semaine complète : corrèle mes séances de sport avec ma nutrition, identifie les points forts et les axes d'amélioration, et donne-moi 3 recommandations concrètes pour la semaine prochaine.";
 
@@ -140,7 +148,7 @@ export default function CoachScreen() {
 
   useEffect(() => {
     AsyncStorage.getItem('@fit_coach_persona').then(v => {
-      if (v) { setCoachPersona(v as any); setCurrentPersona(v as any); }
+      if (v) { setCoachPersona(v as CoachPersona); setCurrentPersona(v as CoachPersona); }
     });
   }, []);
 
@@ -283,7 +291,7 @@ export default function CoachScreen() {
       date:  storage.today(),
     };
     await store.savePlan(plan);
-    Alert.alert('💾 Plan sauvegardé !', `"${title}" est disponible dans Progrès → Plans.`, [{ text: 'Super !' }]);
+    Alert.alert('💾 Plan sauvegardé !', `"${title}" est disponible dans Profil → Plans.`, [{ text: 'Super !' }]);
   }, [store]);
 
   const handleApplyMealPlan = useCallback(async (msgId: string, content: string) => {
@@ -374,24 +382,51 @@ export default function CoachScreen() {
     }
   }, [store]);
 
+  const handleChangePersona = useCallback(async (p: CoachPersona) => {
+    if (p === currentPersona) return;
+    setCoachPersona(p);
+    setCurrentPersona(p);
+    await AsyncStorage.setItem('@fit_coach_persona', p);
+  }, [currentPersona]);
+
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       {/* ── En-tête ──────────────────────────────────────────────────────── */}
-      <View style={styles.coachBar}>
-        <View style={styles.coachAvatar}>
-          <Ionicons name="sparkles" size={20} color={Colors.primary} />
+      <View style={styles.coachHeader}>
+        <View style={styles.coachBar}>
+          <GoldTile size={42} radius={13}>
+            <Ionicons name="sparkles" size={20} color={Colors.onPrimary} />
+          </GoldTile>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.coachName}>FitCoach IA</Text>
+            <Text style={styles.coachSub}>
+              {demoMode ? 'Coach non configuré' : `● Persona : ${(PERSONA_LABELS[currentPersona] ?? '').replace(/^\S+\s/, '')}`}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Historique des conversations" hitSlop={tapSlop}>
+            <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleNewConversation} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Nouvelle conversation" hitSlop={tapSlop}>
+            <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
         </View>
-        <View>
-          <Text style={styles.coachName}>FitCoach IA</Text>
-          <Text style={styles.coachSub}>{demoMode ? 'Coach non configuré' : `${PERSONA_LABELS[currentPersona] ?? ''} · IA`}</Text>
-        </View>
-        <TouchableOpacity onPress={() => setShowHistory(true)} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Historique des conversations" hitSlop={tapSlop}>
-          <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleNewConversation} style={styles.clearBtn} accessibilityRole="button" accessibilityLabel="Nouvelle conversation" hitSlop={tapSlop}>
-          <Ionicons name="trash-outline" size={18} color={Colors.textMuted} />
-        </TouchableOpacity>
+
+        {/* ── Sélecteur de persona (maquette 1f) ─────────────────────────── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.personaRow}
+        >
+          {PERSONAS.map(pid => (
+            <Chip
+              key={pid}
+              label={PERSONA_LABELS[pid]}
+              active={currentPersona === pid}
+              onPress={() => handleChangePersona(pid)}
+            />
+          ))}
+        </ScrollView>
       </View>
 
       {/* ── Alertes de récupération ──────────────────────────────────────── */}
@@ -465,7 +500,7 @@ export default function CoachScreen() {
             {msg.role === 'assistant' && looksLikePlan(msg.content) && (
               <View style={styles.msgActions}>
                 {/* Sauvegarder ce plan */}
-                <TouchableOpacity style={styles.savePlanBtn} onPress={() => handleSavePlan(msg.content)} accessibilityRole="button" accessibilityLabel="Sauvegarder ce plan dans Progrès">
+                <TouchableOpacity style={styles.savePlanBtn} onPress={() => handleSavePlan(msg.content)} accessibilityRole="button" accessibilityLabel="Sauvegarder ce plan dans Profil">
                   <Ionicons name="save-outline" size={13} color={Colors.primary} />
                   <Text style={styles.savePlanBtnText}>💾 Sauvegarder ce plan</Text>
                 </TouchableOpacity>
@@ -500,24 +535,29 @@ export default function CoachScreen() {
 
       {/* ── Saisie ───────────────────────────────────────────────────────── */}
       <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Pose une question…"
-          placeholderTextColor={Colors.textMuted}
-          multiline
-          maxLength={600}
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
-          onPress={() => sendMessage(input)}
-          disabled={!input.trim() || loading}
-          accessibilityLabel="Envoyer le message au coach"
-          accessibilityRole="button"
-        >
-          <Ionicons name="send" size={18} color={Colors.onPrimary} />
-        </TouchableOpacity>
+        <View style={styles.inputShell}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Écris à ton coach…"
+            placeholderTextColor={Colors.textMuted}
+            multiline
+            maxLength={600}
+          />
+          <TouchableOpacity
+            onPress={() => sendMessage(input)}
+            disabled={!input.trim() || loading}
+            accessibilityLabel="Envoyer le message au coach"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !input.trim() || loading }}
+            style={(!input.trim() || loading) && styles.sendBtnDisabled}
+          >
+            <GoldTile size={38} radius={19}>
+              <Ionicons name="arrow-up" size={18} color={Colors.onPrimary} />
+            </GoldTile>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
 
@@ -574,14 +614,26 @@ function Bubble({ msg }: { msg: ChatMessage }) {
   return (
     <View style={[bStyles.row, isUser && bStyles.rowRight]}>
       {!isUser && (
-        <View style={bStyles.avatar}>
-          <Ionicons name="sparkles" size={13} color={Colors.primary} />
+        <GoldTile size={28} radius={9}>
+          <Ionicons name="sparkles" size={13} color={Colors.onPrimary} />
+        </GoldTile>
+      )}
+      {isUser ? (
+        <LinearGradient
+          colors={[...Grad.gold]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[bStyles.bubble, bStyles.userBubble]}
+        >
+          <Text style={[bStyles.text, bStyles.userText]}>{msg.content}</Text>
+          <Text style={[bStyles.time, bStyles.userTime]}>{time}</Text>
+        </LinearGradient>
+      ) : (
+        <View style={[bStyles.bubble, bStyles.botBubble]}>
+          <Text style={bStyles.text}>{msg.content}</Text>
+          <Text style={bStyles.time}>{time}</Text>
         </View>
       )}
-      <View style={[bStyles.bubble, isUser ? bStyles.userBubble : bStyles.botBubble]}>
-        <Text style={[bStyles.text, isUser && bStyles.userText]}>{msg.content}</Text>
-        <Text style={[bStyles.time, isUser && { color: 'rgba(255,255,255,0.45)' }]}>{time}</Text>
-      </View>
     </View>
   );
 }
@@ -646,24 +698,29 @@ function ConversationHistoryModal({ onClose, onRestore }: {
 }
 
 const bStyles = StyleSheet.create({
-  row:         { flexDirection: 'row', marginBottom: Sp.sm, alignItems: 'flex-end', gap: 6 },
+  // Bulles de la maquette 1f : coin « replié » côté auteur, 18px ailleurs.
+  row:         { flexDirection: 'row', marginBottom: 14, alignItems: 'flex-end', gap: 9 },
   rowRight:    { flexDirection: 'row-reverse' },
-  avatar:      { width: 26, height: 26, borderRadius: 13, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
-  bubble:      { maxWidth: '78%', borderRadius: 16, padding: Sp.sm + 2 },
-  userBubble:  { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
-  botBubble:   { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.border, borderBottomLeftRadius: 4 },
-  text:        { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, lineHeight: 20 },
-  userText:    { color: '#fff' },
+  bubble:      { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12 },
+  userBubble:  { borderBottomRightRadius: 5 },
+  botBubble:   { backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.border, borderBottomLeftRadius: 5 },
+  text:        { fontSize: Fs.sm, fontFamily: Fonts.regular, color: '#EDE8DD', lineHeight: 21 },
+  // Texte foncé sur l'or : du blanc sur #E8B84B tombe à ~1,9:1, très en
+  // dessous du seuil AA. La maquette pose bien du texte sombre.
+  userText:    { color: Colors.onPrimary, fontFamily: Fonts.medium },
   time:        { fontSize: 10, fontFamily: Fonts.regular, color: Colors.textMuted, marginTop: 4, alignSelf: 'flex-end' },
+  userTime:    { color: 'rgba(10,10,11,0.55)' },
 });
 
 const styles = StyleSheet.create({
   container:       { flex: 1, backgroundColor: Colors.bg },
-  coachBar:        { flexDirection: 'row', alignItems: 'center', gap: Sp.sm, padding: Sp.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
-  coachAvatar:     { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
+  // En-tête + personas (maquette 1f)
+  coachHeader:     { backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  coachBar:        { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: 12 },
   coachName:       { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
-  coachSub:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
-  clearBtn:        { marginLeft: 'auto', padding: 6 },
+  coachSub:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.green, marginTop: 1 },
+  personaRow:      { flexDirection: 'row', gap: 8, paddingHorizontal: Sp.md, paddingBottom: 12 },
+  clearBtn:        { padding: 6 },
   messages:        { flex: 1 },
   messagesContent: { padding: Sp.md, paddingBottom: Sp.lg },
   welcome:         { alignItems: 'center', paddingVertical: Sp.xl },
@@ -689,8 +746,13 @@ const styles = StyleSheet.create({
   typing:      { flexDirection: 'row', alignItems: 'center', gap: 8, padding: Sp.sm },
   typingText:  { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary },
   // Saisie
-  inputBar:    { flexDirection: 'row', alignItems: 'flex-end', gap: Sp.sm, padding: Sp.sm, paddingBottom: Platform.OS === 'ios' ? Sp.md : Sp.sm, borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.surface },
-  input:       { flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: 20, paddingHorizontal: Sp.md, paddingVertical: Sp.sm, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, maxHeight: 100, borderWidth: 1, borderColor: Colors.border },
-  sendBtn:        { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  inputBar:    { padding: Sp.sm, paddingBottom: Platform.OS === 'ios' ? Sp.md : Sp.sm, backgroundColor: Colors.bg },
+  inputShell:  {
+    flexDirection: 'row', alignItems: 'flex-end', gap: 10,
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
+    paddingLeft: Sp.md, paddingRight: 6, paddingVertical: 6,
+  },
+  input:       { flex: 1, fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.text, maxHeight: 100, paddingVertical: 9 },
   sendBtnDisabled: { opacity: 0.4 },
 });

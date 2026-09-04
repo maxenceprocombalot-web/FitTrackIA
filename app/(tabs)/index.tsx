@@ -9,9 +9,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimatedRing from '../../components/ui/AnimatedRing';
-import MacroBar from '../../components/ui/MacroBar';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts , tapSlop, Rr } from '../../constants/theme';
+import {
+  HeroCard, StatTile, CoachBanner, GoldTile, MacroLine,
+  SectionLabel,
+} from '../../components/ui/design';
 import Button from '../../components/ui/Button';
 import WeightField from '../../components/ui/WeightField';
 import * as storage from '../../services/storage';
@@ -319,6 +322,29 @@ export default function DashboardScreen() {
   const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const greeting = getGreeting();
 
+  // ── Prochaine séance (maquette 1a) ──────────────────────────────────────────
+  // Le programme actif porte la séance du jour ; sans programme actif on retombe
+  // sur la dernière séance enregistrée, qui sert de modèle à « refaire ».
+  const activeProgram = store.activeProgram ? store.findProgram(store.activeProgram.programId) : null;
+  const todayDOW      = ((new Date().getDay() + 6) % 7) + 1; // 1=Lundi … 7=Dimanche
+  const todaySession  = activeProgram?.sessions.find(sess => sess.dayOfWeek === todayDOW) ?? null;
+  const doneToday     = todayWorkouts.length > 0;
+  const lastWorkoutName = store.workouts[0]?.name ?? null;
+
+  // Variation de poids sur 7 jours, pour la tuile « Poids actuel ».
+  // On compare au relevé le plus ancien de la semaine glissante : sans deux
+  // points dans la fenêtre il n'y a pas de variation à annoncer.
+  const weekWeightDelta = (() => {
+    if (!latestWeight) return null;
+    const weekAgo = Date.now() - 7 * 86_400_000;
+    const inWeek  = store.weights.filter(w => new Date(w.date).getTime() >= weekAgo);
+    if (inWeek.length < 2) return null;
+    const diff = latestWeight - inWeek[0].weight;
+    if (Math.abs(diff) < 0.05) return 'Stable cette sem.';
+    const arrow = diff < 0 ? '▼' : '▲';
+    return `${arrow} ${Math.abs(diff).toFixed(1).replace('.', ',')} kg cette sem.`;
+  })();
+
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <Animated.ScrollView
@@ -362,9 +388,11 @@ export default function DashboardScreen() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting.word} {user.name} {greeting.emoji}</Text>
+        <View style={{ flex: 1 }}>
           <Text style={styles.date} numberOfLines={1}>{dateStr}</Text>
+          <Text style={styles.greeting} numberOfLines={2}>
+            {greeting.word}, {user.name} {greeting.emoji}
+          </Text>
         </View>
         <View style={styles.headerRight}>
           {streak > 0 && (
@@ -373,15 +401,16 @@ export default function DashboardScreen() {
             </View>
           )}
           <TouchableOpacity
-            style={styles.avatarBtn}
             onPress={() => router.push('/modals/settings')}
             accessibilityLabel="Paramètres"
             accessibilityRole="button"
           >
-            {user.name?.trim()
-              ? <Text style={styles.avatarText}>{user.name[0].toUpperCase()}</Text>
-              : <Ionicons name="person" size={18} color={Colors.primary} />
-            }
+            <GoldTile size={46} radius={23} deep>
+              {user.name?.trim()
+                ? <Text style={styles.avatarText}>{user.name[0].toUpperCase()}</Text>
+                : <Ionicons name="person" size={20} color={Colors.onPrimary} />
+              }
+            </GoldTile>
           </TouchableOpacity>
         </View>
       </View>
@@ -460,63 +489,119 @@ export default function DashboardScreen() {
         </Card>
       )}
 
-      {/* ── Anneau calories ─────────────────────────────────────────────────── */}
+      {/* ── Anneau calories + macros (maquette 1a) ──────────────────────────── */}
+      {/* Les maquettes réunissent l'anneau et les trois macros dans une seule
+          grande carte : c'est la lecture d'un coup d'œil que demandait le brief.
+          Les quatre chiffres détaillés (objectif / consommé / brûlé / net)
+          restent dessous — ils ne sont pas dans la maquette mais l'app les
+          calcule déjà, et les perdre ferait régresser l'écran. */}
       {!isFirstRun && (
-      <Card style={styles.ringCard}>
+      <HeroCard>
         <View style={styles.ringRow}>
-          <AnimatedRing consumed={macros.calories} burned={burned} goal={user.targetCalories} size={155} />
-          <View style={styles.ringStats}>
-            <RingStat label="Objectif"  value={`${user.targetCalories}`} unit="kcal" color={Colors.text} />
-            <RingStat label="Consommé"  value={`${Math.round(macros.calories)}`} unit="kcal" color={Colors.green} />
-            <RingStat label="Brûlé"     value={`${burned}`} unit="kcal" color={Colors.orange} />
-            <RingStat label="Net"       value={`${Math.round(macros.calories - burned)}`} unit="kcal" color={Colors.primary} />
+          <AnimatedRing consumed={macros.calories} burned={burned} goal={user.targetCalories} size={128} />
+          <View style={styles.ringMacros}>
+            <MacroLine label="Protéines" current={macros.protein} goal={user.targetProtein} color={Colors.proteinColor} />
+            <MacroLine label="Glucides"  current={macros.carbs}   goal={user.targetCarbs}   color={Colors.carbsColor} />
+            <MacroLine label="Lipides"   current={macros.fat}     goal={user.targetFat}     color={Colors.fatColor} />
           </View>
         </View>
+
+        <View style={styles.ringFooter}>
+          <RingStat label="Objectif"  value={`${user.targetCalories}`} unit="kcal" color={Colors.text} />
+          <RingStat label="Consommé"  value={`${Math.round(macros.calories)}`} unit="kcal" color={Colors.green} />
+          <RingStat label="Brûlé"     value={`${burned}`} unit="kcal" color={Colors.orange} />
+          <RingStat label="Net"       value={`${Math.round(macros.calories - burned)}`} unit="kcal" color={Colors.primary} />
+        </View>
+
         {burned > 0 && (
           <Text style={styles.adjustedGoalText}>
             🔥 Objectif ajusté : {user.targetCalories + burned} kcal (+{burned} brûlées)
           </Text>
         )}
-      </Card>
+      </HeroCard>
       )}
 
-      {/* ── Macros ──────────────────────────────────────────────────────────── */}
+      {/* ── Poids / objectif (maquette 1a) ──────────────────────────────────── */}
       {!isFirstRun && (
-      <Card>
-        <Text style={styles.sectionTitle}>Macronutriments</Text>
-        <MacroBar label="Protéines" current={macros.protein} goal={user.targetProtein} color={Colors.proteinColor} />
-        <MacroBar label="Glucides"  current={macros.carbs}   goal={user.targetCarbs}   color={Colors.carbsColor} />
-        <MacroBar label="Lipides"   current={macros.fat}     goal={user.targetFat}      color={Colors.fatColor} />
-      </Card>
+        <View style={styles.tileRow}>
+          <StatTile
+            label="Poids actuel"
+            value={latestWeight ? latestWeight.toFixed(1).replace('.', ',') : '—'}
+            unit={latestWeight ? 'kg' : undefined}
+            footnote={weekWeightDelta ?? 'Enregistre ton poids'}
+            footnoteColor={weekWeightDelta ? Colors.green : Colors.textSecondary}
+            onPress={() => setShowWeightModal(true)}
+          />
+          <StatTile
+            label="Objectif"
+            value={targetWeight ? targetWeight.toFixed(1).replace('.', ',') : '—'}
+            unit={targetWeight ? 'kg' : undefined}
+            footnote={
+              targetWeight && latestWeight
+                ? `Plus que ${Math.abs(latestWeight - targetWeight).toFixed(1).replace('.', ',')} kg`
+                : 'Non défini'
+            }
+            footnoteColor={Colors.primary}
+            onPress={() => router.push('/modals/settings')}
+          />
+        </View>
+      )}
+
+      {/* ── Prochaine séance (maquette 1a) ──────────────────────────────────── */}
+      {!isFirstRun && (todaySession || lastWorkoutName) && (
+        <>
+          <SectionLabel style={styles.blockLabel}>
+            {doneToday ? 'Séance du jour' : 'Prochaine séance'}
+          </SectionLabel>
+          <TouchableOpacity
+            style={styles.nextCard}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={
+              doneToday
+                ? 'Séance du jour terminée, voir le détail'
+                : `Démarrer : ${todaySession?.name ?? lastWorkoutName}`
+            }
+            onPress={() => router.push(
+              todaySession && activeProgram
+                ? { pathname: '/programs/[id]', params: { id: activeProgram.id } }
+                : '/modals/add-workout'
+            )}
+          >
+            <View style={styles.nextIcon}><Text style={styles.nextEmoji}>🏋️</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nextTitle} numberOfLines={1}>
+                {todaySession?.name ?? lastWorkoutName}
+              </Text>
+              <Text style={styles.nextSub} numberOfLines={1}>
+                {todaySession
+                  ? `Aujourd'hui · ${todaySession.exercises.length} exercice${todaySession.exercises.length > 1 ? 's' : ''}`
+                  : 'Refaire ta dernière séance'}
+              </Text>
+            </View>
+            {doneToday ? (
+              <View style={styles.nextDone}>
+                <Ionicons name="checkmark" size={18} color={Colors.green} />
+              </View>
+            ) : (
+              <GoldTile size={38} radius={19} deep>
+                <Ionicons name="play" size={16} color={Colors.onPrimary} />
+              </GoldTile>
+            )}
+          </TouchableOpacity>
+        </>
       )}
 
       {/* ── Objectif de poids (après macros) ───────────────────────────────── */}
       {targetWeight && latestWeight && (
         <Card>
-          <Text style={styles.sectionTitle}>Mon objectif</Text>
-          <View style={styles.goalRow}>
-            <View>
-              <Text style={styles.goalCurrent}>{latestWeight} kg</Text>
-              <Text style={styles.goalLabel}>Actuel</Text>
-            </View>
-            <View style={styles.goalArrow}>
-              <Ionicons name={user.goal === 'weight_loss' ? 'arrow-down' : 'arrow-up'} size={20} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={[styles.goalCurrent, { color: Colors.primary }]}>{targetWeight.toFixed(1)} kg</Text>
-              <Text style={styles.goalLabel}>Objectif</Text>
-            </View>
-          </View>
-          {/* Barre de progression vers l'objectif */}
+          <Text style={styles.sectionTitle}>Ma progression</Text>
+          {/* Barre de progression vers l'objectif. Les chiffres actuel/cible
+              sont dans les tuiles ci-dessus (maquette 1a) : les répéter ici
+              affichait deux fois la même valeur à dix centimètres d'écart. */}
           <View style={styles.goalTrack}>
             <View style={[styles.goalFill, { width: `${Math.max(weightPct * 100, 2)}%` }]} />
           </View>
-          {latestWeight && targetWeight && (
-            <View style={styles.goalRemaining}>
-              <Text style={styles.goalRemainingLabel}>Il te reste</Text>
-              <Text style={styles.goalRemainingValue}>{Math.abs(latestWeight - targetWeight).toFixed(1)} kg</Text>
-            </View>
-          )}
           {projectionDays !== null ? (
             <Text style={styles.goalProjection}>
               📈 À ce rythme : objectif dans <Text style={{ color: Colors.primary, fontFamily: Fonts.bold }}>{projectionDays} jours</Text>
@@ -554,17 +639,13 @@ export default function DashboardScreen() {
         <StatCard icon="restaurant-outline" iconColor={Colors.green} value={todayMeals.length}    label="Repas"    onPress={() => router.push('/(tabs)/nutrition')} />
       </View>
 
-      {/* ── Message du coach ─────────────────────────────────────────────────── */}
-      <Card style={styles.coachCard}>
-        <View style={styles.coachHeader}>
-          <View style={styles.coachDot} />
-          <Text style={styles.coachLabel}>FitCoach IA</Text>
-        </View>
-        <Text style={styles.coachMsg}>{coachMessage(user.name, macros.calories, user.targetCalories, burned, todayWorkouts.length)}</Text>
-        <TouchableOpacity accessibilityRole="button" style={styles.coachBtn} onPress={() => router.push('/(tabs)/coach')}>
-          <Text style={styles.coachBtnText}>Discuter avec le coach →</Text>
-        </TouchableOpacity>
-      </Card>
+      {/* ── Accès coach IA (maquette 1a) ─────────────────────────────────────── */}
+      <CoachBanner
+        title="Ton FitCoach t'attend"
+        subtitle={`« ${coachMessage(user.name, macros.calories, user.targetCalories, burned, todayWorkouts.length)} »`}
+        onPress={() => router.push('/(tabs)/coach')}
+        chevron
+      />
 
       {/* ── Actions rapides ─────────────────────────────────────────────────── */}
       <Text style={styles.sectionTitle}>Actions rapides</Text>
@@ -775,8 +856,8 @@ const weightModalStyles = StyleSheet.create({
 
 function RingStat({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
   return (
-    <View style={{ alignItems: 'center', gap: 1 }}>
-      <Text style={[{ fontSize: Fs.lg, fontFamily: Fonts.bold, color }]}>{value}</Text>
+    <View style={{ flex: 1, minWidth: 64, alignItems: 'center', gap: 1 }}>
+      <Text style={[{ fontSize: Fs.xl, fontFamily: Fonts.condensedBold, color }]}>{value}</Text>
       <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted }}>{unit}</Text>
       <Text style={{ fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary }}>{label}</Text>
     </View>
@@ -826,14 +907,14 @@ const styles = StyleSheet.create({
   dataAlertBtn: { alignSelf: 'flex-start', marginTop: Sp.sm, paddingHorizontal: Sp.md, paddingVertical: 7, borderRadius: R, borderWidth: 1, borderColor: Colors.red + '60' },
   dataAlertBtnText: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.red },
   content: { padding: Sp.md, paddingBottom: 100, gap: Sp.sm },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Sp.xs },
-  greeting: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
-  date: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2, textTransform: 'capitalize' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: Sp.sm, marginBottom: Sp.xs },
+  // Maquette : la date d'abord, en petit, puis la salutation en condensé.
+  greeting: { fontSize: 30, lineHeight: 33, fontFamily: Fonts.condensedBold, color: Colors.text, textTransform: 'uppercase' },
+  date: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textTransform: 'capitalize' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Sp.sm },
   streakBadge: { backgroundColor: Colors.orange + '20', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 },
   streakText: { fontSize: Fs.sm, fontFamily: Fonts.bold, color: Colors.orange },
-  avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.primary + '30', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary },
+  avatarText: { fontSize: Fs.lg, fontFamily: Fonts.bold, color: Colors.onPrimary },
   // Streak card
   streakCard:     { borderColor: Colors.orange + '40', backgroundColor: Colors.orange + '08' },
   streakCardFire: { borderColor: Colors.red + '60', backgroundColor: Colors.red + '10' },
@@ -846,10 +927,36 @@ const styles = StyleSheet.create({
   streakSub:      { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 2 },
   jokerBtn:       { backgroundColor: Colors.surfaceElevated, borderRadius: R, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border },
   jokerBtnText:   { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.text },
-  // Ring
-  ringCard: {},
-  ringRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Sp.md },
-  ringStats: { flex: 1, gap: 10 },
+  // Ring + macros (grande carte de la maquette 1a)
+  ringRow: { flexDirection: 'row', alignItems: 'center', gap: Sp.lg },
+  ringMacros: { flex: 1, gap: 12 },
+  ringFooter: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm,
+    marginTop: Sp.md, paddingTop: Sp.md,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  // Tuiles poids / objectif
+  tileRow: { flexDirection: 'row', gap: 12 },
+  blockLabel: { marginTop: Sp.xs, marginBottom: 2 },
+  // Prochaine séance
+  nextCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: Colors.surface, borderRadius: Rr.card,
+    borderWidth: 1, borderColor: Colors.border, padding: Sp.md,
+  },
+  nextIcon: {
+    width: 52, height: 52, borderRadius: 15,
+    backgroundColor: 'rgba(232,184,75,0.14)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  nextEmoji: { fontSize: 24 },
+  nextTitle: { fontSize: Fs.md, fontFamily: Fonts.semibold, color: Colors.text },
+  nextSub: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, marginTop: 1 },
+  nextDone: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: Colors.green + '22',
+    alignItems: 'center', justifyContent: 'center',
+  },
   adjustedGoalText: { fontSize: Fs.xs, color: Colors.orange, textAlign: 'center', marginTop: Sp.xs, fontFamily: Fonts.medium },
   sectionTitle: { fontSize: Fs.xs, fontFamily: Fonts.semibold, color: Colors.textSecondary, marginBottom: Sp.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Eau
@@ -862,26 +969,11 @@ const styles = StyleSheet.create({
   waterBtnText: { fontSize: Fs.xs, fontFamily: Fonts.semibold },
   waterDone: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.primary, textAlign: 'center', marginTop: 6 },
   // Objectif poids
-  goalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Sp.sm },
-  goalCurrent: { fontSize: Fs.xl, fontFamily: Fonts.bold, color: Colors.text },
-  goalLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
-  goalArrow: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
   goalTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden', marginBottom: 8 },
   goalFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 99 },
-  goalRemaining: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: 6 },
-  goalRemainingLabel: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textMuted },
-  goalRemainingValue: { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.primary },
   goalProjection: { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 18 },
   // Stats
   statRow: { flexDirection: 'row', gap: Sp.sm },
-  // Coach
-  coachCard: {},
-  coachHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  coachDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.green },
-  coachLabel: { fontSize: Fs.sm, fontFamily: Fonts.semibold, color: Colors.primary },
-  coachMsg: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, lineHeight: 20 },
-  coachBtn: { marginTop: 10 },
-  coachBtnText: { fontSize: Fs.sm, color: Colors.primary, fontFamily: Fonts.medium },
   // Actions rapides
   quickActionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Sp.sm },
   quickActionBtn: { width: '48%', backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, padding: Sp.md, gap: 4 },

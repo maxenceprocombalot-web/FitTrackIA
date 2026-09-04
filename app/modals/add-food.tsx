@@ -485,9 +485,17 @@ export default function AddFoodModal() {
                 barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
                 onBarcodeScanned={scanned ? undefined : handleBarcode}
               />
-              <View style={styles.scanOverlay}>
-                <View style={styles.scanFrame} />
-                <Text style={styles.scanHint}>Place le code-barres dans le cadre</Text>
+              {/* Cadre de visée de la maquette 1e : quatre équerres dorées et
+                  une ligne de balayage, plutôt qu'un rectangle plein. */}
+              <View style={styles.scanOverlay} pointerEvents="none">
+                <View style={styles.scanFrame}>
+                  <View style={[styles.scanCorner, styles.scanCornerTL]} />
+                  <View style={[styles.scanCorner, styles.scanCornerTR]} />
+                  <View style={[styles.scanCorner, styles.scanCornerBL]} />
+                  <View style={[styles.scanCorner, styles.scanCornerBR]} />
+                  <View style={styles.scanLine} />
+                </View>
+                <Text style={styles.scanHint}>Alignez le code-barres dans le cadre</Text>
               </View>
               {scanned && (
                 <Button
@@ -611,8 +619,19 @@ const styles = StyleSheet.create({
   scanContainer: { flex: 1 },
   camera: { flex: 1 },
   scanOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  scanFrame: { width: 240, height: 140, borderWidth: 2, borderColor: Colors.primary, borderRadius: R },
-  scanHint: { marginTop: 20, color: Colors.text, fontSize: Fs.sm, fontFamily: Fonts.regular, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: R },
+  scanFrame:  { width: 250, height: 170 },
+  scanCorner: { position: 'absolute', width: 34, height: 34, borderColor: Colors.primary },
+  scanCornerTL: { top: 0, left: 0,  borderTopWidth: 3, borderLeftWidth: 3,  borderTopLeftRadius: 8 },
+  scanCornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
+  scanCornerBL: { bottom: 0, left: 0,  borderBottomWidth: 3, borderLeftWidth: 3,  borderBottomLeftRadius: 8 },
+  scanCornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
+  scanLine: {
+    position: 'absolute', top: '50%', left: 14, right: 14, height: 2,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6, shadowRadius: 6, elevation: 4,
+  },
+  scanHint: { marginTop: 20, color: 'rgba(255,255,255,0.75)', fontSize: Fs.sm, fontFamily: Fonts.regular, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: Sp.md, paddingVertical: 6, borderRadius: R },
   permContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Sp.md, padding: Sp.xl },
   permText: { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center' },
   // Manuel

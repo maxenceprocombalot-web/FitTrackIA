@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { WeightEntry, SavedPlan, BodyMeasurement, WeeklyChallenge } from '../../types';
 import Card from '../../components/ui/Card';
-import { Colors, R, Sp, Fs, Fw, Fonts } from '../../constants/theme';
+import { Colors, R, Sp, Fs, Fw, Fonts, Rr } from '../../constants/theme';
+import { GoldTile } from '../../components/ui/design';
 import { shareFooter } from '../../constants/app';
 import Button from '../../components/ui/Button';
 import WeightField from '../../components/ui/WeightField';
@@ -26,6 +27,13 @@ import {
 import { today, thisMonth, daysAgo, localISO , fmtDayMonth } from '../../services/date';
 import { projectWeight } from '../../services/metrics';
 import { BADGES } from '../../constants/badges';
+import { Goal } from '../../types';
+
+const GOAL_LABELS: Record<Goal, string> = {
+  weight_loss: 'Perte de poids',
+  muscle_gain: 'Prise de masse',
+  maintenance: 'Maintien',
+};
 import { WeightChart, CaloriesChart, ExerciseChart } from '../../components/progress/Charts';
 import { ExoStat, ScoreRow, WBadge, BigStat } from '../../components/progress/Stats';
 import { getUnlockedBadges, getDefaultChallenges, getChallengeProgress } from '../../services/badges';
@@ -212,6 +220,17 @@ export default function ProgressScreen() {
   const weightProj = projectWeight(filteredWeights, projTarget);
 
   const totalWorkouts  = store.workouts.length;
+
+  // ── En-tête de profil (maquette 1g) ────────────────────────────────────────
+  const unlockedCount = getUnlockedBadges(store).size;
+  // « Niveau Or » de la maquette : un palier lisible tiré des badges obtenus,
+  // pas un système de points inventé pour l'occasion.
+  const levelLabel =
+    unlockedCount >= 12 ? 'Niveau Or'
+    : unlockedCount >= 6 ? 'Niveau Argent'
+    : unlockedCount >= 1 ? 'Niveau Bronze'
+    : 'Nouveau';
+
   const totalVolume    = store.workouts.reduce((s, w) =>
     s + w.exercises.reduce((sv, e) =>
       sv + e.sets.reduce((ss, set) => ss + set.reps * set.weight, 0), 0), 0);
@@ -269,6 +288,47 @@ export default function ProgressScreen() {
   return (
     <AnimatedScreen style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+      {/* ── En-tête de profil (maquette 1g) ──────────────────────────────── */}
+      <View style={styles.profileTopBar}>
+        <TouchableOpacity
+          onPress={() => router.push('/modals/settings')}
+          accessibilityRole="button"
+          accessibilityLabel="Paramètres"
+        >
+          <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.profileHead}>
+        <GoldTile size={88} radius={44} deep style={styles.profileAvatar}>
+          {store.user?.name?.trim()
+            ? <Text style={styles.profileInitial}>{store.user.name[0].toUpperCase()}</Text>
+            : <Ionicons name="person" size={36} color={Colors.onPrimary} />}
+        </GoldTile>
+        <Text style={styles.profileName} numberOfLines={1}>{store.user?.name ?? 'Mon profil'}</Text>
+        <Text style={styles.profileGoal} numberOfLines={1}>
+          Objectif : {GOAL_LABELS[store.user?.goal ?? 'maintenance']} · {levelLabel}
+        </Text>
+      </View>
+
+      {/* ── Trois chiffres clés (maquette 1g) ────────────────────────────── */}
+      <View style={styles.profileStats}>
+        <View style={styles.profileStat}>
+          <Text style={styles.profileStatValue}>{totalWorkouts}</Text>
+          <Text style={styles.profileStatLabel}>Séances</Text>
+        </View>
+        <View style={styles.profileStatDivider} />
+        <View style={styles.profileStat}>
+          <Text style={[styles.profileStatValue, { color: Colors.primary }]}>{store.streak.current}</Text>
+          <Text style={styles.profileStatLabel}>Jours de série 🔥</Text>
+        </View>
+        <View style={styles.profileStatDivider} />
+        <View style={styles.profileStat}>
+          <Text style={styles.profileStatValue}>{unlockedCount}</Text>
+          <Text style={styles.profileStatLabel}>Badges</Text>
+        </View>
+      </View>
 
       {/* ── Carte Score de forme ──────────────────────────────────────────── */}
       <Card>
@@ -896,6 +956,33 @@ Généré par FitTrack IA · ${new Date().toLocaleDateString('fr-FR')}`;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { padding: Sp.md, gap: Sp.sm, paddingBottom: 40 },
+
+  // ── En-tête de profil (maquette 1g) ───────────────────────────────────────
+  profileTopBar: { flexDirection: 'row', justifyContent: 'flex-end' },
+  profileHead:   { alignItems: 'center', marginTop: 2, marginBottom: Sp.sm },
+  profileAvatar: {
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  profileInitial: { fontSize: 34, fontFamily: Fonts.bold, color: Colors.onPrimary },
+  profileName:    { fontSize: 24, fontFamily: Fonts.condensedBold, color: Colors.text, marginTop: 12 },
+  profileGoal:    { fontSize: Fs.sm, fontFamily: Fonts.regular, color: Colors.primary, marginTop: 2 },
+
+  profileStats: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: Rr.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: Sp.md,
+  },
+  profileStat:        { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  profileStatDivider: { width: 1, backgroundColor: Colors.border },
+  profileStatValue:   { fontSize: 26, fontFamily: Fonts.condensedBold, color: Colors.text },
+  profileStatLabel:   { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.textSecondary, textAlign: 'center', marginTop: 1 },
   tabsScroll: { backgroundColor: Colors.surface, borderRadius: R, borderWidth: 1, borderColor: Colors.border },
   tabsContent: { padding: 4, gap: 3 },
   tab: { paddingVertical: 8, paddingHorizontal: Sp.sm, borderRadius: R - 2, alignItems: 'center', minWidth: 70 },

@@ -29,9 +29,12 @@ export const Colors = {
   borderStrong: 'rgba(232,184,75,0.20)', // liseré or subtil
 
   // Macros
-  proteinColor: '#5B9BE8',
-  carbsColor: '#E8894B',
-  fatColor: '#F0CC5A',
+  // Macros — teintes des maquettes OR & NOIR : l'or porte les protéines
+  // (la macro que l'app met en avant), l'olive les glucides, la terre cuite
+  // les lipides. Trois teintes distinctes en clair comme en sombre.
+  proteinColor: '#E8B84B',
+  carbsColor: '#8FA66B',
+  fatColor: '#C77B4B',
   caloriesColor: '#E8B84B',
 };
 
@@ -90,3 +93,43 @@ export const shadow = {
   shadowRadius: 8,
   elevation: 6,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tokens de la refonte « maquettes OR & NOIR » (Claude Design, 09/07/2026).
+// Les maquettes composent avec des rayons plus généreux que R=14 et des
+// dégradés nommés : les figer ici évite de re-saisir les mêmes hex écran par
+// écran, ce qui est exactement ce qui avait fait diverger les 40 couleurs en
+// dur relevées lors de la refonte de la vue globale.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Rayons de la maquette. `hero` = grande carte, `card` = carte standard. */
+export const Rr = {
+  hero: 26,
+  card: 20,
+  panel: 18,
+  field: 14,
+  chip: 12,
+  pill: 999,
+};
+
+/** Paires de dégradés (start → end), à passer tel quel à LinearGradient. */
+export const Grad = {
+  /** Grande carte sombre (anneau calories, résumé nutrition). */
+  hero:    ['#1A1A1D', '#131315'] as const,
+  /** Carte mise en avant, liseré or (séance du jour). */
+  raised:  ['#1C1C1F', '#141416'] as const,
+  /** Bouton d'action principal. Texte en Colors.onPrimary. */
+  gold:    ['#E8B84B', '#C9990F'] as const,
+  /** Pastille / avatar or, plus profond que le CTA. */
+  goldDeep:['#E8B84B', '#B8860B'] as const,
+  /** Icône or claire (badge coach, FAB). */
+  goldSoft:['#F2CE73', '#D4A017'] as const,
+  /** Bandeau coach teinté or sur fond sombre. */
+  goldWash:['rgba(232,184,75,0.16)', 'rgba(232,184,75,0.04)'] as const,
+};
+
+/** Texte lisible sur un fond teinté or (bandeau coach). */
+export const onGoldWash = '#B8A870';
+
+/** Liseré or des cartes mises en avant. */
+export const goldBorder = 'rgba(232,184,75,0.30)';
