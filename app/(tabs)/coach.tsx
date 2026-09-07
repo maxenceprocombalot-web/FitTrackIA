@@ -400,7 +400,9 @@ export default function CoachScreen() {
           </GoldTile>
           <View style={{ flex: 1 }}>
             <Text style={styles.coachName}>FitCoach IA</Text>
-            <Text style={styles.coachSub}>
+            {/* Le vert dit « tout va bien » : il ne doit pas servir à annoncer
+                que le coach n'est pas configuré. */}
+            <Text style={[styles.coachSub, demoMode && styles.coachSubWarn]}>
               {demoMode ? 'Coach non configuré' : `● Persona : ${(PERSONA_LABELS[currentPersona] ?? '').replace(/^\S+\s/, '')}`}
             </Text>
           </View>
@@ -719,6 +721,7 @@ const styles = StyleSheet.create({
   coachBar:        { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: Sp.md, paddingTop: Sp.md, paddingBottom: 12 },
   coachName:       { fontSize: Fs.md, fontFamily: Fonts.bold, color: Colors.text },
   coachSub:        { fontSize: Fs.xs, fontFamily: Fonts.regular, color: Colors.green, marginTop: 1 },
+  coachSubWarn:    { color: Colors.orange },
   personaRow:      { flexDirection: 'row', gap: 8, paddingHorizontal: Sp.md, paddingBottom: 12 },
   clearBtn:        { padding: 6 },
   messages:        { flex: 1 },

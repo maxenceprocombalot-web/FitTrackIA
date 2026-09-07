@@ -11,11 +11,14 @@ interface Props {
   strokeWidth?: number;
 }
 
-// Couleur dynamique selon pourcentage de remplissage net
+// Couleur dynamique selon pourcentage de remplissage net.
+// L'état normal est OR (maquette 1a) et non plus vert : l'anneau est l'objet
+// central de l'accueil, il porte l'accent de la marque. Les deux paliers
+// d'alerte restent — les perdre aurait supprimé le signal « tu dépasses ».
 function ringColor(pct: number): string {
   if (pct > 1.0) return Colors.red;
   if (pct > 0.85) return Colors.orange;
-  return Colors.green;
+  return Colors.primary;
 }
 
 // Composant interne qui transforme la valeur Animated en strokeDashoffset SVG
