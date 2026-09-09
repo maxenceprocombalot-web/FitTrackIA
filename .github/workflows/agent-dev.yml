@@ -189,7 +189,12 @@ jobs:
           # Une reprise retrouve sa propre PR déjà ouverte : `gh pr create` rendrait
           # « a pull request already exists » et ferait échouer un passage qui a
           # pourtant livré. On la réutilise — le force-push l'a déjà mise à jour.
-          url=$(gh pr view "${{ steps.reclamer.outputs.branche }}" --json url -q .url 2>/dev/null || true)
+          # `--state open` est indispensable : `gh pr view <branche>` retrouve aussi
+          # les PR FERMÉES. Sans ce filtre, une reprise « réutilisait » une PR close,
+          # rapportait son URL comme si tout allait bien, et l'action restait
+          # `en_cours` accrochée à un lien mort — voie bloquée, sans erreur nulle
+          # part. Constaté sur le run 34355547331.
+          url=$(gh pr list --head "${{ steps.reclamer.outputs.branche }}" --state open --json url -q '.[0].url' 2>/dev/null || true)
           if [ -z "$url" ]; then
             url=$(gh pr create --title "$titre" --body-file /tmp/corps-pr.md \
               --head "${{ steps.reclamer.outputs.branche }}")
