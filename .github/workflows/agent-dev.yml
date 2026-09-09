@@ -166,7 +166,13 @@ jobs:
           exécuté par Claude Code dans GitHub Actions. À relire avant fusion :
           rien n'est parti en production.
           COMMIT
-          git push -q -u origin "${{ steps.reclamer.outputs.branche }}"
+          # `--force-with-lease` et pas un push simple : la branche porte l'identifiant
+          # du chantier, donc une REPRISE après échec retombe sur le même nom. Sans
+          # ça, le deuxième essai mourait au push (« non-fast-forward ») alors que
+          # le travail était fait — et l'échec du bras était alors causé par le bras
+          # lui-même. `with-lease` refuse quand même d'écraser un commit qu'on n'a
+          # pas vu : on reprend son propre travail, on n'efface pas celui d'un autre.
+          git push -q --force-with-lease -u origin "${{ steps.reclamer.outputs.branche }}"
 
           cat > /tmp/corps-pr.md <<CORPS
           Chantier planifié par l'agent dev de Max Brain, exécuté cette nuit par Claude Code.
@@ -180,8 +186,16 @@ jobs:
           _Ouverte automatiquement. À relire avant fusion : rien n'est parti en production._
           CORPS
 
-          url=$(gh pr create --title "$titre" --body-file /tmp/corps-pr.md \
-            --head "${{ steps.reclamer.outputs.branche }}")
+          # Une reprise retrouve sa propre PR déjà ouverte : `gh pr create` rendrait
+          # « a pull request already exists » et ferait échouer un passage qui a
+          # pourtant livré. On la réutilise — le force-push l'a déjà mise à jour.
+          url=$(gh pr view "${{ steps.reclamer.outputs.branche }}" --json url -q .url 2>/dev/null || true)
+          if [ -z "$url" ]; then
+            url=$(gh pr create --title "$titre" --body-file /tmp/corps-pr.md \
+              --head "${{ steps.reclamer.outputs.branche }}")
+          else
+            echo "Pull request déjà ouverte, mise à jour par le force-push : $url"
+          fi
 
           echo "etat=done"  >> "$GITHUB_OUTPUT"
           echo "url=$url"   >> "$GITHUB_OUTPUT"
