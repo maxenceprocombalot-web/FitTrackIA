@@ -172,7 +172,15 @@ jobs:
           # le travail était fait — et l'échec du bras était alors causé par le bras
           # lui-même. `with-lease` refuse quand même d'écraser un commit qu'on n'a
           # pas vu : on reprend son propre travail, on n'efface pas celui d'un autre.
-          git push -q --force-with-lease -u origin "${{ steps.reclamer.outputs.branche }}"
+          # Le « lease » a besoin d'une référence à comparer. Un runner part d'un
+          # clone neuf qui ne connaît pas cette branche : sans ce fetch, le push
+          # est rejeté en « stale info » — le garde-fou bloquerait le seul cas
+          # qu'il est censé protéger. Vérifié à la main, l'erreur est exactement
+          # celle-là. Le `|| true` couvre le premier passage, où la branche
+          # n'existe pas encore côté serveur.
+          BR="${{ steps.reclamer.outputs.branche }}"
+          git fetch -q origin "+refs/heads/$BR:refs/remotes/origin/$BR" 2>/dev/null || true
+          git push -q --force-with-lease -u origin "$BR"
 
           cat > /tmp/corps-pr.md <<CORPS
           Chantier planifié par l'agent dev de Max Brain, exécuté cette nuit par Claude Code.
