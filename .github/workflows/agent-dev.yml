@@ -83,8 +83,11 @@ jobs:
           jq -r '.prompt' <<<"$reponse" > .agent-dev-chantier.md
           # La première ligne de la consigne est le titre du chantier. On la
           # garde à part pour nommer la PR — dans un fichier, encore une fois,
-          # et jamais dans une sortie de workflow : `${{ }}` recolle sa valeur
-          # dans le YAML avant que le shell ne la voie.
+          # et jamais dans une sortie de workflow : une expression GitHub y
+          # recollerait sa valeur dans le YAML avant que le shell ne la voie.
+          # (Et on n'en ÉCRIT pas non plus une vide ici, même en commentaire :
+          # GitHub analyse ces marqueurs partout dans le bloc et refuse le
+          # fichier entier avec « An expression was expected ».)
           head -n 1 .agent-dev-chantier.md | cut -c1-160 > .agent-dev-titre.txt
 
           echo "vide=false"      >> "$GITHUB_OUTPUT"
