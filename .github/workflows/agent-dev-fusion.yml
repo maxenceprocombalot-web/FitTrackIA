@@ -1,0 +1,67 @@
+# LA MOITIÉ QUI LIBÈRE LA VOIE.
+#
+# Ouvrir une pull request ne termine pas l'action côté Max Brain : elle reste
+# `en_cours`, et l'index unique de `agent_actions` empêche l'agent d'en
+# planifier une deuxième tant qu'elle y est. C'est voulu — « tant que la PR de
+# la veille n'est pas fusionnée, il n'en ouvre pas de nouvelle ». Mais sans ce
+# fichier, la voie ne se rouvrirait JAMAIS : personne ne dirait au serveur que
+# la PR est passée.
+#
+# On écoute donc l'événement plutôt que de sonder GitHub en boucle : la
+# condition de déclenchement se referme d'elle-même, il n'y a rien à se
+# rappeler et rien à programmer.
+name: Agent dev — rapporter la fusion
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  MAXBRAIN: https://lgvtjqtytwyovllsqbgv.supabase.co/functions/v1/dev-queue
+
+jobs:
+  rapporter:
+    # Seules les branches ouvertes par le bras concernent Max Brain. Une PR
+    # écrite à la main ne doit rien libérer.
+    if: startsWith(github.event.pull_request.head.ref, 'agent-dev/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Dire au guichet ce qui est arrivé à la PR
+        env:
+          KAIROS_SECRET: ${{ secrets.KAIROS_SECRET }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          FUSIONNEE: ${{ github.event.pull_request.merged }}
+        run: |
+          set -euo pipefail
+
+          # On demande d'abord QUELLE action est en vol, et on ne rapporte que
+          # si c'est bien celle de cette PR. Sans cette vérification, fermer une
+          # vieille branche `agent-dev/` terminerait l'action en cours d'une
+          # autre — et l'agent repartirait sur un chantier déjà pris.
+          envol=$(curl -sS --fail-with-body -X POST "$MAXBRAIN" \
+            -H 'content-type: application/json' \
+            -H "x-kairos-secret: $KAIROS_SECRET" \
+            -d '{"action":"pr_en_vol"}')
+
+          id=$(jq -r '.id // empty' <<<"$envol")
+          url=$(jq -r '.url // empty' <<<"$envol")
+
+          if [ -z "$id" ]; then
+            echo "Aucune action en vol côté Max Brain — rien à libérer."
+            exit 0
+          fi
+          if [ "$url" != "$PR_URL" ]; then
+            echo "L'action en vol pointe vers $url, pas vers cette PR ($PR_URL) — on ne touche à rien."
+            exit 0
+          fi
+
+          if [ "$FUSIONNEE" = "true" ]; then geste=pr_mergee; else geste=pr_fermee; fi
+          corps=$(jq -nc --arg a "$geste" --arg id "$id" --arg u "$PR_URL" \
+            '{action:$a, id:$id, url:$u}')
+          curl -sS --fail-with-body -X POST "$MAXBRAIN" \
+            -H 'content-type: application/json' \
+            -H "x-kairos-secret: $KAIROS_SECRET" \
+            -d "$corps"
+          echo "Rapporté : $geste pour l'action $id."
