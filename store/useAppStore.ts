@@ -47,6 +47,9 @@ let _state: AppState = {
 
 const _listeners = new Set<() => void>();
 
+// File de sérialisation pour l'hydratation (lire-modifier-écrire sur _state.water).
+let _waterChain = Promise.resolve();
+
 function setState(patch: Partial<AppState>) {
   _state = { ..._state, ...patch };
   _listeners.forEach(fn => fn());
@@ -324,11 +327,17 @@ export function useAppStore(watch?: readonly StateKey[]) {
   }, []);
 
   // ─── Hydratation ─────────────────────────────────────────────────────────────
-
-  const addWater = useCallback(async (ml: number) => {
-    const entry: WaterEntry = { date: S.today(), ml: (_state.water.ml + ml) };
-    await S.saveWaterEntry(entry);
-    setState({ water: entry });
+  // `_state.water.ml` est lu puis ré-écrit après un `await` : deux appels
+  // rapprochés (double tap sur un bouton +ml) liraient tous deux l'ancienne
+  // valeur et le second écraserait l'incrément du premier. On sérialise donc
+  // les appels sur une file dédiée, comme le fait déjà `enqueue` côté storage.
+  const addWater = useCallback((ml: number) => {
+    _waterChain = _waterChain.then(async () => {
+      const entry: WaterEntry = { date: S.today(), ml: (_state.water.ml + ml) };
+      await S.saveWaterEntry(entry);
+      setState({ water: entry });
+    });
+    return _waterChain;
   }, []);
 
   const resetWater = useCallback(async () => {
